@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <script>
+        (function () {
+            try {
+                const savedTheme = localStorage.getItem('theme');
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                const theme = savedTheme || (prefersDark ? 'dark' : 'light');
+                document.documentElement.setAttribute('data-theme', theme);
+            } catch (error) {
+                document.documentElement.setAttribute('data-theme', 'light');
+            }
+            document.documentElement.classList.add('js');
+        })();
+    </script>
+    <title>工作室 - Huanfly</title>
+    <meta name="description" content="走进 Huanfly 的极客工作室：可交互的手绘场景，嵌入式工作台、无边框显示器、3D 打印机与窗边的阳光。点击显示器进入 huanfly-os：终端、相册与 Robot。">
+    <meta name="author" content="Huanfly">
+    <link rel="canonical" href="https://huanfly.com/studio.html">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="工作室 - Huanfly">
+    <meta property="og:description" content="可交互的手绘极客工作室：嵌入式工作台、无边框显示器、3D 打印机与窗边的阳光。">
+    <meta property="og:url" content="https://huanfly.com/studio.html">
+    <meta property="og:site_name" content="Huanfly的空间">
+    <meta property="og:locale" content="zh_CN">
+    <meta property="og:image" content="https://huanfly.com/picture/icon-512.png">
+    <meta name="twitter:card" content="summary">
+    <meta name="theme-color" content="#5da844">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" type="image/png" href="picture/icon.png">
+    <link rel="apple-touch-icon" href="picture/icon-192.png">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-screen-webfont@1.7.0/lxgwwenkaigbscreen.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-screen-webfont@1.7.0/lxgwwenkaiscreen.css" media="print" onload="this.media='all'">
+    <noscript>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-screen-webfont@1.7.0/lxgwwenkaigbscreen.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-screen-webfont@1.7.0/lxgwwenkaiscreen.css">
+    </noscript>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/studio.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        // 页面级配置：终端桥接地址与 Robot 默认值（密钥只存浏览器本地，绝不写在这里）
+        window.STUDIO_CONFIG = {
+            terminal: { wsUrl: 'ws://127.0.0.1:7681/' },
+            robot: { baseUrl: 'https://api.openai.com/v1', model: 'gpt-4o-mini' }
+        };
+    </script>
+</head>
+<body class="studio-page">
+
+    <header>
+        <div class="container">
+            <a href="index.html" class="logo">
+                <img src="picture/icon.png" alt="Logo">
+                <span>Huanfly</span>
+            </a>
+            <div class="menu-toggle"><i class="fas fa-bars"></i></div>
+            <nav class="nav-links">
+                <a href="index.html">主页</a>
+                <a href="blog.html">博客</a>
+                <a href="tool.html">工具</a>
+                <a href="studio.html" class="active">工作室</a>
+                <a href="about.html">关于</a>
+                <button class="theme-toggle" aria-label="切换主题" title="切换主题">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <main class="studio" id="studio">
+        <div class="studio-stage" id="studio-stage">
+            <svg class="studio-scene" id="studio-scene" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice"
+                 xmlns="http://www.w3.org/2000/svg" role="group" aria-label="Huanfly 的极客工作室，可交互场景">
+                <defs>
+                    <linearGradient id="g-wall" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0" style="stop-color: var(--st-wall)"/>
+                        <stop offset="1" style="stop-color: var(--st-wall-2)"/>
+                    </linearGradient>
+                    <linearGradient id="g-side-wall" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0" style="stop-color: var(--st-side-wall-2)"/>
+                        <stop offset="1" style="stop-color: var(--st-side-wall)"/>
+                    </linearGradient>
+                    <linearGradient id="g-floor" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0" style="stop-color: var(--st-floor-2)"/>
+                        <stop offset="1" style="stop-color: var(--st-floor)"/>
+                    </linearGradient>
+                    <linearGradient id="g-desk" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0" style="stop-color: var(--st-desk)"/>
+                        <stop offset="1" style="stop-color: var(--st-desk-2)"/>
+                    </linearGradient>
+                    <linearGradient id="g-sky" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0" style="stop-color: var(--st-sky)"/>
+                        <stop offset="1" style="stop-color: var(--st-sky-2)"/>
+                    </linearGradient>
+                    <linearGradient id="g-screen" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0" style="stop-color: var(--st-screen-2)"/>
+                        <stop offset="1" style="stop-color: var(--st-screen)"/>
+                    </linearGradient>
+                    <linearGradient id="g-glass" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0" stop-color="#ffffff" stop-opacity="0.16"/>
+                        <stop offset="0.45" stop-color="#ffffff" stop-opacity="0.02"/>
+                        <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+                    </linearGradient>
+                    <linearGradient id="g-sun" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0" style="stop-color: var(--st-sun)" stop-opacity="1"/>
+                        <stop offset="1" style="stop-color: var(--st-sun)" stop-opacity="0"/>
+                    </linearGradient>
+                    <linearGradient id="g-moon" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0" style="stop-color: var(--st-moon)" stop-opacity="1"/>
+                        <stop offset="1" style="stop-color: var(--st-moon)" stop-opacity="0"/>
+                    </linearGradient>
+                    <linearGradient id="g-rgb" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0" stop-color="#ff6b6b"/>
+                        <stop offset="0.25" stop-color="#f2c46e"/>
+                        <stop offset="0.5" stop-color="#7cc95f"/>
+                        <stop offset="0.75" stop-color="#6fd8e2"/>
+                        <stop offset="1" stop-color="#9b7ede"/>
+                    </linearGradient>
+                    <radialGradient id="g-glow" cx="0.5" cy="0.5" r="0.5">
+                        <stop offset="0" stop-color="#6fd8e2" stop-opacity="0.75"/>
+                        <stop offset="0.5" stop-color="#6fd8e2" stop-opacity="0.22"/>
+                        <stop offset="1" stop-color="#6fd8e2" stop-opacity="0"/>
+                    </radialGradient>
+                    <radialGradient id="g-lamp" cx="0.5" cy="0.5" r="0.5">
+                        <stop offset="0" stop-color="#ffd98a" stop-opacity="0.75"/>
+                        <stop offset="1" stop-color="#ffd98a" stop-opacity="0"/>
+                    </radialGradient>
+                    <radialGradient id="g-night" gradientUnits="userSpaceOnUse" cx="1000" cy="380" r="900">
+                        <stop offset="0" stop-color="#060c10" stop-opacity="0"/>
+                        <stop offset="0.3" stop-color="#060c10" stop-opacity="0.26"/>
+                        <stop offset="1" stop-color="#060c10" stop-opacity="0.62"/>
+                    </radialGradient>
+                    <filter id="f-blur30" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="30"/></filter>
+                    <filter id="f-blur14" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="14"/></filter>
+                    <filter id="f-blur6" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="6"/></filter>
+                    <clipPath id="c-window"><polygon points="448,157 88,45 88,539 448,456"/></clipPath>
+                    <clipPath id="c-screen"><rect x="700" y="167.5" width="600" height="337.5" rx="8"/></clipPath>
+                    <clipPath id="c-scope"><rect x="411" y="477" width="40" height="40"/></clipPath>
+                </defs>
+
+                <!-- ================= 房间 ================= -->
+                <g id="room">
+                    <rect x="520" y="0" width="1080" height="590" fill="url(#g-wall)"/>
+                    <polygon points="0,0 520,0 520,590 0,872" fill="url(#g-side-wall)"/>
+                    <rect x="520" y="0" width="60" height="590" fill="var(--st-corner)" opacity="0.6"/>
+                    <line x1="520" y1="0" x2="520" y2="590" class="ink" opacity="0.35"/>
+
+                    <!-- 地板 -->
+                    <polygon points="0,872 520,590 1600,590 1600,900 0,900" fill="url(#g-floor)"/>
+                    <g stroke="var(--st-floor-line)" stroke-width="2" fill="none">
+                        <line x1="600" y1="590" x2="124" y2="900"/>
+                        <line x1="700" y1="590" x2="343" y2="900"/>
+                        <line x1="800" y1="590" x2="562" y2="900"/>
+                        <line x1="900" y1="590" x2="781" y2="900"/>
+                        <line x1="1000" y1="590" x2="1000" y2="900"/>
+                        <line x1="1100" y1="590" x2="1219" y2="900"/>
+                        <line x1="1200" y1="590" x2="1438" y2="900"/>
+                        <line x1="1300" y1="590" x2="1657" y2="900"/>
+                        <line x1="1400" y1="590" x2="1876" y2="900"/>
+                        <line x1="1500" y1="590" x2="2095" y2="900"/>
+                        <line x1="400" y1="655" x2="1600" y2="655" opacity="0.5"/>
+                        <line x1="232" y1="746" x2="1600" y2="746" opacity="0.5"/>
+                        <line x1="59" y1="840" x2="1600" y2="840" opacity="0.5"/>
+                    </g>
+                    <!-- 地毯 -->
+                    <ellipse cx="1000" cy="835" rx="480" ry="98" fill="var(--st-rug)" opacity="0.92"/>
+                    <ellipse cx="1000" cy="835" rx="440" ry="80" fill="none" stroke="var(--st-rug-2)" stroke-width="3" stroke-dasharray="14 10"/>
+                    <ellipse cx="1000" cy="835" rx="480" ry="98" fill="none" class="ink" opacity="0.5"/>
+
+                    <!-- 踢脚线 -->
+                    <rect x="520" y="576" width="1080" height="14" fill="var(--st-baseboard)"/>
+                    <polygon points="520,576 520,590 0,872 0,850" fill="var(--st-baseboard)"/>
+                    <polyline points="0,850 520,576 1600,576" fill="none" class="ink" opacity="0.45"/>
+                </g>
+
+                <!-- ================= 左墙：窗 ================= -->
+                <g id="window" class="hotspot" data-id="window" role="button" tabindex="0"
+                   aria-label="朝东的窗，点击切换昼夜"
+                   data-tip-title="朝东的窗" data-tip="光线很好，早上有鸟叫，下午的风带着草木香。" data-tip-action="点击切换昼夜 ☀️ / 🌙">
+                    <g class="lift">
+                        <g clip-path="url(#c-window)">
+                            <rect x="60" y="20" width="400" height="540" fill="url(#g-sky)"/>
+                            <g id="window-night">
+                                <circle class="star" cx="150" cy="110" r="2.2" fill="#fff8e0"/>
+                                <circle class="star" cx="230" cy="90" r="1.6" fill="#fff8e0"/>
+                                <circle class="star" cx="300" cy="150" r="2" fill="#fff8e0"/>
+                                <circle class="star" cx="380" cy="200" r="1.5" fill="#fff8e0"/>
+                                <circle class="star" cx="120" cy="200" r="1.4" fill="#fff8e0"/>
+                                <circle class="star" cx="260" cy="230" r="1.8" fill="#fff8e0"/>
+                                <circle class="star" cx="410" cy="260" r="1.3" fill="#fff8e0"/>
+                                <circle class="star" cx="200" cy="170" r="1.2" fill="#fff8e0"/>
+                                <circle cx="330" cy="205" r="24" fill="#f6f1d8"/>
+                                <circle cx="342" cy="196" r="20" fill="var(--st-sky)" opacity="0.92"/>
+                            </g>
+                            <g id="window-clouds" fill="#ffffff" opacity="0.9">
+                                <g>
+                                    <ellipse cx="380" cy="150" rx="34" ry="14"/>
+                                    <ellipse cx="400" cy="140" rx="22" ry="16"/>
+                                    <ellipse cx="360" cy="142" rx="18" ry="12"/>
+                                    <ellipse cx="250" cy="240" rx="28" ry="11"/>
+                                    <ellipse cx="266" cy="232" rx="18" ry="13"/>
+                                </g>
+                            </g>
+                            <path d="M60 430 C150 385 250 415 340 388 S430 352 470 372 L470 560 L60 560 Z" fill="var(--st-hill)"/>
+                            <path d="M60 480 C160 445 240 476 330 455 S420 432 470 442 L470 560 L60 560 Z" fill="var(--st-hill-2)"/>
+                            <g id="window-tree">
+                                <path d="M118 540 C122 470 126 400 132 330 L146 330 C142 400 140 470 142 540 Z" fill="var(--st-trunk)"/>
+                                <path d="M134 400 C110 380 96 360 92 340" fill="none" stroke="var(--st-trunk)" stroke-width="7" stroke-linecap="round"/>
+                                <path d="M140 380 C166 360 176 340 190 322" fill="none" stroke="var(--st-trunk)" stroke-width="7" stroke-linecap="round"/>
+                                <circle cx="138" cy="270" r="58" fill="var(--st-leaf-2)"/>
+                                <circle cx="92" cy="318" r="42" fill="var(--st-leaf)"/>
+                                <circle cx="192" cy="300" r="46" fill="var(--st-leaf)"/>
+                                <circle cx="150" cy="330" r="40" fill="var(--st-leaf-2)"/>
+                                <circle cx="126" cy="236" r="34" fill="var(--st-leaf)"/>
+                            </g>
+                        </g>
+                        <!-- 窗框 -->
+                        <polygon points="448,157 88,45 88,539 448,456" fill="none" stroke="var(--st-frame)" stroke-width="16" stroke-linejoin="round"/>
+                        <line x1="328" y1="120" x2="328" y2="484" stroke="var(--st-frame)" stroke-width="9"/>
+                        <line x1="208" y1="82" x2="208" y2="512" stroke="var(--st-frame)" stroke-width="9"/>
+                        <line x1="448" y1="307" x2="88" y2="292" stroke="var(--st-frame)" stroke-width="9"/>
+                        <polygon points="448,157 88,45 88,539 448,456" fill="none" class="ink"/>
+                        <polygon points="440,168 96,60 96,528 440,448" fill="none" class="ink-thin" opacity="0.6"/>
+                        <!-- 窗台 -->
+                        <polygon points="452,456 84,539 84,556 452,472" fill="var(--st-frame)" class="ink"/>
+                        <polygon points="452,472 84,556 84,563 452,479" fill="var(--st-frame-2)" class="ink-thin"/>
+                        <!-- 窗帘杆 + 窗帘 -->
+                        <line x1="66" y1="14" x2="486" y2="146" class="ink" stroke-width="5"/>
+                        <circle cx="66" cy="14" r="6" fill="var(--st-desk-edge)" class="ink-thin"/>
+                        <circle cx="486" cy="146" r="6" fill="var(--st-desk-edge)" class="ink-thin"/>
+                        <path d="M404 118 L472 140 L472 476 Q460 492 447 478 Q434 494 420 478 Q410 488 404 474 Z" fill="var(--st-curtain)" class="ink-thin"/>
+                        <g stroke="var(--st-curtain-fold)" stroke-width="2.5" fill="none" stroke-linecap="round">
+                            <path d="M418 128 C414 240 420 360 416 470"/>
+                            <path d="M434 134 C430 250 438 360 432 476"/>
+                            <path d="M452 140 C448 250 456 370 450 474"/>
+                        </g>
+                    </g>
+                </g>
+
+                <!-- 窗台绿植 -->
+                <g id="sill-plant" class="hotspot" data-id="plant" role="button" tabindex="0" aria-label="窗台绿植"
+                   data-tip-title="窗台绿植" data-tip="晒太阳的专业选手，唯一不需要固件更新的东西。">
+                    <g class="lift">
+                        <g class="leaves">
+                            <path d="M160 492 C140 470 150 440 172 434 C176 458 172 478 160 492 Z" fill="var(--st-leaf)" class="ink-thin"/>
+                            <path d="M164 494 C186 476 210 480 216 500 C196 506 178 504 164 494 Z" fill="var(--st-leaf-2)" class="ink-thin"/>
+                            <path d="M158 496 C134 490 122 470 130 452 C150 462 158 480 158 496 Z" fill="var(--st-leaf-2)" class="ink-thin"/>
+                            <path d="M162 492 C160 466 176 448 196 448 C194 470 182 486 162 492 Z" fill="var(--st-leaf)" class="ink-thin"/>
+                        </g>
+                        <polygon points="140,492 184,492 178,528 146,528" fill="var(--rose)" class="ink"/>
+                        <rect x="136" y="488" width="52" height="8" rx="2" fill="#f0a08a" class="ink-thin"/>
+                    </g>
+                </g>
+
+                <!-- 左墙挂钟 -->
+                <g id="wall-clock">
+                    <ellipse cx="488" cy="330" rx="15" ry="24" fill="var(--st-paper)" class="ink"/>
+                    <line x1="488" y1="330" x2="488" y2="314" class="ink-thin"/>
+                    <line x1="488" y1="330" x2="495" y2="336" class="ink-thin"/>
+                    <circle cx="488" cy="330" r="1.5" fill="var(--st-ink)"/>
+                </g>
+
+                <!-- ================= 后墙装饰 ================= -->
+                <g id="wall-decor">
+                    <!-- 搁板 -->
+                    <polygon points="560,262 900,262 906,276 554,276" fill="var(--st-desk-2)" class="ink"/>
+                    <polygon points="586,276 586,300 606,276" fill="var(--st-desk-edge)" class="ink-thin"/>
+                    <polygon points="874,276 874,300 854,276" fill="var(--st-desk-edge)" class="ink-thin"/>
+
+                    <!-- 书 -->
+                    <g id="shelf-books" class="hotspot" data-id="books" role="button" tabindex="0" aria-label="书架"
+                       data-tip-title="书架" data-tip="《嵌入式系统设计》《RTOS 内核实现》《控制之美》，还有一本翻烂的《C 陷阱与缺陷》。">
+                        <g class="lift">
+                            <rect x="572" y="196" width="18" height="66" rx="2" fill="var(--primary-color)" class="ink"/>
+                            <rect x="592" y="188" width="22" height="74" rx="2" fill="var(--rose)" class="ink"/>
+                            <rect x="616" y="202" width="16" height="60" rx="2" fill="var(--warm)" class="ink"/>
+                            <rect x="634" y="192" width="20" height="70" rx="2" fill="var(--violet)" class="ink"/>
+                            <rect x="656" y="204" width="17" height="58" rx="2" fill="var(--accent-color)" class="ink"/>
+                            <polygon points="676,262 690,196 708,200 700,262" fill="var(--st-paper)" class="ink"/>
+                            <g stroke="var(--st-paper)" stroke-width="1.5" opacity="0.7">
+                                <line x1="581" y1="206" x2="581" y2="250"/>
+                                <line x1="603" y1="198" x2="603" y2="250"/>
+                                <line x1="644" y1="204" x2="644" y2="250"/>
+                            </g>
+                        </g>
+                    </g>
+
+                    <!-- 多肉 -->
+                    <g id="shelf-succulent" class="hotspot" data-id="succulent" role="button" tabindex="0" aria-label="多肉"
+                       data-tip-title="多肉" data-tip="书架上的常驻嘉宾，两周浇一次水，比板子好养。">
+                        <g class="lift">
+                            <g class="leaves">
+                                <ellipse cx="740" cy="236" rx="7" ry="14" fill="var(--st-leaf)" class="ink-thin" transform="rotate(-30 740 248)"/>
+                                <ellipse cx="748" cy="236" rx="7" ry="14" fill="var(--st-leaf-2)" class="ink-thin" transform="rotate(25 748 248)"/>
+                                <ellipse cx="744" cy="232" rx="6" ry="14" fill="var(--st-leaf)" class="ink-thin"/>
+                            </g>
+                            <polygon points="730,246 758,246 754,262 734,262" fill="var(--accent-color)" class="ink"/>
+                        </g>
+                    </g>
+
+                    <!-- 小黑手办 -->
+                    <g id="shelf-figure" class="hotspot" data-id="figure" role="button" tabindex="0" aria-label="小黑手办"
+                       data-tip-title="小黑手办" data-tip="站点吉祥物，因为踩坏过一块板子被罚站在书架上。">
+                        <g class="lift" transform="translate(772 226) scale(0.26)">
+                            <path d="M112 102 C 138 100 146 76 132 62" fill="none" stroke="var(--st-cat)" stroke-width="11" stroke-linecap="round"/>
+                            <ellipse cx="78" cy="96" rx="36" ry="26" fill="var(--st-cat)"/>
+                            <ellipse cx="64" cy="118" rx="9" ry="6" fill="var(--st-cat)"/>
+                            <ellipse cx="92" cy="118" rx="9" ry="6" fill="var(--st-cat)"/>
+                            <path d="M52 28 L44 2 L67 16 Z" fill="var(--st-cat)"/>
+                            <path d="M96 28 L104 2 L81 16 Z" fill="var(--st-cat)"/>
+                            <circle cx="74" cy="46" r="31" fill="var(--st-cat)"/>
+                            <ellipse cx="63" cy="46" rx="4.5" ry="6.5" fill="#8fe3d9"/>
+                            <ellipse cx="85" cy="46" rx="4.5" ry="6.5" fill="#8fe3d9"/>
+                        </g>
+                    </g>
+
+                    <!-- 四旋翼 -->
+                    <g id="shelf-drone" class="hotspot" data-id="drone" role="button" tabindex="0" aria-label="自制四旋翼"
+                       data-tip-title="自制四旋翼" data-tip="从飞控固件到机架都是自己做的，多旋翼是最早把我拉进嵌入式坑的项目。">
+                        <g class="lift">
+                            <line x1="812" y1="252" x2="884" y2="232" class="ink" stroke-width="4"/>
+                            <line x1="812" y1="232" x2="884" y2="252" class="ink" stroke-width="4"/>
+                            <rect x="836" y="234" width="24" height="16" rx="4" fill="var(--st-metal-3)" class="ink-thin"/>
+                            <ellipse cx="812" cy="230" rx="16" ry="3.5" fill="var(--st-metal)" class="ink-thin"/>
+                            <ellipse cx="884" cy="230" rx="16" ry="3.5" fill="var(--st-metal)" class="ink-thin"/>
+                            <ellipse cx="812" cy="250" rx="16" ry="3.5" fill="var(--st-metal)" class="ink-thin" opacity="0.8"/>
+                            <ellipse cx="884" cy="250" rx="16" ry="3.5" fill="var(--st-metal)" class="ink-thin" opacity="0.8"/>
+                            <rect x="838" y="250" width="4" height="12" fill="var(--st-metal-2)"/>
+                            <rect x="854" y="250" width="4" height="12" fill="var(--st-metal-2)"/>
+                            <circle cx="848" cy="242" r="2.2" fill="#7cc95f"/>
+                        </g>
+                    </g>
+
+                    <!-- 灵感墙 -->
+                    <g id="board" class="hotspot" data-id="board" role="button" tabindex="0" aria-label="灵感墙"
+                       data-tip-title="灵感墙" data-tip="PCB 打样单、待办便签，还有一张手画的 FOC 电流环波形。" data-tip-action="点击整理便签">
+                        <g class="lift">
+                            <rect x="1340" y="150" width="200" height="180" rx="6" fill="var(--st-desk-2)" class="ink"/>
+                            <rect x="1348" y="158" width="184" height="164" rx="4" fill="none" stroke="var(--st-desk-edge)" stroke-width="2"/>
+                            <g class="note" transform="rotate(-4 1390 190)">
+                                <rect x="1360" y="176" width="56" height="52" fill="#fff4b8" class="ink-thin"/>
+                                <g stroke="var(--st-ink)" stroke-width="1.5" opacity="0.5">
+                                    <line x1="1368" y1="190" x2="1408" y2="190"/>
+                                    <line x1="1368" y1="200" x2="1400" y2="200"/>
+                                    <line x1="1368" y1="210" x2="1406" y2="210"/>
+                                </g>
+                                <circle cx="1388" cy="176" r="3" fill="var(--rose)" class="ink-thin"/>
+                            </g>
+                            <g class="note" transform="rotate(3 1470 200)">
+                                <rect x="1436" y="172" width="68" height="60" fill="var(--st-pcb)" class="ink-thin"/>
+                                <g stroke="#b9e6a1" stroke-width="1.5" fill="none" opacity="0.8">
+                                    <path d="M1444 186 h20 v14 h24"/>
+                                    <path d="M1444 206 h12 v14 h36"/>
+                                    <path d="M1490 180 v10 h-10"/>
+                                    <circle cx="1464" cy="186" r="2"/>
+                                    <circle cx="1488" cy="200" r="2"/>
+                                    <rect x="1474" y="212" width="10" height="10"/>
+                                </g>
+                                <circle cx="1470" cy="172" r="3" fill="var(--accent-color)" class="ink-thin"/>
+                            </g>
+                            <g class="note" transform="rotate(-2 1430 280)">
+                                <rect x="1392" y="252" width="88" height="56" fill="var(--st-paper)" class="ink-thin"/>
+                                <path d="M1400 288 q8 -30 16 0 t16 0 t16 0 t16 0" fill="none" stroke="var(--primary-color)" stroke-width="2"/>
+                                <line x1="1400" y1="288" x2="1472" y2="288" stroke="var(--st-ink)" stroke-width="1" opacity="0.4"/>
+                                <circle cx="1436" cy="252" r="3" fill="var(--warm)" class="ink-thin"/>
+                            </g>
+                        </g>
+                    </g>
+                </g>
+
+                <!-- ================= L 形转角桌 ================= -->
+                <g id="desk">
+                    <polygon points="520,490 1380,490 1532,554 461,554 326,610 160,610" fill="url(#g-desk)" class="ink"/>
+                    <g stroke="var(--st-desk-grain)" stroke-width="2" fill="none" stroke-linecap="round">
+                        <path d="M700 500 C 800 504 900 498 1000 503 S 1200 506 1300 500"/>
+                        <path d="M640 528 C 760 532 900 526 1040 531 S 1300 534 1440 528"/>
+                        <path d="M470 520 C 430 540 400 560 360 582"/>
+                    </g>
+                    <!-- 台面阳光 -->
+                    <polygon points="352,562 458,530 430,600 300,606" fill="var(--st-sun-floor)" opacity="0.55" class="fx"/>
+                    <!-- 桌面前沿 -->
+                    <polygon points="461,554 1532,554 1532,580 461,580" fill="var(--st-desk-edge)" class="ink"/>
+                    <polygon points="461,554 326,610 326,642 461,580" fill="var(--st-desk-side)" class="ink"/>
+                    <polygon points="160,610 326,610 326,642 160,642" fill="var(--st-desk-edge)" class="ink"/>
+                    <!-- 桌腿 -->
+                    <rect x="166" y="642" width="12" height="143" fill="var(--st-desk-side)" class="ink-thin"/>
+                    <rect x="308" y="642" width="12" height="143" fill="var(--st-desk-side)" class="ink-thin"/>
+                    <rect x="453" y="580" width="10" height="114" fill="var(--st-desk-side)" class="ink-thin"/>
+                    <!-- 抽屉柜 -->
+                    <g id="pedestal" class="hotspot no-lift" data-id="pedestal" role="button" tabindex="0" aria-label="抽屉柜"
+                       data-tip-title="抽屉柜" data-tip="上层杜邦线和各种模块，下层说明书和舍不得扔的旧板子。">
+                        <g class="lift">
+                            <rect x="1350" y="580" width="170" height="114" fill="var(--st-desk-side)" class="ink"/>
+                            <rect x="1360" y="590" width="150" height="44" rx="3" fill="var(--st-desk)" class="ink-thin"/>
+                            <rect x="1360" y="642" width="150" height="44" rx="3" fill="var(--st-desk)" class="ink-thin"/>
+                            <rect x="1420" y="609" width="30" height="6" rx="3" fill="var(--st-metal-2)" class="ink-thin"/>
+                            <rect x="1420" y="661" width="30" height="6" rx="3" fill="var(--st-metal-2)" class="ink-thin"/>
+                        </g>
+                    </g>
+                </g>
+
+                <!-- ================= 嵌入式工作台（左桌） ================= -->
+                <g id="bench">
+                    <!-- 元件柜 -->
+                    <g id="toolbox" class="hotspot" data-id="toolbox" role="button" tabindex="0" aria-label="元件柜，点击拉开抽屉"
+                       data-tip-title="元件柜" data-tip="从 0402 到 DIP，按阻值容值排好；找不到的元件永远在最后一格。" data-tip-action="点击拉开抽屉">
+                        <g class="lift">
+                            <rect x="478" y="398" width="66" height="108" rx="4" fill="var(--st-metal)" class="ink"/>
+                            <g fill="var(--st-plastic)" class="ink-thin">
+                                <rect x="483" y="403" width="18" height="17" rx="2"/><rect x="504" y="403" width="18" height="17" rx="2"/><rect x="525" y="403" width="18" height="17" rx="2"/>
+                                <rect x="483" y="423" width="18" height="17" rx="2"/><rect x="504" y="423" width="18" height="17" rx="2"/><rect x="525" y="423" width="18" height="17" rx="2"/>
+                                <rect x="483" y="443" width="18" height="17" rx="2"/><rect x="525" y="443" width="18" height="17" rx="2"/>
+                                <rect x="483" y="463" width="18" height="17" rx="2"/><rect x="504" y="463" width="18" height="17" rx="2"/><rect x="525" y="463" width="18" height="17" rx="2"/>
+                                <rect x="483" y="483" width="18" height="17" rx="2"/><rect x="504" y="483" width="18" height="17" rx="2"/><rect x="525" y="483" width="18" height="17" rx="2"/>
+                            </g>
+                            <g fill="var(--primary-color)">
+                                <circle cx="492" cy="408" r="1.6"/><circle cx="534" cy="428" r="1.6"/><circle cx="492" cy="468" r="1.6"/><circle cx="513" cy="488" r="1.6"/>
+                            </g>
+                            <g fill="var(--rose)">
+                                <circle cx="513" cy="408" r="1.6"/><circle cx="492" cy="448" r="1.6"/><circle cx="534" cy="488" r="1.6"/>
+                            </g>
+                            <g fill="var(--accent-color)">
+                                <circle cx="534" cy="408" r="1.6"/><circle cx="513" cy="428" r="1.6"/><circle cx="534" cy="468" r="1.6"/>
+                            </g>
+                            <g id="drawer-pop">
+                                <rect x="504" y="443" width="18" height="17" rx="2" fill="var(--st-plastic)" class="ink-thin"/>
+                                <rect x="507" y="447" width="5" height="3" fill="var(--st-ink)"/>
+                                <rect x="514" y="447" width="5" height="3" fill="var(--st-ink)"/>
+                                <rect x="507" y="452" width="5" height="3" fill="var(--rose)"/>
+                                <rect x="514" y="452" width="5" height="3" fill="var(--primary-color)"/>
+                                <circle cx="513" cy="448" r="1.6" fill="var(--warm)"/>
+                            </g>
+                        </g>
+                    </g>
+
+                    <!-- 示波器 -->
+                    <g id="scope" class="hotspot" data-id="scope" role="button" tabindex="0" aria-label="示波器，点击切换波形"
+                       data-tip-title="示波器" data-tip="4 通道 100 MHz，抓过无数次 I²C 卡死现场。" data-tip-action="点击切换波形">
+                        <g class="lift">
+                            <rect x="405" y="470" width="70" height="60" rx="4" fill="var(--st-metal)" class="ink"/>
+                            <rect x="411" y="477" width="40" height="40" fill="var(--st-screen)" class="ink-thin"/>
+                            <g stroke="#2d4a40" stroke-width="0.8" clip-path="url(#c-scope)">
+                                <line x1="411" y1="487" x2="451" y2="487"/><line x1="411" y1="497" x2="451" y2="497"/><line x1="411" y1="507" x2="451" y2="507"/>
+                                <line x1="421" y1="477" x2="421" y2="517"/><line x1="431" y1="477" x2="431" y2="517"/><line x1="441" y1="477" x2="441" y2="517"/>
+                            </g>
+                            <path id="scope-wave" d="M411 497 q5 -13 10 0 t10 0 t10 0 t10 0" fill="none" stroke="var(--accent-color)" stroke-width="1.8" clip-path="url(#c-scope)"/>
+                            <circle cx="462" cy="484" r="4.5" fill="var(--st-plastic)" class="ink-thin"/>
+                            <circle cx="462" cy="498" r="4.5" fill="var(--st-plastic)" class="ink-thin"/>
+                            <circle cx="462" cy="512" r="3.5" fill="var(--warm)" class="ink-thin"/>
+                            <rect x="409" y="524" width="62" height="6" fill="var(--st-metal-2)"/>
+                        </g>
+                    </g>
+
+                    <!-- 排烟风扇 -->
+                    <g id="fan" class="hotspot" data-id="fan" role="button" tabindex="0" aria-label="排烟风扇，点击开关"
+                       data-tip-title="排烟风扇" data-tip="焊锡烟味的克星，焊台一开它就自动跟着转。" data-tip-action="点击开关">
+                        <g class="lift">
+                            <rect x="330" y="478" width="76" height="76" rx="8" fill="var(--st-metal)" class="ink"/>
+                            <circle cx="368" cy="516" r="30" fill="var(--st-metal-3)" class="ink-thin"/>
+                            <g id="fan-blades" fill="var(--st-plastic)" stroke="var(--st-metal-2)" stroke-width="1">
+                                <ellipse cx="368" cy="503" rx="6" ry="12"/>
+                                <ellipse cx="368" cy="503" rx="6" ry="12" transform="rotate(90 368 516)"/>
+                                <ellipse cx="368" cy="503" rx="6" ry="12" transform="rotate(180 368 516)"/>
+                                <ellipse cx="368" cy="503" rx="6" ry="12" transform="rotate(270 368 516)"/>
+                                <circle cx="368" cy="516" r="5" fill="var(--st-metal-2)"/>
+                            </g>
+                            <g stroke="var(--st-metal-2)" stroke-width="2" opacity="0.85">
+                                <line x1="342" y1="504" x2="394" y2="504"/>
+                                <line x1="338" y1="516" x2="398" y2="516"/>
+                                <line x1="342" y1="528" x2="394" y2="528"/>
+                            </g>
+                            <circle cx="368" cy="516" r="30" fill="none" class="ink-thin"/>
+                            <circle id="fan-led" cx="396" cy="486" r="3" fill="var(--st-metal-2)" class="ink-thin"/>
+                            <rect x="336" y="482" width="12" height="6" rx="2" fill="var(--st-metal-2)"/>
+                        </g>
+                    </g>
+
+                    <!-- 焊台 -->
+                    <g id="iron-station" class="hotspot" data-id="iron" role="button" tabindex="0" aria-label="焊台，点击加热或冷却"
+                       data-tip-title="焊台" data-tip="T12 烙铁，350 °C 待命。焊完记得回炉上锡，才是好习惯。" data-tip-action="点击加热 / 冷却">
+                        <g class="lift">
+                            <rect x="318" y="546" width="76" height="32" rx="4" fill="var(--st-metal)" class="ink"/>
+                            <rect x="326" y="552" width="36" height="16" rx="2" fill="var(--st-screen)" class="ink-thin"/>
+                            <text id="iron-temp" x="344" y="564" font-size="10" class="mono" fill="#8fd873" text-anchor="middle">OFF</text>
+                            <circle cx="378" cy="562" r="6" fill="var(--st-plastic)" class="ink-thin"/>
+                            <circle id="iron-led" cx="368" cy="552" r="2.2" fill="var(--st-metal-2)"/>
+                            <rect x="300" y="570" width="22" height="8" rx="2" fill="var(--st-metal-2)" class="ink-thin"/>
+                            <path d="M346 574 q10 8 22 0" fill="none" class="ink-thin"/>
+                            <g transform="rotate(28 318 560)">
+                                <polygon id="iron-tip" points="266,560 277,556 277,564" fill="var(--st-metal-2)"/>
+                                <rect x="276" y="557" width="30" height="6" fill="var(--st-metal)" class="ink-thin"/>
+                                <rect x="304" y="553" width="44" height="14" rx="6" fill="var(--st-metal-3)" class="ink-thin"/>
+                                <rect x="312" y="553" width="5" height="14" fill="var(--accent-color)"/>
+                            </g>
+                            <ellipse cx="312" cy="556" rx="5" ry="8" fill="none" stroke="var(--st-metal-2)" stroke-width="2.5" transform="rotate(28 312 556)"/>
+                            <g id="iron-smoke" transform="translate(272 532)" fill="none" stroke="var(--st-plastic)" stroke-width="2" stroke-linecap="round" opacity="0.8">
+                                <path d="M0 0 c -5 -10 5 -16 0 -30"/>
+                                <path d="M3 0 c 6 -12 -4 -18 2 -30"/>
+                                <path d="M-3 0 c -7 -9 6 -18 -2 -30"/>
+                            </g>
+                        </g>
+                    </g>
+
+                    <!-- 热风枪 -->
+                    <g id="gun-station" class="hotspot" data-id="gun" role="button" tabindex="0" aria-label="热风枪，点击开关"
+                       data-tip-title="热风枪" data-tip="拆 QFN 和救活飞线板的救星，380 °C 小风量最顺手。" data-tip-action="点击开关">
+                        <g class="lift">
+                            <rect x="214" y="562" width="76" height="40" rx="4" fill="var(--st-metal)" class="ink"/>
+                            <rect x="222" y="570" width="34" height="16" rx="2" fill="var(--st-screen)" class="ink-thin"/>
+                            <text id="gun-temp" x="239" y="582" font-size="10" class="mono" fill="#8fd873" text-anchor="middle">OFF</text>
+                            <circle cx="272" cy="574" r="5" fill="var(--st-plastic)" class="ink-thin"/>
+                            <circle cx="272" cy="590" r="5" fill="var(--st-plastic)" class="ink-thin"/>
+                            <circle id="gun-led" cx="250" cy="594" r="2.2" fill="var(--st-metal-2)"/>
+                            <rect x="182" y="596" width="30" height="6" rx="2" fill="var(--st-metal-2)" class="ink-thin"/>
+                            <polygon points="188,578 206,578 214,600 196,600" fill="var(--st-metal-3)" class="ink-thin"/>
+                            <rect x="190" y="532" width="16" height="50" rx="3" fill="var(--st-metal-3)" class="ink-thin"/>
+                            <rect x="193" y="518" width="10" height="15" fill="var(--st-metal)" class="ink-thin"/>
+                            <path d="M206 598 q8 10 14 -2" fill="none" class="ink-thin"/>
+                            <g id="gun-air" transform="translate(198 514)" fill="none" stroke="var(--st-plastic)" stroke-width="2" stroke-linecap="round">
+                                <path d="M-8 0 q 8 -7 16 0"/>
+                                <path d="M-8 -6 q 8 -7 16 0"/>
+                                <path d="M-8 -12 q 8 -7 16 0"/>
+                            </g>
+                        </g>
+                    </g>
+
+                    <!-- 桌面杂物 -->
+                    <g id="clutter" class="hotspot no-lift" data-id="clutter" role="button" tabindex="0" aria-label="桌面杂物"
+                       data-tip-title="桌面杂物" data-tip="焊锡丝、镊子，和刚打样回来还没上电的板子——祝它一次点亮。">
+                        <g class="lift">
+                            <polygon points="234,606 272,606 276,617 230,617" fill="var(--st-pcb)" class="ink-thin"/>
+                            <g stroke="#b9e6a1" stroke-width="1" fill="none" opacity="0.85">
+                                <path d="M240 610 h10 v4 h14"/>
+                                <circle cx="262" cy="610" r="1.2"/>
+                                <rect x="246" y="612" width="4" height="3"/>
+                            </g>
+                            <circle cx="330" cy="601" r="9" fill="var(--st-metal-2)" class="ink-thin"/>
+                            <circle cx="330" cy="601" r="3" fill="var(--st-metal-3)"/>
+                            <path d="M321 603 q -10 6 -22 2" fill="none" stroke="var(--st-metal)" stroke-width="1.4"/>
+                            <path d="M286 616 L 314 606 M 286 617 L 314 609" stroke="var(--st-metal-2)" stroke-width="1.8" stroke-linecap="round"/>
+                        </g>
+                    </g>
+                </g>
+
+                <!-- ================= 3D 打印机 ================= -->
+                <g id="printer" class="hotspot no-lift" data-id="printer" role="button" tabindex="0" aria-label="3D 打印机，点击开始打印"
+                   data-tip-title="3D 打印机" data-tip="FDM 机，工作室的第三只手。外壳、支架、无刷电机的转子都从这里出来。" data-tip-action="点击开始 / 停止打印">
+                    <g class="lift">
+                        <!-- 矮柜 -->
+                        <rect x="30" y="808" width="220" height="100" fill="var(--st-desk-side)" class="ink"/>
+                        <rect x="30" y="808" width="220" height="10" fill="var(--st-desk)"/>
+                        <rect x="44" y="830" width="192" height="50" rx="3" fill="var(--st-desk)" class="ink-thin"/>
+                        <rect x="126" y="852" width="28" height="6" rx="3" fill="var(--st-metal-2)" class="ink-thin"/>
+                        <!-- 机身 -->
+                        <rect x="50" y="772" width="180" height="36" rx="4" fill="var(--st-metal-3)" class="ink"/>
+                        <rect x="172" y="776" width="54" height="28" rx="3" fill="var(--st-metal)" class="ink-thin"/>
+                        <rect x="178" y="781" width="30" height="14" fill="var(--st-screen)" class="ink-thin"/>
+                        <text id="printer-lcd" x="193" y="791.5" font-size="7.5" class="mono" fill="#8fd873" text-anchor="middle">READY</text>
+                        <circle cx="217" cy="790" r="5" fill="var(--st-plastic)" class="ink-thin"/>
+                        <circle id="printer-led" cx="62" cy="790" r="3" fill="var(--st-metal-2)" class="ink-thin"/>
+                        <!-- 热床 -->
+                        <polygon points="62,758 218,758 226,772 54,772" fill="var(--st-metal-2)" class="ink-thin"/>
+                        <polygon points="66,758 214,758 220,767 60,767" fill="#1d2a30"/>
+                        <rect id="printer-object" x="118" y="758" width="44" height="0" fill="#6fd8e2" class="ink-thin"/>
+                        <!-- 立柱 -->
+                        <rect x="62" y="598" width="12" height="176" fill="var(--st-metal-3)" class="ink-thin"/>
+                        <rect x="206" y="598" width="12" height="176" fill="var(--st-metal-3)" class="ink-thin"/>
+                        <rect x="54" y="590" width="172" height="12" rx="3" fill="var(--st-metal-3)" class="ink"/>
+                        <!-- 料盘 -->
+                        <rect x="136" y="586" width="8" height="6" fill="var(--st-metal-2)"/>
+                        <circle cx="140" cy="562" r="26" fill="var(--st-plastic)" class="ink"/>
+                        <circle cx="140" cy="562" r="18" fill="#6fd8e2" class="ink-thin"/>
+                        <circle cx="140" cy="562" r="6" fill="var(--st-metal-3)" class="ink-thin"/>
+                        <path d="M158 580 C 175 600 168 640 150 660" fill="none" stroke="#6fd8e2" stroke-width="1.6"/>
+                        <!-- Z 龛架 + 喷头 -->
+                        <g id="printer-gantry">
+                            <rect x="62" y="734" width="156" height="10" rx="2" fill="var(--st-metal-2)" class="ink-thin"/>
+                            <g id="printer-head">
+                                <rect x="76" y="726" width="24" height="22" rx="3" fill="var(--st-metal)" class="ink-thin"/>
+                                <circle cx="88" cy="737" r="6" fill="var(--st-metal-3)" class="ink-thin"/>
+                                <polygon points="84,748 92,748 88,757" fill="var(--st-metal-2)" class="ink-thin"/>
+                                <circle id="printer-nozzle-heat" cx="88" cy="757" r="3.5" fill="#ff6b3d" filter="url(#f-blur6)" opacity="0"/>
+                            </g>
+                        </g>
+                    </g>
+                </g>
+
+                <!-- ================= 光影层（夜间压暗 + 屏幕光晕） ================= -->
+                <g class="fx">
+                    <rect id="night-tint" x="0" y="0" width="1600" height="900" fill="url(#g-night)"/>
+                    <ellipse id="screen-glow" cx="1000" cy="350" rx="440" ry="280" fill="url(#g-glow)" filter="url(#f-blur30)"/>
+                    <circle id="lamp-glow" cx="676" cy="384" r="130" fill="url(#g-lamp)" filter="url(#f-blur14)"/>
+                </g>
+
+                <!-- ================= 主工作区 ================= -->
+                <g id="desk-items">
+                    <!-- 台灯 -->
+                    <g id="lamp" class="hotspot" data-id="lamp" role="button" tabindex="0" aria-label="台灯，点击开关"
+                       data-tip-title="护眼台灯" data-tip="夜里只留这一盏，配合显示器的冷光刚刚好。" data-tip-action="点击开关">
+                        <g class="lift">
+                            <ellipse id="lamp-pool" cx="690" cy="548" rx="110" ry="14" fill="#ffd98a" opacity="0.35" class="fx"/>
+                            <ellipse cx="597" cy="514" rx="24" ry="7" fill="var(--st-metal-3)" class="ink"/>
+                            <line x1="597" y1="510" x2="622" y2="410" class="ink" stroke-width="6"/>
+                            <line x1="597" y1="510" x2="622" y2="410" stroke="var(--st-metal)" stroke-width="2.5"/>
+                            <circle cx="622" cy="410" r="4.5" fill="var(--st-metal-2)" class="ink-thin"/>
+                            <line x1="622" y1="410" x2="658" y2="352" class="ink" stroke-width="6"/>
+                            <line x1="622" y1="410" x2="658" y2="352" stroke="var(--st-metal)" stroke-width="2.5"/>
+                            <path d="M652 344 C 660 330 676 326 688 332 L 700 376 C 686 386 664 388 650 380 Z" fill="var(--primary-color)" class="ink"/>
+                            <path d="M650 380 C 664 388 686 386 700 376" fill="none" class="ink-thin" opacity="0.6"/>
+                            <circle id="lamp-bulb" cx="676" cy="380" r="6" class="ink-thin"/>
+                        </g>
+                    </g>
+
+                    <!-- 马克杯 -->
+                    <g id="mug" class="hotspot on" data-id="mug" role="button" tabindex="0" aria-label="马克杯，点击看热气"
+                       data-tip-title="马克杯" data-tip="咖啡续命。杯子上印着「先看手册」四个字。" data-tip-action="点击开关热气">
+                        <g class="lift">
+                            <g id="mug-steam" transform="translate(727 506)" fill="none" stroke="var(--st-plastic)" stroke-width="2" stroke-linecap="round">
+                                <path d="M-6 0 c -4 -7 4 -11 0 -20"/>
+                                <path d="M1 0 c 4 -8 -4 -12 0 -22"/>
+                                <path d="M7 0 c -3 -6 3 -10 0 -18"/>
+                            </g>
+                            <path d="M742 514 c 12 -2 16 6 14 12 c -2 6 -8 8 -14 6" fill="none" class="ink" stroke-width="8"/>
+                            <path d="M742 514 c 12 -2 16 6 14 12 c -2 6 -8 8 -14 6" fill="none" stroke="var(--rose)" stroke-width="4"/>
+                            <rect x="712" y="506" width="30" height="32" rx="4" fill="var(--rose)" class="ink"/>
+                            <rect x="716" y="514" width="22" height="14" rx="2" fill="var(--st-paper)" opacity="0.9"/>
+                            <text x="727" y="524" font-size="7" fill="var(--st-ink)" text-anchor="middle" font-weight="700">先看手册</text>
+                        </g>
+                    </g>
+
+                    <!-- 灵感本 -->
+                    <g id="notebook" class="hotspot no-lift" data-id="notebook" role="button" tabindex="0" aria-label="灵感本"
+                       data-tip-title="灵感本" data-tip="随手记的电路草图、待办和一句「别忘了拉高 BOOT0」。">
+                        <g class="lift">
+                            <polygon points="766,538 836,538 842,551 760,551" fill="var(--st-paper)" class="ink"/>
+                            <g stroke="var(--st-ink)" stroke-width="1" opacity="0.4">
+                                <line x1="772" y1="542" x2="826" y2="542"/>
+                                <line x1="770" y1="546" x2="822" y2="546"/>
+                            </g>
+                            <line x1="792" y1="549" x2="834" y2="541" class="ink" stroke-width="5"/>
+                            <line x1="792" y1="549" x2="834" y2="541" stroke="var(--violet)" stroke-width="2.5"/>
+                        </g>
+                    </g>
+
+                    <!-- 无边框显示器 -->
+                    <g id="monitor" class="hotspot no-lift" data-id="monitor" role="button" tabindex="0" aria-label="无边框显示器，点击进入 huanfly-os"
+                       data-tip-title="无边框显示器" data-tip="工作台的核心。里面跑着 huanfly-os：终端 · 相册 · Robot。" data-tip-action="点击靠近，进入系统 →">
+                        <g class="lift">
+                            <rect x="986" y="505" width="28" height="14" fill="var(--st-metal-3)" class="ink-thin"/>
+                            <rect x="900" y="514" width="200" height="16" rx="8" fill="var(--st-metal-3)" class="ink"/>
+                            <g clip-path="url(#c-screen)">
+                                <rect x="700" y="167.5" width="600" height="337.5" fill="url(#g-screen)"/>
+                                <g fill="#ffffff" opacity="0.45">
+                                    <circle cx="760" cy="210" r="1.6"/><circle cx="820" cy="260" r="1.2"/><circle cx="1220" cy="220" r="1.5"/>
+                                    <circle cx="1160" cy="300" r="1.1"/><circle cx="1260" cy="330" r="1.3"/><circle cx="740" cy="330" r="1.2"/>
+                                </g>
+                                <g id="screen-moon">
+                                    <circle cx="1220" cy="232" r="22" fill="#f6f1d8" opacity="0.9"/>
+                                    <circle cx="1231" cy="224" r="19" fill="#16302a" opacity="0.95"/>
+                                </g>
+                                <g id="screen-sun">
+                                    <circle cx="1220" cy="232" r="30" fill="#f2c46e" opacity="0.25"/>
+                                    <circle cx="1220" cy="232" r="20" fill="#f6dc8a" opacity="0.95"/>
+                                </g>
+                                <path d="M700 470 C 800 440 900 480 1000 456 S 1200 430 1300 452 L1300 505 L700 505 Z" fill="#7cc95f" opacity="0.16"/>
+                                <path d="M700 490 C 820 470 940 500 1060 480 S 1240 470 1300 482 L1300 505 L700 505 Z" fill="#6fd8e2" opacity="0.14"/>
+                                <text id="screen-clock" x="1000" y="292" font-size="64" font-weight="800" fill="#eef7ee" text-anchor="middle" letter-spacing="2">--:--</text>
+                                <text id="screen-date" x="1000" y="322" font-size="16" fill="#eef7ee" opacity="0.7" text-anchor="middle">—</text>
+                                <text x="716" y="188" font-size="11" fill="#eef7ee" opacity="0.6" class="mono">huanfly-os</text>
+                                <text x="1286" y="188" font-size="11" fill="#eef7ee" opacity="0.6" text-anchor="end" class="mono">◔ ▮▮▮</text>
+                                <!-- Dock -->
+                                <rect x="880" y="420" width="240" height="52" rx="14" fill="#ffffff" opacity="0.07"/>
+                                <rect x="880" y="420" width="240" height="52" rx="14" fill="none" stroke="#ffffff" stroke-opacity="0.16" stroke-width="1.5"/>
+                                <rect x="900" y="428" width="36" height="36" rx="10" fill="#7cc95f" class="ink-thin"/>
+                                <text x="918" y="452" font-size="15" fill="#10140e" text-anchor="middle" font-weight="800" class="mono">&gt;_</text>
+                                <rect x="982" y="428" width="36" height="36" rx="10" fill="#6fd8e2" class="ink-thin"/>
+                                <path d="M990 456 l8 -10 6 7 5 -5 9 8 Z" fill="#10140e"/>
+                                <circle cx="1008" cy="438" r="3" fill="#10140e"/>
+                                <rect x="1064" y="428" width="36" height="36" rx="10" fill="#b39aec" class="ink-thin"/>
+                                <rect x="1072" y="438" width="20" height="16" rx="4" fill="#10140e"/>
+                                <circle cx="1078" cy="446" r="2.2" fill="#b39aec"/>
+                                <circle cx="1086" cy="446" r="2.2" fill="#b39aec"/>
+                                <line x1="1082" y1="438" x2="1082" y2="432" stroke="#10140e" stroke-width="2"/>
+                                <text id="screen-hint" x="1000" y="400" font-size="14" fill="#eef7ee" text-anchor="middle">点击进入</text>
+                                <!-- 玻璃反光 -->
+                                <polygon points="700,167.5 900,167.5 700,380" fill="url(#g-glass)"/>
+                                <polygon points="960,167.5 1010,167.5 780,505 740,505" fill="#ffffff" opacity="0.035"/>
+                            </g>
+                            <rect id="screen-glass" x="700" y="167.5" width="600" height="337.5" rx="8" fill="none" stroke="var(--st-ink)" stroke-width="1.6"/>
+                        </g>
+                    </g>
+
+                    <!-- 键盘 + 鼠标 -->
+                    <g id="keyboard" class="hotspot no-lift" data-id="keyboard" role="button" tabindex="0" aria-label="机械键盘，点击去练习键位"
+                       data-tip-title="机械键盘" data-tip="75% 配列，静音线性轴。盲打是靠刻意练习磕出来的。" data-tip-action="点击去练习键位 →">
+                        <g class="lift">
+                            <rect id="keyboard-glow" x="800" y="546" width="400" height="8" fill="url(#g-rgb)" filter="url(#f-blur6)" class="fx"/>
+                            <polygon points="822,533 1178,533 1190,548 810,548" fill="var(--st-metal-3)" class="ink"/>
+                            <g fill="var(--st-plastic)" stroke="var(--st-ink)" stroke-width="0.6" stroke-dasharray="6 1.6">
+                                <rect class="key-row" x="827" y="535" width="346" height="2.4" rx="0.8"/>
+                                <rect class="key-row" x="825" y="538.4" width="350" height="2.4" rx="0.8"/>
+                                <rect class="key-row" x="822" y="541.8" width="356" height="2.4" rx="0.8"/>
+                                <rect class="key-row" x="819" y="545.2" width="362" height="2.2" rx="0.8"/>
+                            </g>
+                            <ellipse cx="1262" cy="541" rx="13" ry="17" fill="var(--st-plastic)" class="ink" transform="rotate(-8 1262 541)"/>
+                            <line x1="1263" y1="526" x2="1262" y2="536" class="ink-thin" opacity="0.6"/>
+                        </g>
+                    </g>
+
+                    <!-- 小黑 -->
+                    <g id="cat" class="hotspot no-lift" data-id="cat" role="button" tabindex="0" aria-label="小黑，点击逗它"
+                       data-tip-title="小黑" data-tip="工作室监工，主要工作是踩键盘和挡住显示器。" data-tip-action="点击逗它">
+                        <g class="lift">
+                            <g transform="translate(1300 400) scale(0.92)">
+                                <path class="cat-tail" d="M112 102 C 138 100 146 76 132 62" fill="none" stroke="var(--st-cat)" stroke-width="11" stroke-linecap="round"/>
+                                <ellipse cx="78" cy="96" rx="36" ry="26" fill="var(--st-cat)"/>
+                                <ellipse cx="64" cy="118" rx="9" ry="6" fill="var(--st-cat)"/>
+                                <ellipse cx="92" cy="118" rx="9" ry="6" fill="var(--st-cat)"/>
+                                <path class="cat-ear-l" d="M52 28 L44 2 L67 16 Z" fill="var(--st-cat)"/>
+                                <path class="cat-ear-r" d="M96 28 L104 2 L81 16 Z" fill="var(--st-cat)"/>
+                                <circle cx="74" cy="46" r="31" fill="var(--st-cat)"/>
+                                <g class="cat-eyes">
+                                    <ellipse cx="63" cy="46" rx="4.5" ry="6.5" fill="#8fe3d9"/>
+                                    <ellipse cx="85" cy="46" rx="4.5" ry="6.5" fill="#8fe3d9"/>
+                                    <circle cx="64.5" cy="43.5" r="1.5" fill="#ffffff"/>
+                                    <circle cx="86.5" cy="43.5" r="1.5" fill="#ffffff"/>
+                                </g>
+                                <path d="M69 57 q5 4 10 0" fill="none" stroke="#8fe3d9" stroke-width="1.8" stroke-linecap="round"/>
+                                <g fill="none" stroke="#8fe3d9" stroke-width="1.5" stroke-linecap="round" opacity="0.5">
+                                    <path d="M36 46 q10 1 16 1"/><path d="M37 54 q9 -1 15 -2"/>
+                                    <path d="M112 46 q-10 1 -16 1"/><path d="M111 54 q-9 -1 -15 -2"/>
+                                </g>
+                            </g>
+                            <g id="cat-bubble">
+                                <rect x="1322" y="350" width="96" height="32" rx="14" fill="var(--st-paper)" class="ink"/>
+                                <polygon points="1360,381 1372,381 1364,393" fill="var(--st-paper)" class="ink-thin"/>
+                                <line x1="1361" y1="380" x2="1371" y2="380" stroke="var(--st-paper)" stroke-width="3"/>
+                                <text id="cat-bubble-text" x="1370" y="372" font-size="16" font-weight="700" fill="var(--st-ink)" text-anchor="middle">喵～</text>
+                            </g>
+                        </g>
+                    </g>
+                </g>
+
+                <!-- ================= 窗光 ================= -->
+                <g class="fx">
+                    <g id="sun-rays">
+                        <polygon points="448,190 448,330 1250,900 950,900" fill="url(#g-sun)" filter="url(#f-blur6)"/>
+                        <polygon points="448,350 448,456 900,900 640,900" fill="url(#g-sun)" filter="url(#f-blur6)" opacity="0.75"/>
+                        <polygon points="620,720 830,690 1130,900 760,900" fill="var(--st-sun-floor)" filter="url(#f-blur14)"/>
+                    </g>
+                    <g id="moon-rays">
+                        <polygon points="448,190 448,330 1250,900 950,900" fill="url(#g-moon)" filter="url(#f-blur6)"/>
+                    </g>
+                </g>
+            </svg>
+        </div>
+
+        <!-- 悬停说明卡 -->
+        <div class="studio-tip" id="studio-tip" role="tooltip" aria-hidden="true">
+            <b class="tip-title"></b>
+            <span class="tip-text"></span>
+            <span class="tip-action"></span>
+        </div>
+
+        <!-- 引导 -->
+        <div class="studio-hint" id="studio-hint" aria-hidden="true">
+            <i class="fas fa-hand-pointer"></i>悬停查看物品<span class="sep">·</span><i class="fas fa-desktop"></i>点击显示器进入系统
+        </div>
+
+        <!-- 显示器聚焦：遮罩 + huanfly-os -->
+        <div class="mf-dim" id="mf-dim"></div>
+        <div class="monitor-focus" id="monitor-focus">
+            <div class="mf-screen" id="mf-screen" role="dialog" aria-modal="true" aria-label="huanfly-os">
+                <div class="os">
+                    <div class="os-topbar">
+                        <span class="os-brand"><img src="picture/icon.png" alt="">huanfly-os</span>
+                        <span class="os-title" id="os-title">桌面</span>
+                        <span class="os-status">
+                            <button class="os-btn" id="os-home" title="回到桌面" aria-label="回到桌面"><i class="fas fa-house"></i></button>
+                            <i class="fas fa-wifi" aria-hidden="true"></i>
+                            <i class="fas fa-battery-three-quarters" aria-hidden="true"></i>
+                            <span id="os-clock">--:--</span>
+                        </span>
+                    </div>
+
+                    <div class="os-body">
+                        <!-- 桌面 -->
+                        <section class="os-app os-desktop active" data-app="desktop" aria-label="桌面">
+                            <div class="os-clock">
+                                <div class="time" id="os-time">--:--</div>
+                                <div class="date" id="os-date"></div>
+                                <div class="greet" id="os-greet"></div>
+                            </div>
+                            <nav class="os-dock" aria-label="应用">
+                                <button class="os-dock-item terminal" data-open="terminal">
+                                    <span class="icon"><i class="fas fa-terminal"></i></span>终端
+                                </button>
+                                <button class="os-dock-item album" data-open="album">
+                                    <span class="icon"><i class="fas fa-images"></i></span>相册
+                                </button>
+                                <button class="os-dock-item robot" data-open="robot">
+                                    <span class="icon"><i class="fas fa-robot"></i></span>Robot
+                                </button>
+                            </nav>
+                        </section>
+
+                        <!-- 终端 -->
+                        <section class="os-app" data-app="terminal" aria-label="终端">
+                            <div class="app-head">
+                                <span class="app-name"><i class="fas fa-terminal"></i> 终端</span>
+                                <span class="dot" id="term-dot"></span>
+                                <span id="term-mode-label">未连接</span>
+                                <span class="grow"></span>
+                                <button class="os-btn" id="term-relock" title="锁定终端"><i class="fas fa-lock"></i> 锁定</button>
+                            </div>
+                            <div class="app-body">
+                                <div class="term-lock" id="term-lock">
+                                    <div class="term-lock-card">
+                                        <div class="lock-icon"><i class="fas fa-lock"></i></div>
+                                        <h3>huanfly@studio</h3>
+                                        <div class="lock-status" id="term-status"><i class="fas fa-spinner fa-spin"></i>正在探测终端桥接…</div>
+                                        <form class="term-lock-form" id="term-form" autocomplete="off">
+                                            <input type="password" id="term-password" placeholder="输入密码进入真实终端" autocomplete="current-password" aria-label="终端密码" disabled>
+                                            <button type="submit" class="os-btn primary" id="term-submit" disabled><i class="fas fa-arrow-right"></i></button>
+                                        </form>
+                                        <div class="lock-alt">
+                                            或者
+                                            <button type="button" class="os-btn" id="term-guest"><i class="fas fa-ghost"></i> 进入访客终端</button>
+                                        </div>
+                                        <div class="lock-help">
+                                            真实终端需要在本机运行桥接服务：<code>STUDIO_TERM_PASSWORD=… ./run.sh term</code><br>
+                                            访客终端是浏览器内的模拟 shell，随便敲敲不伤机器。
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="term-body" id="term-body"></div>
+                            </div>
+                        </section>
+
+                        <!-- 相册 -->
+                        <section class="os-app" data-app="album" aria-label="相册">
+                            <div class="app-head">
+                                <span class="app-name"><i class="fas fa-images"></i> 相册</span>
+                                <span class="grow"></span>
+                                <div class="album-tabs" id="album-tabs" role="tablist">
+                                    <button class="os-btn primary" role="tab" data-album="photography" aria-selected="true">摄影</button>
+                                    <button class="os-btn" role="tab" data-album="tech" aria-selected="false">制作</button>
+                                </div>
+                            </div>
+                            <div class="app-body">
+                                <div class="album-grid" id="album-grid"></div>
+                                <div class="album-viewer" id="album-viewer" aria-hidden="true">
+                                    <div class="viewer-stage">
+                                        <button class="viewer-nav prev" id="album-prev" aria-label="上一张"><i class="fas fa-chevron-left"></i></button>
+                                        <img id="album-viewer-img" alt="">
+                                        <button class="viewer-nav next" id="album-next" aria-label="下一张"><i class="fas fa-chevron-right"></i></button>
+                                    </div>
+                                    <div class="viewer-caption">
+                                        <span id="album-viewer-caption"></span>
+                                        <small id="album-viewer-index"></small>
+                                        <small>Esc 返回相册 · ← → 切换</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Robot -->
+                        <section class="os-app" data-app="robot" aria-label="Robot">
+                            <div class="app-head">
+                                <span class="app-name"><i class="fas fa-robot"></i> Robot</span>
+                                <span class="dot" id="robot-dot"></span>
+                                <span id="robot-model-label">未配置</span>
+                                <span class="grow"></span>
+                                <button class="os-btn" id="robot-clear" title="清空对话"><i class="fas fa-broom"></i> 清空</button>
+                                <button class="os-btn" id="robot-settings-btn" title="设置"><i class="fas fa-gear"></i> 设置</button>
+                            </div>
+                            <div class="app-body">
+                                <div class="robot-body">
+                                    <div class="robot-messages" id="robot-messages" aria-live="polite"></div>
+                                    <form class="robot-composer" id="robot-form">
+                                        <textarea id="robot-input" rows="1" placeholder="和小黑聊聊…（Enter 发送，Shift+Enter 换行）" aria-label="消息"></textarea>
+                                        <button type="button" class="os-btn danger" id="robot-stop" hidden><i class="fas fa-stop"></i></button>
+                                        <button type="submit" class="os-btn primary" id="robot-send"><i class="fas fa-paper-plane"></i></button>
+                                    </form>
+                                </div>
+                                <div class="robot-settings" id="robot-settings">
+                                    <div class="robot-settings-card">
+                                        <h3><i class="fas fa-gear"></i> Robot 设置</h3>
+                                        <p class="hint">接入任意 OpenAI 兼容接口。配置只保存在当前浏览器的 localStorage，不会上传到站点。</p>
+                                        <form id="robot-settings-form">
+                                            <label for="robot-base">API Base URL</label>
+                                            <input id="robot-base" type="url" placeholder="https://api.openai.com/v1" spellcheck="false">
+                                            <label for="robot-key">API Key</label>
+                                            <input id="robot-key" type="password" placeholder="sk-…" autocomplete="off" spellcheck="false">
+                                            <label for="robot-model">Model</label>
+                                            <div class="row">
+                                                <input id="robot-model" type="text" list="robot-model-list" placeholder="gpt-4o-mini" spellcheck="false">
+                                                <datalist id="robot-model-list"></datalist>
+                                                <button type="button" class="os-btn" id="robot-fetch-models"><i class="fas fa-list"></i> 拉取</button>
+                                            </div>
+                                            <label for="robot-system">System Prompt</label>
+                                            <textarea id="robot-system" rows="3"></textarea>
+                                            <label class="check" for="robot-relay">
+                                                <input type="checkbox" id="robot-relay">
+                                                <span>通过本地桥接中转请求 <small>— 接口不支持浏览器跨域（CORS）时勾选；需在本机运行 <code>./run.sh term</code>，密钥仍只经你的浏览器与上游传递</small></span>
+                                            </label>
+                                            <div class="status" id="robot-settings-status"></div>
+                                            <div class="actions">
+                                                <button type="button" class="os-btn" id="robot-settings-cancel">取消</button>
+                                                <button type="submit" class="os-btn primary">保存</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button class="mf-exit" id="mf-exit" type="button"><i class="fas fa-arrow-left"></i> 离开显示器 <kbd>Esc</kbd></button>
+    </main>
+
+    <script src="js/script.js"></script>
+    <script src="js/studio.js"></script>
+    <script src="js/studio-apps.js"></script>
+</body>
+</html>
