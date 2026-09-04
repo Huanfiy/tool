@@ -5,6 +5,7 @@
 /CLAUDE.md export-ignore
 /run.sh export-ignore
 /deploy export-ignore
+/server export-ignore
 README.md export-ignore
 *.log export-ignore
 .DS_Store export-ignore

@@ -4,3 +4,5 @@ tmp
 .claude/
 .cursor/
 /deploy/nginx/
+.agents/
+__pycache__/
