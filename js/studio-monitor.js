@@ -11,8 +11,11 @@ export function createStudioMonitor({ container, camera, monitor, width, height,
     const cssRenderer = new CSS3DRenderer();
     cssRenderer.domElement.className = 'lab-screen-layer';
     container.prepend(cssRenderer.domElement);
+    // CSS3DRenderer reparents and projects the desktop only on render().
+    // Keep its untransformed 960px layout hidden until that has happened.
+    element.inert = true;
+    element.style.visibility = 'hidden';
     element.classList.add('is-spatial');
-    element.inert = false;
     const screen = new CSS3DObject(element);
     screen.matrixAutoUpdate = false;
     cssScene.add(screen);
@@ -47,9 +50,9 @@ export function createStudioMonitor({ container, camera, monitor, width, height,
         const facing = normal.dot(direction.copy(camera.position).sub(center)) > 0;
         const p = center.clone().project(camera);
         const visible = facing && p.z > -1 && p.z < 1;
+        cssRenderer.render(cssScene, camera);
         element.inert = !visible;
         element.style.visibility = visible ? 'visible' : 'hidden';
-        cssRenderer.render(cssScene, camera);
     }
     // Native clicks, selection, input and scrolling stay inside the screen.
     // Room gestures are handled on the separate surface behind this element.
@@ -62,6 +65,7 @@ export function createStudioMonitor({ container, camera, monitor, width, height,
             if (disposed) return;
             disposed = true;
             events.forEach(type => element.removeEventListener(type, stop));
+            element.inert = true;
             element.classList.remove('is-spatial');
             element.style.cssText = '';
             home.append(element);

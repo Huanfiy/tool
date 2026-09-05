@@ -34,6 +34,7 @@
 5. 20 次主题往返、20 次质量切换，相同状态不重绘，旧纹理释放一次。
 6. 自有几何、材质、纹理及 InstancedMesh 实例缓冲释放一次。
 7. 完整 room 五次初始化 / 销毁、预设预热、主通道资源保护线、Canvas 初始化失败后的 DOM 清理。
+8. 首帧前桌面隐藏且不可交互、完成投影和绘制后仅通知一次就绪、零 dt 首帧不节流，以及异步首帧绘制失败后的 DOM 清理。
 
 该测试是可维护的模块 / 生命周期保护线，**不是下述完整视觉矩阵或真机性能测试的替代品**。
 
@@ -117,3 +118,15 @@ far = max(首轮 far, ceil(radius + cameraBound + 8))
 - [ ] 用户最终确认纸面留白、庭院密度和远景画风。浏览器截图抽查不是美术签收。
 
 没有上述真机结果，不能把计划的“性能验收”或整体完成定义勾为完成。生产部署也不属于本次本地实现 / 回归操作。
+
+## 7. 进入 / 刷新时的首帧闪屏回归
+
+验证日期：2026-09-05（UTC）。环境：Chrome `152.0.7977.64` / SwiftShader；不是新增真机性能验收。
+
+- 复现方法：在测试浏览器中暂缓 room 的 `requestAnimationFrame(render)`，其他回调照常执行，不改写生产源码。修复前 `renderedFrames=0` 时 loader 已标记 `ready`，桌面仍在 `#studio` 下，以无 transform 的 `960×540` 原始尺寸显示于左上角，且 `inert=false`，与问题截图一致。
+- 修复后：CSS3D 桌面在首次投影 / 挂载完成前保持隐藏和 inert；loader 和设备按钮由 room 在 CSS3D / WebGL 首帧成功绘制后的 `onReady` 通知更新，而不是另一条独立 RAF。首帧不参与帧率节流；异步绘制异常进入既有错误 / 备用桌面流程，并清理加载计时器。
+- 浏览器回归：`1440×900` / `390×844` × 普通 / 减少动态 × 首次进入 / 刷新，共 8 组首帧检查通过；4 组原生输入与靠近 / 退后草稿保留检查通过。
+- 故障回归：阻断实际 Three.js CDN、WebGL 不可用、首帧 WebGL clear 抛错、运行后丢失 context，均可打开 / 退出备用桌面并保留输入。另验证延迟 room 导入期间提前打开备用桌面，恢复加载后同一草稿迁入物理屏幕。
+- `tests/studio-outdoor.html` 的现有契约与新增首帧契约全部通过。故障用例有意输出 `Studio frame failed to render`，以页面最终 `#results[data-status="passed"]` 为准。
+
+临时浏览器脚本：`/tmp/huanfly-studio-review/loading-repro.mjs`、`loading-regression.mjs`；复现前后截图和 17 项回归结果：`/tmp/huanfly-studio-review/loading/`。这些测试证据不提交、可能随临时目录清理；可维护的模块契约保留在仓库测试页。

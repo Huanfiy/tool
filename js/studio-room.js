@@ -9,7 +9,7 @@ import { createStudioFigures } from './studio-figures.js';
 import { createStudioWindow } from './studio-window.js';
 import { createStudioLandscape } from './studio-landscape.js';
 
-export function createStudioRoom({ container, state, reducedMotion, onSelect, onFrame, onEvent, onError, onWindowToggle }) {
+export function createStudioRoom({ container, state, reducedMotion, onSelect, onFrame, onEvent, onError, onWindowToggle, onReady = () => {} }) {
     const mobile = () => window.innerWidth <= 700;
     const scene = new THREE.Scene();
     const resources = new Set(), released = new WeakSet(), cleanups = [];
@@ -875,10 +875,12 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     }
     function render(now){
         frameId=null;if(disposed||lost||document.hidden)return;
+        try {
         const active=tween||now<interactiveUntil||state.printer==='printing'||state.motor||currentRPM>1||state.arm||state.firmware==='flashing'||state.watering;
+        // Never throttle the first frame: the loader is waiting for real pixels.
         // Quiet room: 30 fps with cached shadows; camera and device actions: up to 60 fps.
-        if(!paused&&now-lastTime<1000/(active?60:30)-1){frameId=requestAnimationFrame(render);return;}
-        const dt=Math.min((now-lastTime)/1000,.1);lastTime=now;
+        if(renderedFrames>0&&!paused&&now-lastTime<1000/(active?60:30)-1){frameId=requestAnimationFrame(render);return;}
+        const dt=Math.max(0,Math.min((now-lastTime)/1000,.1));lastTime=now;
         if(!paused){elapsed+=dt;tickSimulation(dt);}
         if(tween){const t=tween.duration?Math.min(1,(now-tween.start)/tween.duration):1;const eased=t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;camera.position.lerpVectors(tween.fromPos,tween.toPos,eased);controls.target.lerpVectors(tween.fromTarget,tween.toTarget,eased);if(t===1){tween=null;controls.enabled=!paused;}}
         controls.update();
@@ -892,8 +894,17 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
         liveMonitor.render();
         renderer.render(scene,camera);
         renderedFrames++;
+        if(renderedFrames===1)onReady();
+        if(disposed)return;
         if(active||reportElapsed>.1){onFrame({markers:projectedMarkers(),selected,rpm:Math.round(currentRPM),armPhase:Math.round((armTime%10)/10*100),update:reportElapsed>.1});if(reportElapsed>.1)reportElapsed=0;}
         if(!paused||tween)frameId=requestAnimationFrame(render);
+        } catch (error) {
+            // RAF errors do not reach createStudioRoom's initialization catch.
+            // Tear down partially rendered layers before exposing the fallback.
+            console.error('Studio frame failed to render:', error);
+            dispose();
+            onError('场景画面未能绘制，请重新加载，也可直接打开桌面。');
+        }
     }
     resize();setView('overview',true);setNight(false);
     // Render the first instrument display before exposing the workspace.

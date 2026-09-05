@@ -250,6 +250,7 @@ document.addEventListener('keydown', e => {
 });
 if (matchMedia('(pointer: coarse)').matches) $('lab-gesture').innerHTML = '拖动环视 <span>·</span> 双指缩放 <span>·</span> 轻点设备';
 function showError(message) {
+    booted = false; clearTimeout(loadingMessage);
     const wasFocused = focused;
     room?.dispose(); room = null; leaveMonitorView();
     if (wasFocused) focusMonitor();
@@ -272,6 +273,11 @@ try {
         picker.innerHTML = `<span>${device.n}</span>${device.label} ↗`; picker.addEventListener('click', () => selectDevice(id)); $('lab-device-list').append(picker);
     }
     room = createStudioRoom({ container: $('studio-stage'), state, reducedMotion, onSelect: selectDevice, onEvent: announce, onError: showError, onWindowToggle: toggleWindow,
+        onReady: () => {
+            booted = true; clearTimeout(loadingMessage);
+            document.querySelectorAll('[data-needs-room]').forEach(el => { el.disabled = false; });
+            $('lab-loader').classList.add('ready');
+        },
         onFrame: ({ markers, rpm, armPhase: phase, update }) => {
             currentRPM = rpm; armPhase = phase;
             const compact = innerWidth <= 700;
@@ -306,9 +312,6 @@ try {
     $('monitor-focus').setAttribute('role', 'region'); $('monitor-focus').removeAttribute('aria-modal');
     if (focused) room.focusMonitor();
     if (!window.StudioOS?.isAwake()) window.StudioOS?.wake();
-    booted = true; clearTimeout(loadingMessage);
-    document.querySelectorAll('[data-needs-room]').forEach(el => { el.disabled = false; });
-    requestAnimationFrame(() => $('lab-loader').classList.add('ready'));
 } catch (error) {
     clearTimeout(loadingMessage); console.error('Studio scene failed to start:', error);
     room?.dispose(); room = null; showError('场景资源未能加载，或浏览器未开启 WebGL。请重试，也可直接打开桌面。');
