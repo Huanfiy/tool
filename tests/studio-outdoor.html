@@ -38,7 +38,7 @@ const layout = {
     background:{center:[-5.33,0,0],radius:80,horizonUV:.5}, sunDirection:[-4.4,7.8,2.7],
     casement:{hingeX:-5.145,width:2.58,maxAngle:Math.PI/3,bottom:1.655,top:4.315,zMin:-2.66,zMax:2.52}
 };
-const palette = night => ({night,paper:night?'#344840':'#eee5d2',sky:night?'#405960':'#b7d8d4',haze:night?'#567163':'#dde5cc',hills:['#becbb1','#a7bd9b','#93ad86'],ground:'#93a574',crown:'#78a274',grass:'#8d9c66',bark:'#8f7256',stone:'#d0c5ab',flower:'#fff6e3',cloud:'#fcf5df',bird:'#6c8077'});
+const palette = night => ({night,paper:night?'#344840':'#eee5d2',sky:night?'#405960':'#b7d8d4',haze:night?'#567163':'#dde5cc',hills:['#becbb1','#a7bd9b','#93ad86'],ground:'#93a574',crown:'#78a274',grass:night?'#71876a':'#a4b97e',bark:'#8f7256',stone:'#d0c5ab',flower:'#fff6e3',cloud:'#fcf5df',bird:'#6c8077'});
 let landscape, renderer, room, roomFrame;
 // Observe the real room camera/geometry without exporting production internals.
 const sceneBeforeRender = THREE.Scene.prototype.onBeforeRender;
@@ -90,13 +90,85 @@ try {
     assert(!sky.material.transparent&&!sky.material.fog&&!sky.material.toneMapped&&sky.material.depthTest,'sky material contract');
     assert(sky.material.map.colorSpace===THREE.SRGBColorSpace,'sky texture colour space');
     landscape.root.traverse(o=>assert(!o.userData.window&&!o.userData.device&&!o.castShadow,'exterior action or shadow caster'));
-    const matrixSnapshot=()=>JSON.stringify(landscape.root.children.filter(o=>o.isInstancedMesh).map(o=>Array.from(o.instanceMatrix.array)));
+    const matrixSnapshot=(root=landscape.root)=>JSON.stringify(root.children.filter(o=>o.isInstancedMesh).map(o=>Array.from(o.instanceMatrix.array)));
+    const grass=scene.getObjectByName('garden-grass'), blades=grass.geometry.attributes.position, bladeColors=grass.geometry.attributes.color;
+    assert(grass.isInstancedMesh&&grass.material.vertexColors&&grass.material.side===THREE.DoubleSide&&!grass.material.transparent&&!grass.material.map,'grass lost its single opaque, texture-free batch');
+    assert(grass.count>=40&&grass.count<=120&&grass.geometry.index.count/3*grass.count<=6500,'sparse grass detail budget');
+    // Each independent ribbon has five paired rows and a single pointed tip.
+    assert(blades.count===66&&bladeColors.count===blades.count,'grass ribbon topology or colour gradient missing');
+    const a=new THREE.Vector3(),b=new THREE.Vector3(),c=new THREE.Vector3();
+    for(let leaf=0;leaf<6;leaf++) {
+        const start=leaf*11;
+        const root=a.fromBufferAttribute(blades,start).clone().add(b.fromBufferAttribute(blades,start+1)).multiplyScalar(.5);
+        const tip=c.fromBufferAttribute(blades,start+10);
+        assert(Math.hypot(tip.x-root.x,tip.z-root.z)>.25&&tip.y>.35,'grass reverted to upright spikes');
+        const rootWidth=a.fromBufferAttribute(blades,start).distanceTo(b.fromBufferAttribute(blades,start+1));
+        const middleWidth=a.fromBufferAttribute(blades,start+2).distanceTo(b.fromBufferAttribute(blades,start+3));
+        const endWidth=a.fromBufferAttribute(blades,start+8).distanceTo(b.fromBufferAttribute(blades,start+9));
+        assert(middleWidth>rootWidth&&endWidth<rootWidth,'blade must broaden, curve and taper');
+        assert(bladeColors.getX(start+10)>bladeColors.getX(start),'grass tips lost their painted highlight');
+    }
+    const indices=grass.geometry.index.array;
+    for(let i=0;i<indices.length;i+=3) {
+        a.fromBufferAttribute(blades,indices[i]);b.fromBufferAttribute(blades,indices[i+1]);c.fromBufferAttribute(blades,indices[i+2]);
+        assert(b.sub(a).cross(c.sub(a)).lengthSq()>1e-12,'degenerate grass triangle');
+    }
+    const twin=createStudioLandscape({layout,palette:palette(false),compact:false,disposeOnce});
+    try {
+        assert(matrixSnapshot(twin.root)===matrixSnapshot(),'scenery placement is not deterministic');
+        const twinGrass=twin.root.getObjectByName('garden-grass');
+        assert(JSON.stringify([...twinGrass.geometry.attributes.position.array])===JSON.stringify([...blades.array])
+            &&JSON.stringify([...twinGrass.instanceColor.array])===JSON.stringify([...grass.instanceColor.array]),'grass shape or colour is not deterministic');
+    } finally {twin.dispose();}
+    const roots=[],grassMatrix=new THREE.Matrix4(),stoneMesh=scene.getObjectByName('side-garden-stepping-stones'),stoneFrames=[];
+    for(let i=0;i<grass.count;i++) {
+        grass.getMatrixAt(i,grassMatrix);const root=new THREE.Vector3().setFromMatrixPosition(grassMatrix);roots.push(root);
+        assert(Math.abs(root.y-landscape.heightAt(root.x,root.z)+.008)<1e-6,'grass is floating above its terrain');
+    }
+    let neighbours=0;
+    for(let i=0;i<roots.length;i++) {
+        let nearest=Infinity;
+        for(let j=0;j<roots.length;j++)if(i!==j)nearest=Math.min(nearest,Math.hypot(roots[i].x-roots[j].x,roots[i].z-roots[j].z));
+        assert(nearest>=.15999,'grass roots piled up');
+        if(nearest<.65)neighbours++;
+    }
+    assert(neighbours>roots.length*.75,'grass lost its clustered distribution');
+    for(let i=0;i<stoneMesh.count;i++) {
+        const matrix=new THREE.Matrix4();stoneMesh.getMatrixAt(i,matrix);
+        stoneFrames.push({center:new THREE.Vector3().setFromMatrixPosition(matrix),inverse:matrix.clone().invert()});
+    }
+    function assertGrassClearance() {
+        const vertex=new THREE.Vector3(),local=new THREE.Vector3(),root=new THREE.Vector3();
+        for(let i=0;i<grass.count;i++) {
+            grass.getMatrixAt(i,grassMatrix);root.setFromMatrixPosition(grassMatrix);
+            assert(root.equals(roots[i]),'wind moved a grass root');
+            const nearby=stoneFrames.filter(stone=>Math.hypot(root.x-stone.center.x,root.z-stone.center.z)<1.2);
+            for(let j=0;j<blades.count;j++) {
+                vertex.fromBufferAttribute(blades,j).applyMatrix4(grassMatrix);
+                assert(vertex.x<layout.wall.outerX-.30&&vertex.y<layout.ground.top+.5,'grass entered wall/casement clearance');
+                // Interpolate the actual stones, not the production grass mask:
+                // the continuous house-side strip must also be bare in the gaps.
+                const next=stoneFrames.findIndex(stone=>stone.center.z>=vertex.z);
+                const end=next<0?stoneFrames.length-1:Math.max(1,next);
+                const from=stoneFrames[end-1].center,to=stoneFrames[end].center;
+                const pathX=THREE.MathUtils.lerp(from.x,to.x,(vertex.z-from.z)/(to.z-from.z));
+                assert(vertex.x<pathX-.55,'grass entered the house-side verge / under-window strip');
+                for(const stone of nearby) {
+                    local.copy(vertex).applyMatrix4(stone.inverse);
+                    assert(local.x*local.x+local.z*local.z>1,'a grass blade overgrew a stepping stone');
+                }
+            }
+        }
+    }
+    assertGrassClearance();
+    pass('草丛：弯曲尖叶、顶点渐变、确定性成簇分布、地表接根与单批次预算');
     const before=matrixSnapshot(),version=sky.material.map.version;
     for(let i=0;i<300;i++)landscape.update(1/30,{wind:.18,reducedMotion:true});
     assert(before===matrixSnapshot()&&version===sky.material.map.version,'reduced exterior changed');
     const matrix=new THREE.Matrix4();
     for(let i=0;i<600;i++) {
         landscape.update(1/3,{wind:i<300?1:.18,reducedMotion:false});
+        if(i%20===0)assertGrassClearance();
         if(i%20===0)for(const object of landscape.root.children.filter(o=>o.isInstancedMesh)) {
             object.geometry.computeBoundingSphere();
             for(let j=0;j<object.count;j++) {
@@ -109,6 +181,7 @@ try {
     assert(before!==matrixSnapshot()&&version===sky.material.map.version,'motion needs a static texture');
     assert(Math.abs(landscape.heightAt(-5.33,0)+.15)<1e-8,'wall foot not level');
     pass('景观：世界基准、实体拾取分类、非投影动效、静态纹理与减少动态');
+    pass('稀疏草丛完整风动：仅在石径远侧生长、靠房路边与窗下无草、根部固定及保守包围体');
     renderer=new THREE.WebGLRenderer({alpha:true});renderer.setSize(128,128);renderer.outputColorSpace=THREE.SRGBColorSpace;
     renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;
     const camera=new THREE.PerspectiveCamera(36,1,.1,160);camera.position.set(35,15,30);camera.up.set(0,0,1);camera.lookAt(35,-.15,30);camera.updateMatrixWorld();scene.updateMatrixWorld(true);

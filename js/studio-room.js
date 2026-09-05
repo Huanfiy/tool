@@ -62,10 +62,10 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     layout.casement.sweepX = layout.casement.hingeX - layout.casement.width * Math.sin(layout.casement.maxAngle);
     function outdoorPalette(night) {
         return night ? {
-            night: true, paper: '#344840', ground: '#526950', crown: '#526c60', grass: '#566e55', bark: '#695f53', stone: '#697767', flower: '#9da9a2',
+            night: true, paper: '#344840', ground: '#526950', crown: '#526c60', grass: '#71876a', bark: '#695f53', stone: '#697767', flower: '#9da9a2',
             sky: '#405960', haze: '#567163', hills: ['#4c655b', '#466052', '#3e594c'], cloud: '#a4b9b1', bird: '#b8c6b6'
         } : {
-            night: false, paper: '#eee5d2', ground: '#93a574', crown: '#78a274', grass: '#8d9c66', bark: '#8f7256', stone: '#d0c5ab', flower: '#fff6e3',
+            night: false, paper: '#eee5d2', ground: '#93a574', crown: '#78a274', grass: '#a4b97e', bark: '#8f7256', stone: '#d0c5ab', flower: '#fff6e3',
             sky: '#b7d8d4', haze: '#dde5cc', hills: ['#becbb1', '#a7bd9b', '#93ad86'], cloud: '#fcf5df', bird: '#6c8077'
         };
     }

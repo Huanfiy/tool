@@ -114,8 +114,9 @@ export function createStudioLandscape({ layout, palette, compact, disposeOnce })
     });
     instances('wall-foot-stone-and-corner-returns', cube, stoneMat, foundation, true);
     const stones = [];
+    const pathCenterX = z => layout.wall.outerX - 4.0 - .038 * z * z;
     for (let i = 0; i < 23; i++) {
-        const z = -8.3 + i * .72, x = layout.wall.outerX - 4.0 - .038 * z * z + Math.sin(i * .8) * .12;
+        const z = -8.3 + i * .72, x = pathCenterX(z) + Math.sin(i * .8) * .12;
         stones.push({ x, y: heightAt(x, z) + .025, z, ry: Math.sin(i * 4) * .3,
             scale: [.40 + random() * .09, .045, .26 + random() * .05], color: i % 2 ? '#f3e5c7' : '#d6d6bd' });
     }
@@ -152,21 +153,74 @@ export function createStudioLandscape({ layout, palette, compact, disposeOnce })
     // Native raycasting uses these same animated instance matrices; opaque trees
     // occlude devices, but no exterior ancestor carries a window/device action.
 
-    const grassMat = material('grass', { color: palette.grass, side: THREE.DoubleSide });
-    const bladePositions = [];
-    for (let i = 0; i < 3; i++) {
-        const a = i * Math.PI / 3, dx = Math.cos(a) * .09, dz = Math.sin(a) * .09;
-        bladePositions.push(-dx, 0, -dz, dx, 0, dz, dx * .8, .58 + i * .15, dz * .8,
-            -dx, 0, -dz, dx * .8, .58 + i * .15, dz * .8, -dx * .55, .37, -dz * .55);
+    const grassMat = material('grass', { color: palette.grass, side: THREE.DoubleSide, vertexColors: true });
+    const bladePositions = [], bladeColors = [], bladeIndices = [];
+    const rootTint = new THREE.Color('#c6d4ac'), middleTint = new THREE.Color('#eef1cf'), tipTint = new THREE.Color('#fff2bd');
+    const leafTint = new THREE.Color();
+    let grassReach = 0, grassHeight = 0;
+    // Six independent, curved ribbons, not intersecting upright wedges. Roots
+    // spread slightly; each blade broadens then tapers to ONE tip (no flat cap).
+    // Indexed rows share normals for a soft painted surface without dark facets.
+    const blades = [[.15, .64, .37, .053], [2.55, .43, .48, .058], [4.8, .75, .26, .045],
+        [1.5, .51, .53, .055], [3.8, .55, .42, .048], [5.85, .38, .45, .052]];
+    for (const [angle, height, bend, width] of blades) {
+        const start = bladePositions.length / 3;
+        for (let row = 0; row <= 5; row++) {
+            const t = row / 5, a = angle + .18 * t * t;
+            const reach = .045 + bend * t * t;
+            const x = Math.cos(a) * reach, z = Math.sin(a) * reach;
+            const y = height * (2.1 * t - 1.1 * t * t);
+            const halfWidth = width * [.40, 1, .82, .50, .20, 0][row];
+            grassReach = Math.max(grassReach, Math.hypot(reach, halfWidth));
+            grassHeight = Math.max(grassHeight, y);
+            leafTint.copy(rootTint).lerp(middleTint, Math.min(1, t * 2));
+            if (t > .5) leafTint.lerp(tipTint, (t - .5) * 2);
+            for (const side of row === 5 ? [0] : [-1, 1]) {
+                bladePositions.push(x - Math.sin(a) * halfWidth * side, y, z + Math.cos(a) * halfWidth * side);
+                bladeColors.push(leafTint.r, leafTint.g, leafTint.b);
+            }
+            if (row < 4) {
+                const v = start + row * 2;
+                bladeIndices.push(v, v + 1, v + 2, v + 1, v + 3, v + 2);
+            } else if (row === 4) bladeIndices.push(start + 8, start + 9, start + 10);
+        }
     }
     const grassGeometry = own(new THREE.BufferGeometry());
-    grassGeometry.setAttribute('position', new THREE.Float32BufferAttribute(bladePositions, 3)); grassGeometry.computeVertexNormals();
-    const grasses = [];
+    grassGeometry.setAttribute('position', new THREE.Float32BufferAttribute(bladePositions, 3));
+    grassGeometry.setAttribute('color', new THREE.Float32BufferAttribute(bladeColors, 3));
+    grassGeometry.setIndex(bladeIndices); grassGeometry.computeVertexNormals(); grassGeometry.computeBoundingSphere();
+    const grasses = [], grassRandom = landscapeRandom(1927), patches = [];
+    // Keep the original scenery random stream stable: changing the grass detail
+    // must not rearrange the flowers. All new tuft decisions use their own seed.
     for (let i = 0; i < 150; i++) {
         const x = layout.wall.outerX - .65 - random() * 10.0, z = (random() - .5) * 15.5;
-        const size = .22 + random() * .25;
-        grasses.push({ x, y: heightAt(x, z), z, ry: random() * Math.PI, phase: random() * 6.28,
-            scale: [size, size, size], color: i % 3 ? '#dde3b8' : '#b6c89c' });
+        patches.push({ x, z, size: .22 + random() * .25, angle: random() * Math.PI, phase: random() * 6.28 });
+    }
+    for (const patch of patches) {
+        // Loose islands of growth with breathing room, rather than evenly spaced
+        // spikes or a dense carpet. Smaller low tufts gather around a taller one.
+        if (grassRandom() > .40) continue;
+        const count = 3 + Math.floor(grassRandom() * 4);
+        for (let i = 0; i < count; i++) {
+            const a = patch.angle + grassRandom() * Math.PI * 2;
+            const distance = i ? .17 + grassRandom() * .62 : 0;
+            const x = patch.x + Math.cos(a) * distance, z = patch.z + Math.sin(a) * distance;
+            const size = (i ? .72 : 1) * (.30 + patch.size * .30 + grassRandom() * .10);
+            const spread = size * (1.15 + grassRandom() * .45), depth = spread * (.80 + grassRandom() * .30);
+            // Include nonuniform scale, full leaf reach and the .08-radian wind
+            // envelope in the clearances, not just the instance's root point.
+            const footprint = grassReach * Math.max(spread, depth) + grassHeight * size * .08;
+            // Only the far side of the path grows grass. The entire house-side
+            // strip (including beneath the window) stays clear, even between stones.
+            // Use the outermost path bend across the tuft's full Z footprint;
+            // .75 covers stone width, placement jitter and a small bare verge.
+            if (Math.abs(z) + footprint > 7.85 || x + footprint > pathCenterX(Math.abs(z) + footprint) - .75) continue;
+            if (trees.some(([tx, tz, , treeSize]) => Math.hypot(x - tx, z - tz) < .14 * treeSize + footprint)) continue;
+            if (grasses.some(grass => Math.hypot(x - grass.x, z - grass.z) < .16)) continue;
+            grasses.push({ x, y: heightAt(x, z) - .008, z, ry: a, phase: patch.phase * .12,
+                scale: [spread, size, depth],
+                color: ['#ffffff', '#f1f4dc', '#e4edcf'][Math.floor(grassRandom() * 3)] });
+        }
     }
     const grassMesh = instances('garden-grass', grassGeometry, grassMat, grasses);
     grassMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
@@ -262,7 +316,12 @@ export function createStudioLandscape({ layout, palette, compact, disposeOnce })
         wind = THREE.MathUtils.damp(wind, motion.wind, 3, dt);
         time += dt; windTime += dt * wind;
         crowns.forEach((item, i) => pose(crownMesh, i, item, Math.sin(windTime * .65 + item.phase) * .021 * wind));
-        grasses.forEach((item, i) => pose(grassMesh, i, item, Math.sin(windTime * 1.1 + item.phase) * .14 * wind));
+        grasses.forEach((item, i) => {
+            // A slow, spatially coherent breeze, with a much smaller second ripple.
+            // Root translations remain fixed; native picking follows the matrices.
+            const phase = windTime * .95 + item.x * .48 + item.z * .32 + item.phase;
+            pose(grassMesh, i, item, (Math.sin(phase) * .065 + Math.sin(phase * 1.8 + item.phase) * .015) * wind);
+        });
         flowers.forEach((item, i) => pose(flowerMesh, i, item, Math.sin(windTime * .9 + item.phase) * .085 * wind));
         clouds.forEach((item, i) => {
             item.z = item.baseZ + Math.sin(windTime * .065 + item.phase) * 1.1;
