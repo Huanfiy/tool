@@ -2,7 +2,9 @@
 
 > 落档日期：2026-07-03
 >
-> 现状核验日期：2026-07-10
+> 主站共享设计核验日期：2026-07-10
+>
+> 工作室风格补充日期：2026-09-05
 >
 > 配套可视化：[design-system.html](design-system.html)（记录 2026-07-02 视觉基线；单文件，双击即开，断网可用）
 
@@ -14,6 +16,7 @@
 ### 1.1 覆盖范围
 
 - 主站页面：`index.html`、`blog.html`、`tool.html`、`about.html`；
+- 独立场景的风格定位：`studio.html`（Three.js 工作室，见 §1.3）；
 - 延伸页面：`tools/downloads.html`、`tools/visualizations.html`；
 - 共享资源：`css/style.css`、`js/script.js`、`js/interests.js`；
 - 部分复用共享样式的工具页：`tools/keyboard.html`、`tools/buy.html`。
@@ -23,6 +26,16 @@
 - `tools/visualizations/foc.html` 使用独立页面样式，不受共享组件规范约束；
 - `tools/keyboard.html`、`tools/buy.html` 的页面专属布局与交互样式；
 - `posts/*.md` 的内容写作规范与文章发布流程。发布流程见 [blog-auto-publish.md](blog-auto-publish.md)。
+
+### 1.3 风格延展：嵌入式极客工作室
+
+2026-09-05 的 Three.js 工作室初版，是 Huanfly 个人设计风格在三维空间中的一次延展。
+
+核心是**温暖自然的手绘插画风，融合克制的极客科技感**。以午后阳光、木质家具和绿意营造轻松惬意的氛围，通过可操作的电子设备与 3D 交互带来探索乐趣。
+
+局部描边、纸张与布料纹理、便签式面板延续本站的手绘语言；科技感主要由仪器操作及其反馈表达，环境动效保持舒缓，让技术与生活气息自然相融。
+
+工作室采用独立样式与 Three.js 场景渲染。本节记录其风格定位；下文的共享 Token、组件、动效及主题规则适用于主站共享设计体系。
 
 ## 2. 文件结构与职责
 
