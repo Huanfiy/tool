@@ -72,13 +72,13 @@
 
     function greeting() {
         const h = new Date().getHours();
-        if (h < 5) return '夜深了，小黑都睁不开眼了 🌙';
+        if (h < 5) return '夜深了，保存进度，早点休息 🌙';
         if (h < 9) return '早上好，窗边的光刚刚好 🌿';
         if (h < 12) return '上午好，适合焊点东西 ☀️';
         if (h < 14) return '午安，先吃饭，板子不会跑 🍃';
         if (h < 18) return '下午好，泡杯茶继续 🍵';
         if (h < 22) return '晚上好，窗外的星星亮了 ✨';
-        return '夜猫子模式已开启 🐈‍⬛';
+        return '夜间工作模式已开启 🌙';
     }
 
     /* -------------------------------------------------------------
@@ -491,9 +491,9 @@
             const writeln = (s = '') => t.write(s + '\r\n');
 
             function banner() {
-                writeln(`${C.green}  /\\_/\\   ${C.reset}${C.bold}huanfly-os${C.reset} ${C.dim}guest shell · v1.0${C.reset}`);
-                writeln(`${C.green} ( ${C.cyan}o.o${C.green} )  ${C.reset}${C.dim}欢迎来到工作室。这里是模拟终端，随便敲，不伤机器。${C.reset}`);
-                writeln(`${C.green}  > ^ <   ${C.reset}${C.dim}输入 ${C.reset}help${C.dim} 查看命令，${C.reset}exit${C.dim} 回到桌面。${C.reset}`);
+                writeln(`${C.green}  ┌─ H7 ─┐  ${C.reset}${C.bold}huanfly-os${C.reset} ${C.dim}guest shell · v2.0${C.reset}`);
+                writeln(`${C.green} ─┤ LAB  ├─ ${C.reset}${C.dim}欢迎来到工作室。这里是模拟终端，随便敲，不伤机器。${C.reset}`);
+                writeln(`${C.green}  └──────┘  ${C.reset}${C.dim}输入 ${C.reset}help${C.dim} 查看命令，${C.reset}exit${C.dim} 回到桌面。${C.reset}`);
                 writeln();
             }
 
@@ -503,7 +503,7 @@
                     const rows = [
                         ['help', '显示本帮助'], ['ls', '列出文件'], ['cat <file>', '查看文件'],
                         ['posts', '列出博客文章'], ['open <n|blog|tools|about|home>', '打开文章或页面'],
-                        ['neofetch', '系统信息'], ['studio <iron|gun|fan|printer|window>', '操控工作室里的物件'],
+                        ['neofetch', '系统信息'], ['studio <pcb|scope|solder|printer|motor|arm|plant|window>', '操控工作室里的物件'],
                         ['theme', '切换昼夜'], ['date', '当前时间'], ['echo <text>', '回显'],
                         ['history', '命令历史'], ['clear', '清屏 (Ctrl+L)'], ['exit', '回到桌面']
                     ];
@@ -521,12 +521,12 @@
                 },
                 pwd() { writeln('/home/guest'); },
                 whoami() { writeln('guest'); },
-                uname() { writeln('huanfly-os 1.0 studio x86_64 GNU/Paper'); },
+                uname() { writeln('huanfly-os 2.0 studio x86_64 GNU/Lab'); },
                 date() { writeln(new Date().toString()); },
                 echo(args) { writeln(args.join(' ')); },
                 clear() { t.clear(); },
                 history() { history.forEach((h, i) => writeln(`  ${String(i + 1).padStart(3)}  ${h}`)); },
-                sudo() { writeln(`${C.red}小黑：想都别想。${C.reset}`); },
+                sudo() { writeln(`${C.red}guest: 当前会话没有管理员权限。${C.reset}`); },
                 rm() { writeln(`${C.yellow}rm: 这里什么都删不掉，包括黑历史。${C.reset}`); },
                 cd() { writeln(`${C.dim}这间工作室只有一个房间。${C.reset}`); },
                 theme() {
@@ -538,23 +538,22 @@
                     const lines = [
                         `${C.bold}${C.green}guest${C.reset}@${C.bold}${C.green}huanfly-studio${C.reset}`,
                         `${C.dim}-----------------------${C.reset}`,
-                        `${C.green}OS${C.reset}       huanfly-os 1.0 (paper edition)`,
-                        `${C.green}Host${C.reset}     无边框显示器 · L 形转角桌`,
-                        `${C.green}Kernel${C.reset}   storybook 2026.09`,
+                        `${C.green}OS${C.reset}       huanfly-os 2.0 (lab edition)`,
+                        `${C.green}Host${C.reset}     嵌入式开发台 · 机电实验台`,
+                        `${C.green}Kernel${C.reset}   lab 2026.09`,
                         `${C.green}Shell${C.reset}    guest-sh (simulated)`,
-                        `${C.green}Theme${C.reset}    ${dark ? '夜之森林' : '纸面白天'}`,
-                        `${C.green}Bench${C.reset}    T12 焊台 · 热风枪 · 排烟扇 · 示波器`,
+                        `${C.green}Theme${C.reset}    ${dark ? '窗边夜灯' : '午后工作室'}`,
+                        `${C.green}Bench${C.reset}    STM32 H7 · T12 · DSO · BLDC`,
                         `${C.green}Printer${C.reset}  FDM · ${window.Studio ? window.Studio.state.printer : 'idle'}`,
-                        `${C.green}Mascot${C.reset}   小黑 🐈‍⬛`
+                        `${C.green}Motion${C.reset}   机械臂 · 无刷电机测试台`
                     ];
                     const art = [
-                        `${C.green}   |\\---/|  ${C.reset}`,
-                        `${C.green}   | ${C.cyan}o_o${C.green} |  ${C.reset}`,
-                        `${C.green}    \\_^_/   ${C.reset}`,
-                        `${C.green}   /     \\  ${C.reset}`,
-                        `${C.green}  |  | |  | ${C.reset}`,
-                        `${C.green}  |__|_|__| ${C.reset}`,
-                        `            `, `            `, `            `, `            `
+                        `${C.green}  ┌─────────┐ ${C.reset}`,
+                        `${C.green} ─┤  H 7    ├─${C.reset}`,
+                        `${C.green} ─┤         ├─${C.reset}`,
+                        `${C.green} ─┤   LAB   ├─${C.reset}`,
+                        `${C.green}  └─────────┘ ${C.reset}`,
+                        `              `, `              `, `              `, `              `, `              `
                     ];
                     art.forEach((a, i) => writeln(a + '  ' + (lines[i] || '')));
                 },
@@ -587,13 +586,14 @@
                     writeln('用法: open <编号|blog|tools|about|home>');
                 },
                 studio(args) {
-                    const map = { iron: 'iron-station', gun: 'gun-station', fan: 'fan', printer: 'printer', window: 'window', cat: 'cat', mug: 'mug', toolbox: 'toolbox', scope: 'scope' };
-                    const id = map[(args[0] || '').toLowerCase()];
-                    if (!id) { writeln('用法: studio <iron|gun|fan|printer|window|cat|mug|toolbox|scope>'); return; }
-                    const el = document.getElementById(id);
-                    if (el) {
-                        el.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-                        writeln(`${C.dim}已切换 ${args[0]}。退出显示器看看效果。${C.reset}`);
+                    const id = (args[0] || '').toLowerCase();
+                    if (!['pcb', 'scope', 'solder', 'iron', 'printer', 'motor', 'arm', 'plant', 'window'].includes(id)) {
+                        writeln('用法: studio <pcb|scope|solder|printer|motor|arm|plant|window>'); return;
+                    }
+                    if (window.Studio && window.Studio.action(id)) {
+                        writeln(`${C.dim}已切换 ${id}。退出显示器看看效果。${C.reset}`);
+                    } else {
+                        writeln('3D 场景尚未就绪。');
                     }
                 },
                 exit() {
@@ -858,7 +858,7 @@
         const SETTINGS_KEY = 'studio.robot.settings';
         const HISTORY_KEY = 'studio.robot.history';
         const MARKED_JS = 'https://cdn.jsdelivr.net/npm/marked@4.0.12/marked.min.js';
-        const DEFAULT_SYSTEM = '你是「小黑」，Huanfly 极客工作室里的 AI 助手，性格像一只机灵、话不多但很靠谱的黑猫。用简洁友好的中文回答；涉及嵌入式、电路、固件、编程问题时给出准确、可操作的建议，不确定就直说。适度使用 Markdown（代码块、列表），不要长篇大论。';
+        const DEFAULT_SYSTEM = '你是 Huanfly Lab 的工程助手，擅长嵌入式开发、电路设计与原型制作。用简洁友好的中文回答；涉及嵌入式、电路、固件、编程问题时给出准确、可操作的建议，不确定就直说。适度使用 Markdown（代码块、列表），不要长篇大论。';
         const defaults = {
             baseUrl: (CONFIG.robot && CONFIG.robot.baseUrl) || 'https://api.openai.com/v1',
             apiKey: '',
@@ -962,7 +962,7 @@
             wrap.className = `msg ${role}${extraClass ? ' ' + extraClass : ''}`;
             const avatar = document.createElement('span');
             avatar.className = 'avatar';
-            avatar.innerHTML = role === 'user' ? '<i class="fas fa-user"></i>' : '<i class="fas fa-cat"></i>';
+            avatar.innerHTML = role === 'user' ? '<i class="fas fa-user"></i>' : '<i class="fas fa-microchip"></i>';
             const bubble = document.createElement('div');
             bubble.className = 'bubble';
             if (role === 'user') {
@@ -985,9 +985,9 @@
             const configured = !!settings.apiKey;
             const welcome = document.createElement('div');
             welcome.className = 'robot-welcome';
-            welcome.innerHTML = `<div class="welcome-avatar"><i class="fas fa-cat" aria-hidden="true"></i></div>
-                <h3>喵，今天有什么新想法？</h3>
-                <p>${configured ? '我是小黑。电路、代码，或者一个还没成形的灵感，都可以聊聊。' : '我是小黑，工作室里的 AI 助手。连接你自己的模型，就可以坐下来聊聊了。'}</p>
+            welcome.innerHTML = `<div class="welcome-avatar"><i class="fas fa-microchip" aria-hidden="true"></i></div>
+                <h3>今天，想做点什么？</h3>
+                <p>${configured ? '电路、代码，或者一个还没成形的灵感，都可以一起推敲。' : '我是工作室里的工程助手。连接你自己的模型，一起把想法做成实物。'}</p>
                 <div class="robot-suggestions">${configured
                     ? ['给我一个周末小制作的灵感', '怎样开始学习嵌入式？'].map((text) => `<button type="button" class="os-btn" data-prompt="${text}">${text}</button>`).join('')
                     : '<button type="button" class="os-btn" data-configure><i class="fas fa-sliders" aria-hidden="true"></i> 设置聊天模型</button>'}</div>`;

@@ -6,18 +6,21 @@
 
 - **博客系统** — Markdown 驱动，客户端渲染，文章存放于 `posts/` 目录
 - **工具箱** — 图片转 ICO、键位练习、链接转换器
-- **工作室** — 可交互的手绘极客工作室场景（`studio.html`）：房间全景等比适配屏幕，墙面与地板延展到视口边缘，支持全屏查看与物件提示，3D 打印机直接落地，键盘和鼠标使用独立 SVG 细节，点击焊台 / 热风枪 / 3D 打印机等互动；点击显示器或「进入电脑」打开适配手机的 huanfly-os，内含终端（可桥接到本机真实 shell，离线时为访客模拟 shell）、相册与 Robot（OpenAI 兼容流式聊天，密钥只存浏览器）
+- **工作室** — Three.js 手绘质感的嵌入式工作室（`studio.html`）：可拖动环视、缩放和切换分区镜头；包含 STM32 固件烧录与电路板展开、示波器波形 / 频率调节、焊台与排烟联动、FDM 逐层打印、无刷电机调速和机械臂取放演示。新增绿植浇水与模拟土壤湿度联动。支持昼夜灯光、微风开关、设备导览、手机触控；进入显示器后使用 HTML huanfly-os，内含终端（本机桥接或访客 shell）、相册与 Robot。
 - **个人展示** — 首页、关于页面，响应式布局
 
 ## 设计风格
 
 采用罗小黑战记主题，以森林绿（`#6ab04c`）为主色调，搭配灵质蓝（`#7ed6df`）强调色，整体风格清新治愈。大圆角卡片、柔和阴影、玻璃拟态导航栏，配合自托管的滚动入场动画（CSS 关键帧 + IntersectionObserver），营造轻松自然的浏览体验。
 
+工作室将 Three.js 空间与插画式美术结合：默认午后光照，窗外有树木和草坡，室内使用浅木、暖白与灰绿，搭配局部描边、布纹窗帘、地毯和工作笔记。纹理由本地 Canvas 生成，无额外模型、图片或字体下载；设备标签按需显示，操作面板采用便签式设计。不包含小黑角色。静置时以 30 fps 为目标并缓存阴影，操作镜头或运行设备时最高 60 fps；进入电脑或切换到后台时停止场景渲染。
+
 ## 技术栈
 
 - HTML5 + CSS3 + 原生 JavaScript，无框架
 - [Marked.js](https://github.com/markedjs/marked) — Markdown 解析
 - [Font Awesome](https://fontawesome.com/) — 图标
+- [Three.js](https://threejs.org/) 0.170.0 — 工作室的程序化模型、镜头与实时渲染（通过 CDN 加载）
 
 ## 项目结构
 
@@ -28,9 +31,12 @@
 ├── studio.html           # 工作室：可交互场景 + huanfly-os
 ├── about.html            # 关于
 ├── css/style.css         # 全局样式
-├── css/studio.css        # 工作室专属样式
+├── css/studio.css        # 3D 工作室的界面与响应式布局
+├── css/studio-apps.css   # huanfly-os 应用样式
 ├── js/script.js          # 通用脚本
-├── js/studio.js          # 工作室场景交互
+├── js/studio.js          # 设备状态、镜头导航与电脑入口
+├── js/studio-room.js     # Three.js 场景、程序化模型与设备动画
+├── js/studio-art.js      # 本地生成的纸张、木纹、布料与自然窗景
 ├── js/studio-apps.js     # huanfly-os：终端 / 相册 / Robot
 ├── server/studio-bridge.py  # 本机终端桥接（开发用，不随部署发布）
 ├── posts/                # Markdown 博客文章

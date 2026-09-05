@@ -1,579 +1,290 @@
-/* =============================================================
- * Huanfly · 工作室场景交互（studio.html）
- * 1. 悬停 / 触摸 / 键盘聚焦 → 手绘说明卡
- * 2. 物件互动：焊台、热风枪、风扇、元件柜、示波器、打印机、小黑…
- * 3. 显示器聚焦：以屏幕为中心推近，展开自适应 huanfly-os
- * 4. 待机屏时钟、昼夜（主题）联动、全景与显示器聚焦
- * 依赖：js/script.js（站点主题初始化）
- * 对外：window.Studio = { focusMonitor, unfocusMonitor, toggleTheme, isFocused }
- * ============================================================= */
-(function () {
-    'use strict';
+/* Huanfly Lab: device controls, camera navigation and the HTML computer. */
+const $ = id => document.getElementById(id);
+const root = $('studio');
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const state = {
+    printer: 'idle', printProgress: 0, iron: false, fan: false,
+    scope: 'sine', scopeRunning: true, frequency: 2.0,
+    firmware: 'idle', flashProgress: 0, boardExploded: false,
+    motor: false, rpm: 2400, arm: false, armStarted: false,
+    breeze: true, soilMoisture: 42, watering: false, waterProgress: 0
+};
+const devices = {
+    monitor: { n: '01', label: '工作站', title: '思考的主屏幕', category: 'WORKSTATION / HUANFLY-OS', description: '写代码，也收集灵感。靠近屏幕，进入真正可以使用的终端、相册和 AI 助手。' },
+    pcb: { n: '02', label: '开发板', title: '从一行代码开始', category: 'DEVELOPMENT / STM32 H743', description: '给开发板烧录一份固件，观察状态灯和主屏幕的反馈。展开电路板，看看芯片、排针与 PCB 的层次。' },
+    scope: { n: '03', label: '示波器', title: '让信号有迹可循', category: 'MEASUREMENT / DIGITAL OSCILLOSCOPE', description: '正弦波、方波、锯齿波。在屏幕上观察信号，调节频率，或者暂停捕获这一瞬间。' },
+    solder: { n: '04', label: '焊接台', title: '把想法焊在一起', category: 'REWORK / T12 SOLDERING STATION', description: '打开焊台，烙铁进入工作状态，排烟风扇随之启动。工作结束后，记得让它休息。' },
+    printer: { n: '05', label: '3D 打印', title: '一层一层，成为实物', category: 'FABRICATION / FDM PRINTER', description: '从空白热床开始，打印一个六角原型外壳。看喷头沿导轨移动，零件逐层长出来。' },
+    motor: { n: '06', label: '电机测试', title: '让代码转起来', category: 'MOTION / BRUSHLESS MOTOR', description: '启动无刷电机测试台，调节目标转速。转子平滑加速，主屏幕同步显示运行状态。' },
+    arm: { n: '07', label: '机械臂', title: '重复的事，交给机械', category: 'ROBOTICS / PICK & PLACE', description: '让机械臂执行一轮又一轮的取放装配。底座、肩部、肘部与夹爪协同完成运动。' },
+    plant: { n: '08', label: '绿植与传感器', title: '也照顾一下小小的绿意', category: 'LITTLE GARDEN / SOIL SENSOR', description: '给桌边绿植浇一点水，观察模拟土壤湿度的变化。开发板烧录完成后，OLED 也会显示它的读数。' }
+};
+const views = { overview: '窗边工作室', bench: '木头工作桌', fabrication: '打印角', robotics: '窗边的小实验', panorama: '房间全景' };
+let room = null, selected = null, focused = false, night = false, labelsVisible = false;
+let tourIndex = -1, focusTimer = null, returnFocus = null, booted = false;
+let currentRPM = 0, armPhase = 0;
+const tour = ['pcb', 'scope', 'solder', 'printer', 'motor', 'arm', 'plant', 'monitor'];
+const markerEls = new Map();
+function setText(el, value) { if (el.textContent !== String(value)) el.textContent = value; }
+function announce(message) { setText($('lab-log-text'), message); setText($('lab-announcement'), message); }
+function updateClock() {
+    const t = new Date();
+    $('lab-clock').textContent = `${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}`;
+}
+updateClock(); setInterval(updateClock, 15000);
 
-    const root = document.getElementById('studio');
-    const stage = document.getElementById('studio-stage');
-    const scene = document.getElementById('studio-scene');
-    if (!root || !stage || !scene) return;
-
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const $ = (id) => document.getElementById(id);
-
-    const isDark = () => document.documentElement.getAttribute('data-theme') === 'dark';
-
-    /* -------------------------------------------------------------
-     * 说明卡
-     * ----------------------------------------------------------- */
-    const tip = $('studio-tip');
-    const tipTitle = tip.querySelector('.tip-title');
-    const tipText = tip.querySelector('.tip-text');
-    const tipAction = tip.querySelector('.tip-action');
-    let activeHotspot = null;
-    let touchedHotspot = null;
-
-    function positionTip(x, y) {
-        const margin = 12;
-        const rect = tip.getBoundingClientRect();
-        const vw = window.innerWidth;
-        const vh = window.innerHeight;
-        // 默认显示在指针上方；空间不足时翻到下方
-        let top = y - rect.height - 18;
-        let flip = false;
-        if (top < margin + 60) {
-            top = y + 24;
-            flip = true;
-        }
-        if (top + rect.height > vh - margin) top = vh - margin - rect.height;
-        let left = x;
-        const half = rect.width / 2;
-        if (left - half < margin) left = margin + half;
-        if (left + half > vw - margin) left = vw - margin - half;
-        tip.style.left = left + 'px';
-        tip.style.top = top + 'px';
-        tip.classList.toggle('flip', flip);
+function updatePanel() {
+    if (!selected) return;
+    let status = '', value = '', action = '', secondary = '', progress = null;
+    switch (selected) {
+        case 'monitor': status = '工作站已就绪'; value = 'ONLINE'; action = '进入 huanfly-os ↗'; break;
+        case 'pcb':
+            status = state.firmware === 'flashing' ? '正在写入固件' : state.firmware === 'done' ? '固件运行中' : 'ST-LINK 已连接';
+            value = state.firmware === 'flashing' ? `${Math.round(state.flashProgress)}%` : '480 MHz';
+            action = state.firmware === 'flashing' ? '烧录中…' : state.firmware === 'done' ? '重新烧录固件 ↻' : '烧录固件 →';
+            secondary = state.boardExploded ? '合上电路板' : '展开电路板';
+            if (state.firmware === 'flashing') progress = state.flashProgress;
+            break;
+        case 'scope':
+            status = state.scopeRunning ? '信号采集中' : '采集已暂停';
+            value = { sine: 'SINE', square: 'PWM', saw: 'SAW' }[state.scope];
+            action = '切换信号波形 ↻'; secondary = state.scopeRunning ? '暂停采集' : '继续采集'; break;
+        case 'solder': status = state.iron ? '加热中 · 排烟已开启' : '焊台待机'; value = state.iron ? '350 °C' : 'OFF'; action = state.iron ? '关闭焊台' : '开启焊台 →'; break;
+        case 'printer':
+            status = { idle: '热床已就绪', printing: '正在逐层打印', paused: '打印已暂停', done: '原型打印完成' }[state.printer];
+            value = `${Math.round(state.printProgress)}%`;
+            action = { idle: '开始打印 →', printing: '暂停打印', paused: '继续打印 →', done: '打印新零件 ↻' }[state.printer];
+            secondary = state.printProgress > 0 ? '重置' : ''; progress = state.printProgress; break;
+        case 'motor': status = state.motor ? '电机运行中' : currentRPM > 10 ? '转子减速中' : '测试台待机'; value = `${currentRPM} RPM`; action = state.motor ? '停止电机' : '启动电机 →'; break;
+        case 'arm': status = state.arm ? '取放装配循环中' : state.armStarted ? '装配已暂停' : '机械臂待机'; value = state.armStarted ? `CYCLE ${armPhase}%` : 'READY'; action = state.arm ? '暂停装配' : state.armStarted ? '继续装配 →' : '运行取放装配 →'; break;
+        case 'plant':
+            status = state.watering ? '水慢慢渗进土壤' : state.soilMoisture >= 70 ? '水分充足，慢慢生长' : '土壤有些干了';
+            value = `${Math.round(state.soilMoisture)}%`; action = state.watering ? '正在浇水…' : state.soilMoisture >= 70 ? '已经喝饱了 ✓' : '浇一点水 ↗';
+            secondary = state.soilMoisture >= 70 ? '重置实验' : ''; break;
     }
-
-    function showTip(hotspot, x, y) {
-        activeHotspot = hotspot;
-        tipTitle.textContent = hotspot.dataset.tipTitle || '';
-        tipText.textContent = hotspot.dataset.tip || '';
-        const action = hotspot.dataset.tipAction || '';
-        tipAction.textContent = action;
-        tipAction.style.display = action ? 'inline-block' : 'none';
-        tip.setAttribute('aria-hidden', 'false');
-        positionTip(x, y);
-        tip.classList.add('show');
+    setText($('device-status'), status); setText($('device-value'), value); setText($('device-action'), action);
+    $('device-action').disabled = (selected === 'pcb' && state.firmware === 'flashing') || (selected === 'plant' && (state.watering || state.soilMoisture >= 70));
+    $('device-secondary').hidden = !secondary; setText($('device-secondary'), secondary);
+    $('device-progress').hidden = progress === null;
+    if (progress !== null) $('device-progress-bar').style.width = `${progress}%`;
+    const output = $('device-range-value');
+    if (output) setText(output, selected === 'scope' ? `${state.frequency.toFixed(1)} kHz` : `${state.rpm} RPM`);
+}
+function buildOptions(id) {
+    $('device-options').replaceChildren();
+    if (id !== 'scope' && id !== 'motor') return;
+    const label = document.createElement('label'); label.htmlFor = 'device-range';
+    label.textContent = id === 'scope' ? '信号频率' : '目标转速';
+    const output = document.createElement('output'); output.id = 'device-range-value'; output.htmlFor = 'device-range'; label.append(output);
+    const range = document.createElement('input'); range.type = 'range'; range.id = 'device-range';
+    range.min = id === 'scope' ? '.5' : '300'; range.max = id === 'scope' ? '5' : '6000'; range.step = id === 'scope' ? '.1' : '100';
+    range.value = id === 'scope' ? state.frequency : state.rpm;
+    range.addEventListener('input', () => { if (id === 'scope') state.frequency = Number(range.value); else state.rpm = Number(range.value); updatePanel(); });
+    range.addEventListener('change', () => announce(id === 'scope' ? `信号频率设为 ${state.frequency.toFixed(1)} kHz。` : `目标转速设为 ${state.rpm} RPM。`));
+    $('device-options').append(label, range);
+}
+function selectDevice(id, fromTour = false) {
+    if (!room || focused || !devices[id]) return;
+    if (!fromTour) tourIndex = -1;
+    closeDeviceList();
+    selected = id;
+    const device = devices[id];
+    setText($('device-number'), `工作室笔记 · ${device.n}`); setText($('device-category'), device.category);
+    setText($('device-title'), device.title); setText($('device-description'), device.description);
+    setText($('device-index'), `${device.n} / ${String(Object.keys(devices).length).padStart(2, '0')}`);
+    $('lab-inspector').hidden = false; root.classList.add('has-selection');
+    root.classList.remove('is-close-view');
+    $('lab-intro').inert = true;
+    buildOptions(id); updatePanel();
+    $('tour-navigation').hidden = tourIndex < 0;
+    if (tourIndex >= 0) { setText($('tour-step'), `探索 ${tourIndex + 1} / ${tour.length}`); setText($('tour-next'), tourIndex === tour.length - 1 ? '完成探索 ✓' : '下一站 →'); }
+    markerEls.forEach((el, key) => { el.classList.toggle('selected', key === id); el.setAttribute('aria-pressed', String(key === id)); });
+    room.select(id); setText($('lab-view-name'), device.label);
+    document.querySelectorAll('[data-view]').forEach(btn => { btn.classList.remove('active'); btn.setAttribute('aria-pressed', 'false'); });
+    announce(`已靠近${device.label}。${device.description}`);
+}
+function closePanel(reset = true) {
+    const hadFocus = $('lab-inspector').contains(document.activeElement);
+    selected = null; tourIndex = -1; $('lab-inspector').hidden = true; root.classList.remove('has-selection'); $('lab-intro').inert = false;
+    markerEls.forEach(el => { el.classList.remove('selected'); el.setAttribute('aria-pressed', 'false'); });
+    if (reset) setView('overview');
+    if (hadFocus) document.querySelector('[data-view="overview"]').focus({ preventScroll: true });
+}
+function setView(name) {
+    if (!room || focused) return;
+    closeDeviceList();
+    closePanel(false); room.setView(name);
+    root.classList.toggle('is-close-view', name !== 'overview');
+    $('lab-intro').inert = name !== 'overview';
+    document.querySelectorAll('[data-view]').forEach(btn => { const active = btn.dataset.view === name; btn.classList.toggle('active', active); btn.setAttribute('aria-pressed', String(active)); });
+    setText($('lab-view-name'), views[name]);
+}
+function act(id = selected, secondary = false) {
+    if (!room) return false;
+    if (id === 'iron' || id === 'fan' || id === 'gun') id = 'solder';
+    if (id === 'window') { toggleTheme(); return true; }
+    switch (id) {
+        case 'monitor': focusMonitor(); break;
+        case 'pcb':
+            if (secondary) { state.boardExploded = !state.boardExploded; announce(state.boardExploded ? '电路板已展开：PCB、芯片与连接器。' : '电路板已合上。'); }
+            else if (state.firmware !== 'flashing') { state.firmware = 'flashing'; state.flashProgress = 0; announce('ST-LINK 已连接，开始写入固件。'); }
+            break;
+        case 'scope':
+            if (secondary) { state.scopeRunning = !state.scopeRunning; announce(state.scopeRunning ? '示波器继续采集信号。' : '示波器已暂停采集。'); }
+            else { const waves = ['sine', 'square', 'saw']; state.scope = waves[(waves.indexOf(state.scope) + 1) % waves.length]; announce(`信号已切换为${{ sine: '正弦波', square: '方波', saw: '锯齿波' }[state.scope]}。`); }
+            break;
+        case 'solder': state.iron = !state.iron; state.fan = state.iron; announce(state.iron ? '焊台已开启 · 350 °C · 排烟风扇运行。' : '焊台与排烟风扇已关闭。'); break;
+        case 'printer':
+            if (secondary) { state.printer = 'idle'; state.printProgress = 0; announce('热床已清空，可以开始新的打印。'); }
+            else if (state.printer === 'printing') { state.printer = 'paused'; announce('打印已暂停。'); }
+            else { if (state.printer === 'done') state.printProgress = 0; state.printer = 'printing'; announce('FDM 打印已开始，正在制造六角外壳。'); }
+            break;
+        case 'motor': state.motor = !state.motor; announce(state.motor ? `电机已启动，目标 ${state.rpm} RPM。` : '电机正在平滑减速。'); break;
+        case 'arm': state.arm = !state.arm; state.armStarted = true; announce(state.arm ? '机械臂开始执行取放装配循环。' : '机械臂已暂停。'); break;
+        case 'plant':
+            if (secondary && !state.watering) { state.soilMoisture = 42; state.waterProgress = 0; announce('传感器实验已重置，可以重新观察浇水后的变化。'); }
+            else if (!state.watering && state.soilMoisture < 70) { state.watering = true; state.waterProgress = 0; announce('给小植物浇一点水，留意旁边的湿度读数。'); }
+            break;
+        default: return false;
     }
+    updatePanel(); return true;
+}
+function toggleTheme() {
+    night = !night; document.documentElement.setAttribute('data-theme', night ? 'dark' : 'light');
+    room?.setNight(night);
+    document.querySelector('meta[name="theme-color"]').content = night ? '#344840' : '#eee5d2';
+    $('lab-theme').setAttribute('aria-label', night ? '切换日间灯光' : '切换夜间灯光'); $('lab-theme').title = $('lab-theme').getAttribute('aria-label');
+    announce(night ? '窗外入夜了，留一盏暖灯陪你。' : '午后的阳光，又照进了房间。');
+}
+function toggleLabels() {
+    labelsVisible = !labelsVisible; $('lab-labels').setAttribute('aria-pressed', String(labelsVisible));
+}
+function closeDeviceList() { $('lab-device-list').hidden = true; $('lab-devices').setAttribute('aria-expanded', 'false'); }
 
-    function hideTip() {
-        activeHotspot = null;
-        tip.classList.remove('show');
-        tip.setAttribute('aria-hidden', 'true');
-    }
-
-    function hotspotCenter(hotspot) {
-        const r = hotspot.getBoundingClientRect();
-        return { x: r.left + r.width / 2, y: r.top + r.height * 0.25 };
-    }
-
-    scene.addEventListener('pointerover', (e) => {
-        if (e.pointerType === 'touch') return;
-        const hs = e.target.closest('.hotspot');
-        if (!hs || hs === activeHotspot) return;
-        showTip(hs, e.clientX, e.clientY);
-    });
-
-    scene.addEventListener('pointermove', (e) => {
-        if (e.pointerType === 'touch' || !activeHotspot) return;
-        positionTip(e.clientX, e.clientY);
-    });
-
-    scene.addEventListener('pointerout', (e) => {
-        const hs = e.target.closest('.hotspot');
-        if (!hs || hs !== activeHotspot) return;
-        if (e.relatedTarget && hs.contains(e.relatedTarget)) return;
-        hideTip();
-    });
-
-    // 触屏：首次点按只显示说明，再次点按才触发动作
-    scene.addEventListener('pointerdown', (e) => {
-        if (e.pointerType !== 'touch') return;
-        const hs = e.target.closest('.hotspot');
-        if (!hs) {
-            clearTouched();
-            hideTip();
-            return;
-        }
-        if (touchedHotspot !== hs) {
-            clearTouched();
-            touchedHotspot = hs;
-            hs.classList.add('is-touched');
-            const c = hotspotCenter(hs);
-            showTip(hs, c.x, c.y);
-            hs.dataset.touchArmed = '0';
-        } else {
-            hs.dataset.touchArmed = '1';
-        }
-    });
-
-    function clearTouched() {
-        if (touchedHotspot) {
-            touchedHotspot.classList.remove('is-touched');
-            delete touchedHotspot.dataset.touchArmed;
-            touchedHotspot = null;
-        }
-    }
-
-    scene.addEventListener('focusin', (e) => {
-        const hs = e.target.closest('.hotspot');
-        if (!hs) return;
-        const c = hotspotCenter(hs);
-        showTip(hs, c.x, c.y);
-    });
-
-    scene.addEventListener('focusout', (e) => {
-        const hs = e.target.closest('.hotspot');
-        if (hs && hs === activeHotspot) hideTip();
-    });
-
-    /* -------------------------------------------------------------
-     * 物件状态
-     * ----------------------------------------------------------- */
-    const state = {
-        iron: false,
-        gun: false,
-        fan: false,
-        fanManual: null,      // 用户手动指定风扇开关后不再自动跟随
-        drawer: false,
-        scope: 'sine',
-        printer: 'idle',      // idle | printing | done
-        printProgress: 0,
-        printTimer: null
-    };
-
-    const SCOPE_WAVES = {
-        sine: 'M411 497 q5 -13 10 0 t10 0 t10 0 t10 0',
-        square: 'M411 505 h5 v-16 h5 v16 h5 v-16 h5 v16 h5 v-16 h5 v16 h5 v-16 h5 v16',
-        tri: 'M411 505 l5 -16 l5 16 l5 -16 l5 16 l5 -16 l5 16 l5 -16 l5 16'
-    };
-    const SCOPE_ORDER = ['sine', 'square', 'tri'];
-
-    const CAT_LINES = ['喵～', '别摸尾巴', '板子冒烟了', 'zzZ…', '该喂罐头了', '踩个键盘', '今天焊啥？'];
-
-    function syncFan() {
-        const auto = state.iron || state.gun;
-        const on = state.fanManual === null ? auto : state.fanManual;
-        state.fan = on;
-        $('fan').classList.toggle('on', on);
-    }
-
-    function setIron(on) {
-        state.iron = on;
-        $('iron-station').classList.toggle('on', on);
-        $('iron-temp').textContent = on ? '350°' : 'OFF';
-        syncFan();
-    }
-
-    function setGun(on) {
-        state.gun = on;
-        $('gun-station').classList.toggle('on', on);
-        $('gun-temp').textContent = on ? '380°' : 'OFF';
-        syncFan();
-    }
-
-    /* ---- 3D 打印机 ---- */
-    const PRINT_MAX_H = 50;
-    const PRINT_DURATION = 42000;
-
-    function renderPrinter() {
-        const h = (state.printProgress / 100) * PRINT_MAX_H;
-        const obj = $('printer-object');
-        obj.setAttribute('height', h.toFixed(2));
-        obj.setAttribute('y', (758 - h).toFixed(2));
-        $('printer-gantry').style.transform = `translateY(${(-h).toFixed(2)}px)`;
-        const lcd = $('printer-lcd');
-        if (state.printer === 'printing') {
-            lcd.textContent = Math.round(state.printProgress) + '%';
-        } else if (state.printer === 'done') {
-            lcd.textContent = 'DONE';
-        } else {
-            lcd.textContent = 'READY';
-        }
-    }
-
-    function stopPrintTimer() {
-        if (state.printTimer) {
-            cancelAnimationFrame(state.printTimer);
-            state.printTimer = null;
-        }
-    }
-
-    function startPrint() {
-        state.printer = 'printing';
-        const printer = $('printer');
-        printer.classList.remove('done');
-        printer.classList.add('printing');
-        const startProgress = state.printProgress;
-        const startAt = performance.now();
-        const remain = (1 - startProgress / 100) * PRINT_DURATION;
-        const step = (now) => {
-            const t = Math.min(1, (now - startAt) / remain);
-            state.printProgress = startProgress + (100 - startProgress) * t;
-            renderPrinter();
-            if (t < 1) {
-                state.printTimer = requestAnimationFrame(step);
-            } else {
-                finishPrint();
-            }
-        };
-        state.printTimer = requestAnimationFrame(step);
-        renderPrinter();
-    }
-
-    function pausePrint() {
-        stopPrintTimer();
-        state.printer = 'idle';
-        $('printer').classList.remove('printing');
-        renderPrinter();
-        $('printer-lcd').textContent = 'PAUSE';
-    }
-
-    function finishPrint() {
-        stopPrintTimer();
-        state.printer = 'done';
-        state.printProgress = 100;
-        const printer = $('printer');
-        printer.classList.remove('printing');
-        printer.classList.add('done');
-        renderPrinter();
-    }
-
-    function resetPrint() {
-        stopPrintTimer();
-        state.printer = 'idle';
-        state.printProgress = 0;
-        $('printer').classList.remove('printing', 'done');
-        $('printer-head').style.transform = '';
-        renderPrinter();
-    }
-
-    function togglePrinter() {
-        if (state.printer === 'printing') {
-            pausePrint();
-        } else if (state.printer === 'done') {
-            resetPrint();
-        } else {
-            startPrint();
-        }
-    }
-
-    /* ---- 小黑 ---- */
-    let bubbleTimer = null;
-    function pokeCat() {
-        const cat = $('cat');
-        const bubble = $('cat-bubble');
-        const text = $('cat-bubble-text');
-        text.textContent = CAT_LINES[Math.floor(Math.random() * CAT_LINES.length)];
-        bubble.classList.remove('show');
-        // 重新触发动画
-        void bubble.getBoundingClientRect();
-        bubble.classList.add('show');
-        cat.classList.add('excited');
-        clearTimeout(bubbleTimer);
-        bubbleTimer = setTimeout(() => {
-            bubble.classList.remove('show');
-            cat.classList.remove('excited');
-        }, 1800);
-    }
-
-    /* ---- 主题（昼夜） ---- */
-    function toggleTheme() {
-        const btn = document.querySelector('.theme-toggle');
-        if (btn) {
-            btn.click();
-            return;
-        }
-        const next = isDark() ? 'light' : 'dark';
-        document.documentElement.setAttribute('data-theme', next);
-        try { localStorage.setItem('theme', next); } catch (e) { /* ignore */ }
-    }
-
-    function syncThemeControls() {
-        const dark = isDark();
-        const control = $('studio-daynight');
-        control.querySelector('i').className = dark ? 'fas fa-sun' : 'fas fa-moon';
-        control.setAttribute('aria-label', dark ? '切换到日间工作室' : '切换到夜间工作室');
-        control.title = control.getAttribute('aria-label');
-    }
-
-    const themeObserver = new MutationObserver(() => {
-        syncThemeControls();
-    });
-    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
-
-    /* ---- 点击分发 ---- */
-    const actions = {
-        monitor: () => focusMonitor(),
-        mouse: () => focusMonitor(),
-        keyboard: () => {
-            const kb = $('keyboard');
-            kb.classList.remove('wave');
-            void kb.getBoundingClientRect();
-            kb.classList.add('wave');
-            setTimeout(() => { window.location.href = 'tools/keyboard.html'; }, 650);
-        },
-        mug: () => $('mug').classList.toggle('on'),
-        cat: () => pokeCat(),
-        window: () => toggleTheme(),
-        toolbox: () => {
-            state.drawer = !state.drawer;
-            $('toolbox').classList.toggle('open', state.drawer);
-        },
-        scope: () => {
-            const idx = (SCOPE_ORDER.indexOf(state.scope) + 1) % SCOPE_ORDER.length;
-            state.scope = SCOPE_ORDER[idx];
-            $('scope-wave').setAttribute('d', SCOPE_WAVES[state.scope]);
-        },
-        fan: () => {
-            state.fanManual = !state.fan;
-            syncFan();
-        },
-        iron: () => setIron(!state.iron),
-        gun: () => setGun(!state.gun),
-        printer: () => togglePrinter(),
-        board: () => $('board').classList.toggle('alt')
-    };
-
-    scene.addEventListener('click', (e) => {
-        const hs = e.target.closest('.hotspot');
-        if (!hs) return;
-        // 触屏：第一次点按只看说明
-        if (hs.dataset.touchArmed === '0') {
-            hs.dataset.touchArmed = '1';
-            return;
-        }
-        hideTip();
-        const fn = actions[hs.dataset.id];
-        if (fn) fn(hs, e);
-    });
-
-    scene.addEventListener('keydown', (e) => {
-        if (e.key !== 'Enter' && e.key !== ' ') return;
-        const hs = e.target.closest('.hotspot');
-        if (!hs) return;
-        e.preventDefault();
-        const fn = actions[hs.dataset.id];
-        if (fn) fn(hs, e);
-    });
-
-    /* -------------------------------------------------------------
-     * 待机屏时钟
-     * ----------------------------------------------------------- */
-    const WEEKDAYS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
-    function tickClock() {
-        const now = new Date();
-        const hh = String(now.getHours()).padStart(2, '0');
-        const mm = String(now.getMinutes()).padStart(2, '0');
-        const clock = $('screen-clock');
-        const date = $('screen-date');
-        if (clock) clock.textContent = `${hh}:${mm}`;
-        if (date) date.textContent = `${now.getMonth() + 1} 月 ${now.getDate()} 日 · ${WEEKDAYS[now.getDay()]}`;
-    }
-    tickClock();
-    setInterval(tickClock, 15000);
-
-    /* -------------------------------------------------------------
-     * 显示器聚焦
-     * ----------------------------------------------------------- */
-    const mfScreen = $('mf-screen');
-    const mfExit = $('mf-exit');
-    const mfDim = $('mf-dim');
-    const focusLayer = $('monitor-focus');
-    const background = [stage, $('studio-leave'), $('studio-toolbar')];
-    let focused = false;
-    let focusTransitionTimer = null;
-    let returnFocus = null;
-
-    function computeFocusTransform() {
-        // 同一任务内先去掉 transform 再测量，中间不会绘制帧，不会闪
-        const prevTransform = scene.style.transform;
-        scene.style.transition = 'none';
-        scene.style.transform = 'none';
-        const src = $('screen-glass').getBoundingClientRect();
-        const box = scene.getBoundingClientRect();
-        const dst = mfScreen.getBoundingClientRect();
-        scene.style.transform = prevTransform;
-        void scene.getBoundingClientRect();
-        scene.style.transition = '';
-
-        // transform-origin 为 0 0：p' = box.TL + (p - box.TL) * s + t
-        const s = dst.width / src.width;
-        const tx = dst.left + dst.width / 2 - box.left - (src.left + src.width / 2 - box.left) * s;
-        const ty = dst.top + dst.height / 2 - box.top - (src.top + src.height / 2 - box.top) * s;
-        return { s, tx, ty };
-    }
-
-    function applyFocusTransform(animate) {
-        const { s, tx, ty } = computeFocusTransform();
-        if (!animate) scene.style.transition = 'none';
-        scene.style.transform = `translate(${tx}px, ${ty}px) scale(${s})`;
-        if (!animate) {
-            void scene.getBoundingClientRect();
-            scene.style.transition = '';
-        }
-    }
-
-    function focusMonitor() {
-        if (focused) return;
-        returnFocus = document.activeElement;
-        focused = true;
-        hideTip();
-        dismissHint();
-        clearTouched();
-        root.classList.add('is-focused');
-        document.body.classList.add('is-focused');
-        background.forEach((el) => { el.inert = true; });
-        applyFocusTransform(!reducedMotion);
-        const done = () => {
-            if (!focused) return;
-            root.classList.add('is-focused-ready');
-            focusLayer.inert = false;
-            mfExit.inert = false;
-            mfScreen.focus({ preventScroll: true });
-            if (window.StudioOS && typeof window.StudioOS.wake === 'function') {
-                window.StudioOS.wake();
-            }
-        };
-        clearTimeout(focusTransitionTimer);
-        focusTransitionTimer = setTimeout(done, reducedMotion ? 30 : 1000);
-    }
-
-    function unfocusMonitor() {
+// Native HTML applications retain their text selection, forms and keyboard navigation.
+function focusMonitor() {
+    if (focused) return;
+    returnFocus = document.activeElement; focused = true;
+    closeDeviceList();
+    closePanel(false); root.classList.add('is-focused'); document.body.classList.add('is-focused');
+    $('lab-ui').inert = true; $('studio-stage').inert = true;
+    room?.focusMonitor();
+    clearTimeout(focusTimer);
+    focusTimer = setTimeout(() => {
         if (!focused) return;
-        focused = false;
-        clearTimeout(focusTransitionTimer);
-        focusLayer.inert = true;
-        mfExit.inert = true;
-        if (window.StudioOS && typeof window.StudioOS.sleep === 'function') {
-            window.StudioOS.sleep();
-        }
-        root.classList.remove('is-focused-ready');
-        scene.style.transform = '';
-        focusTransitionTimer = setTimeout(() => {
-            root.classList.remove('is-focused');
-            document.body.classList.remove('is-focused');
-            background.forEach((el) => { el.inert = false; });
-            if (returnFocus && returnFocus !== document.body && returnFocus.isConnected) {
-                returnFocus.focus({ preventScroll: true });
-            } else {
-                $('studio-enter').focus({ preventScroll: true });
-            }
-        }, reducedMotion ? 30 : 700);
+        root.classList.add('is-focused-ready'); $('monitor-focus').inert = false; $('mf-exit').inert = false;
+        $('mf-screen').focus({ preventScroll: true }); window.StudioOS?.wake(); room?.setPaused(true);
+    }, reducedMotion || !room ? 30 : 1250);
+}
+function unfocusMonitor() {
+    if (!focused) return;
+    focused = false; clearTimeout(focusTimer); window.StudioOS?.sleep();
+    $('monitor-focus').inert = true; $('mf-exit').inert = true;
+    root.classList.remove('is-focused-ready', 'is-close-view'); room?.setPaused(false); room?.setView('overview');
+    focusTimer = setTimeout(() => {
+        root.classList.remove('is-focused'); document.body.classList.remove('is-focused'); $('lab-ui').inert = false; $('studio-stage').inert = false;
+        if (returnFocus?.isConnected && !returnFocus.closest('[hidden]') && returnFocus !== document.body) returnFocus.focus({ preventScroll: true });
+        else $('studio-enter').focus({ preventScroll: true });
+        setText($('lab-view-name'), views.overview);
+        document.querySelectorAll('[data-view]').forEach(btn => { const active = btn.dataset.view === 'overview'; btn.classList.toggle('active', active); btn.setAttribute('aria-pressed', String(active)); });
+    }, reducedMotion ? 30 : 450);
+}
+window.Studio = { focusMonitor, unfocusMonitor, toggleTheme, isFocused: () => focused, state, action: act, select: selectDevice, setView, getStats: () => room?.getStats() };
+$('studio-enter').addEventListener('click', focusMonitor);
+$('mf-exit').addEventListener('click', unfocusMonitor); $('mf-dim').addEventListener('click', unfocusMonitor);
+$('device-close').addEventListener('click', () => closePanel());
+$('device-action').addEventListener('click', () => act()); $('device-secondary').addEventListener('click', () => act(selected, true));
+$('lab-theme').addEventListener('click', toggleTheme); $('lab-labels').addEventListener('click', toggleLabels);
+$('lab-breeze').addEventListener('click', () => {
+    state.breeze = !state.breeze; $('lab-breeze').setAttribute('aria-pressed', String(state.breeze));
+    $('lab-breeze').setAttribute('aria-label', state.breeze ? '关上窗，暂停微风' : '打开窗，让微风进来');
+    $('lab-breeze').querySelector('span').textContent = state.breeze ? '微风入室' : '静静待着';
+    announce(state.breeze ? '开一点窗，让树叶和窗帘轻轻动起来。' : '关上窗，让房间安静一会儿。');
+});
+$('lab-devices').addEventListener('click', () => { const open = $('lab-device-list').hidden; $('lab-device-list').hidden = !open; $('lab-devices').setAttribute('aria-expanded', String(open)); });
+document.addEventListener('pointerdown', e => { if (!e.target.closest('#lab-device-list, #lab-devices')) closeDeviceList(); });
+document.querySelectorAll('[data-view]').forEach(btn => btn.addEventListener('click', () => setView(btn.dataset.view)));
+$('lab-tour').addEventListener('click', () => { tourIndex = 0; selectDevice(tour[0], true); });
+$('tour-next').addEventListener('click', () => { tourIndex++; if (tourIndex >= tour.length) { closePanel(); announce('探索完成。现在，试着把几台设备一起运行起来。'); } else selectDevice(tour[tourIndex], true); });
+$('loader-retry').addEventListener('click', () => location.reload());
+const full = $('lab-fullscreen'); full.hidden = !document.fullscreenEnabled;
+full.addEventListener('click', async () => {
+    try { if (document.fullscreenElement) await document.exitFullscreen(); else await document.documentElement.requestFullscreen(); }
+    catch { announce('浏览器暂时无法进入全屏，可继续在当前窗口探索。'); }
+});
+document.addEventListener('fullscreenchange', () => { const active = !!document.fullscreenElement; full.setAttribute('aria-label', active ? '退出全屏' : '进入全屏'); full.title = full.getAttribute('aria-label'); });
+document.addEventListener('keydown', e => {
+    if (e.key === 'Tab' && focused) {
+        const controls = [...$('monitor-focus').querySelectorAll('button,input,textarea,select,a[href],summary,[tabindex="0"]')].filter(el => !el.disabled && !el.closest('[inert]') && el.getClientRects().length && getComputedStyle(el).visibility !== 'hidden');
+        if (!controls.length) { e.preventDefault(); return; }
+        const first = controls[0], last = controls[controls.length - 1];
+        if (e.shiftKey && (document.activeElement === first || !controls.includes(document.activeElement))) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && (document.activeElement === last || !controls.includes(document.activeElement))) { e.preventDefault(); first.focus(); }
+        return;
     }
-
-    mfExit.addEventListener('click', unfocusMonitor);
-    mfDim.addEventListener('click', unfocusMonitor);
-
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Tab' && focused) {
-            const controls = [...focusLayer.querySelectorAll('button, input, textarea, select, a[href], summary, [tabindex="0"]')]
-                .filter((el) => !el.disabled && !el.closest('[inert]') && el.getClientRects().length && getComputedStyle(el).visibility !== 'hidden');
-            if (!controls.length) { e.preventDefault(); return; }
-            const first = controls[0];
-            const last = controls[controls.length - 1];
-            if (e.shiftKey && (document.activeElement === first || !controls.includes(document.activeElement))) {
-                e.preventDefault(); last.focus();
-            } else if (!e.shiftKey && (document.activeElement === last || !controls.includes(document.activeElement))) {
-                e.preventDefault(); first.focus();
-            }
-            return;
-        }
-        if (e.key !== 'Escape' || !focused) return;
-        if (window.StudioOS && typeof window.StudioOS.handleEscape === 'function' && window.StudioOS.handleEscape()) {
-            return;
-        }
-        unfocusMonitor();
-    });
-
-    let resizeTimer = null;
-    window.addEventListener('resize', () => {
-        clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(() => {
-            if (focused) {
-                applyFocusTransform(false);
-            }
-            hideTip();
-        }, 80);
-    }, { passive: true });
-
-    /* -------------------------------------------------------------
-     * 入场 / 引导 / 全屏
-     * ----------------------------------------------------------- */
-    const hint = $('studio-hint');
-    let hintTimer = null;
-
-    function dismissHint() {
-        clearTimeout(hintTimer);
-        hint.classList.add('is-dismissed');
+    if (e.key === 'Escape') {
+        if (!$('lab-device-list').hidden) { closeDeviceList(); $('lab-devices').focus(); return; }
+        if (focused) { if (!window.StudioOS?.handleEscape()) unfocusMonitor(); }
+        else if (selected) closePanel();
     }
-
-    $('studio-enter').addEventListener('click', focusMonitor);
-    $('studio-daynight').addEventListener('click', toggleTheme);
-    $('studio-guides').addEventListener('click', (e) => {
-        const visible = root.classList.toggle('show-guides');
-        e.currentTarget.setAttribute('aria-pressed', String(visible));
-    });
-
-    const fullscreenButton = $('studio-fullscreen');
-    fullscreenButton.hidden = !document.fullscreenEnabled;
-    fullscreenButton.addEventListener('click', async () => {
-        try {
-            if (document.fullscreenElement) {
-                await document.exitFullscreen();
-            } else {
-                await document.documentElement.requestFullscreen();
+    if (focused || /INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName)) return;
+    const view = { '1': 'overview', '2': 'bench', '3': 'fabrication', '4': 'robotics' }[e.key];
+    if (view) setView(view);
+});
+if (matchMedia('(pointer: coarse)').matches) $('lab-gesture').innerHTML = '拖动环视 <span>·</span> 双指缩放 <span>·</span> 轻点设备';
+function showError(message) {
+    const loader = $('lab-loader'); loader.classList.remove('ready'); loader.classList.add('error');
+    $('loader-title').textContent = '工作室暂时未能启动'; $('loader-detail').textContent = message || '请检查网络与浏览器的图形支持。仍可从右上角进入电脑。'; $('loader-retry').hidden = false;
+    document.querySelectorAll('[data-needs-room]').forEach(el => { el.disabled = true; });
+    announce('3D 场景未能启动，仍可使用进入电脑按钮。');
+}
+const loadingMessage = setTimeout(() => { if (!booted) $('loader-detail').textContent = '首次加载需要连接场景资源，请稍候。也可以先从右上角进入电脑。'; }, 12000);
+try {
+    const { createStudioRoom } = await import('./studio-room.js');
+    for (const [id, device] of Object.entries(devices)) {
+        const button = document.createElement('button'); button.type = 'button'; button.className = 'lab-marker'; button.dataset.device = id;
+        button.setAttribute('aria-label', `查看${device.label}并控制设备`); button.setAttribute('aria-pressed', 'false');
+        button.innerHTML = `<span class="marker-dot" aria-hidden="true">·</span><span class="marker-label">${device.label}</span>`;
+        button.addEventListener('click', () => selectDevice(id)); $('lab-markers').append(button); markerEls.set(id, button);
+        button.addEventListener('pointerenter', () => room?.setHovered(id)); button.addEventListener('pointerleave', () => room?.setHovered(null));
+        const picker = document.createElement('button'); picker.type = 'button'; picker.dataset.pick = id;
+        picker.innerHTML = `<span>${device.n}</span>${device.label} ↗`; picker.addEventListener('click', () => selectDevice(id)); $('lab-device-list').append(picker);
+    }
+    room = createStudioRoom({ container: $('studio-stage'), state, reducedMotion, onSelect: selectDevice, onEvent: announce, onError: showError,
+        onFrame: ({ markers, rpm, armPhase: phase, update }) => {
+            currentRPM = rpm; armPhase = phase;
+            const compact = innerWidth <= 700;
+            const occupied = [];
+            const panelTop = compact && selected ? $('lab-inspector').offsetTop : Infinity;
+            const widths = new Map([...markerEls].map(([id, el]) => [id, el.offsetWidth]));
+            for (const marker of markers) {
+                const el = markerEls.get(marker.id);
+                let visible = marker.visible && !focused && (labelsVisible || marker.hovered || marker.id === selected);
+                if (selected) visible = visible && marker.id === selected;
+                if (!selected && compact && room?.getView() === 'overview' && ['solder', 'scope'].includes(marker.id)) visible = false;
+                // Prevent labels from covering the mobile header, intro or device controls.
+                if (compact && marker.y < (selected || room?.getView() !== 'overview' ? 75 : 212)) visible = false;
+                if (compact && selected && marker.y > panelTop - 26) visible = false;
+                el.classList.toggle('visible', visible); el.tabIndex = visible ? 0 : -1; el.setAttribute('aria-hidden', String(!visible));
+                if (!visible) continue;
+                const half = widths.get(marker.id) / 2;
+                let x = Math.max(half + 10, Math.min(innerWidth - half - 10, marker.x)), y = marker.y;
+                // Keep every visible control clickable when device labels approach each other.
+                for (const [dx, dy] of [[0, 0], [0, -35], [0, 35], [-48, 0], [48, 0], [-48, -35], [48, 35]]) {
+                    const cx = Math.max(half + 10, Math.min(innerWidth - half - 10, marker.x + dx)), cy = marker.y + dy;
+                    if (occupied.every(r => cx + half < r.left || cx - half > r.right || cy + 17 < r.top || cy - 17 > r.bottom)) { x = cx; y = cy; break; }
+                }
+                occupied.push({ left: x - half - 3, right: x + half + 3, top: y - 17, bottom: y + 17 });
+                el.style.left = `${x}px`; el.style.top = `${y}px`;
             }
-        } catch (error) {
-            hint.textContent = '浏览器暂时无法进入全屏，仍可在当前窗口探索。';
-            hint.classList.remove('is-dismissed');
-            hintTimer = setTimeout(dismissHint, 6000);
+            if (update) updatePanel();
         }
     });
-    document.addEventListener('fullscreenchange', () => {
-        const fullscreen = !!document.fullscreenElement;
-        fullscreenButton.setAttribute('aria-pressed', String(fullscreen));
-        fullscreenButton.setAttribute('aria-label', fullscreen ? '退出全屏' : '全屏查看工作室');
-        fullscreenButton.title = fullscreenButton.getAttribute('aria-label');
-        fullscreenButton.querySelector('i').className = fullscreen ? 'fas fa-compress' : 'fas fa-expand';
-    });
-
-    $('studio-toolbar').addEventListener('click', dismissHint);
-    stage.addEventListener('pointerdown', dismissHint, { passive: true });
-    stage.addEventListener('keydown', dismissHint);
-    scene.addEventListener('pointercancel', () => { clearTouched(); hideTip(); });
-
-    function init() {
-        hint.textContent = window.matchMedia('(pointer: coarse)').matches
-            ? '轻点查看，再点互动 · 点击显示器进入电脑'
-            : '点击物件探索 · 点击显示器进入电脑';
-        syncThemeControls();
-        renderPrinter();
-        requestAnimationFrame(() => {
-            root.classList.add('is-ready');
-        });
-        hintTimer = setTimeout(dismissHint, 6000);
-    }
-
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-    } else {
-        init();
-    }
-
-    window.Studio = {
-        focusMonitor,
-        unfocusMonitor,
-        toggleTheme,
-        isFocused: () => focused,
-        state
-    };
-})();
+    room.setNight(night); if (focused) { room.focusMonitor(); room.setPaused(root.classList.contains('is-focused-ready')); }
+    booted = true; clearTimeout(loadingMessage);
+    document.querySelectorAll('[data-needs-room]').forEach(el => { el.disabled = false; });
+    requestAnimationFrame(() => $('lab-loader').classList.add('ready'));
+} catch (error) {
+    clearTimeout(loadingMessage); console.error('Studio scene failed to start:', error);
+    room?.dispose(); room = null; showError('场景资源未能加载，或浏览器未开启 WebGL。请重试，也可直接进入电脑。');
+}
