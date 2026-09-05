@@ -1,92 +1,12 @@
-/* huanfly-os: HTML applications over the 3D monitor. */
-.mf-dim {
-    position: fixed;
-    inset: 0;
-    z-index: 65;
-    background: radial-gradient(ellipse at center, rgba(10, 16, 14, 0.25) 30%, rgba(10, 16, 14, 0.72) 100%);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.9s ease;
-}
-
-.studio.is-focused .mf-dim {
-    opacity: 1;
-    pointer-events: auto;
-}
-
-.monitor-focus {
-    position: fixed;
-    inset: 0;
-    z-index: 70;
-    display: grid;
-    place-items: center;
-    pointer-events: none;
-}
-
-.mf-screen {
-    position: relative;
-    width: min(1180px, 92vw, calc((100dvh - 120px) * 16 / 10));
-    aspect-ratio: 16 / 10;
-    background: var(--st-screen, #0f1a17);
-    color: #e6f0e8;
-    border-radius: 18px;
-    overflow: hidden;
-    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.55), 0 30px 80px rgba(0, 0, 0, 0.45), 0 0 90px rgba(111, 216, 226, 0.14);
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.35s ease;
-    font-family: var(--font-hand);
-    -webkit-font-smoothing: antialiased;
-}
-
-.studio.is-focused-ready .mf-screen {
-    opacity: 1;
-    visibility: visible;
-    pointer-events: auto;
-}
-
-.mf-exit {
-    position: fixed;
-    top: 18px;
-    right: 22px;
-    z-index: 75;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 18px;
-    font-family: inherit;
-    font-size: 0.92rem;
-    font-weight: 700;
-    color: #fffdf5;
-    background: rgba(20, 28, 22, 0.72);
-    border: 1px solid rgba(255, 253, 245, 0.25);
-    border-radius: 12px;
-    cursor: pointer;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    opacity: 0;
-    transform: translateY(-10px);
-    pointer-events: none;
-    transition: opacity 0.4s ease, transform 0.4s ease, background 0.3s ease;
-}
-
-.studio.is-focused-ready .mf-exit {
-    opacity: 1;
-    transform: none;
-    pointer-events: auto;
-}
-
-.mf-exit:hover {
-    background: rgba(93, 168, 68, 0.85);
-}
-
-.mf-exit kbd {
-    font-family: inherit;
-    font-size: 0.75rem;
-    padding: 0 6px;
-    border: 1px solid rgba(255, 253, 245, 0.5);
-    border-radius: 6px;
-}
+/* huanfly-os is always mounted on the physical monitor, with a WebGL-free fallback. */
+.monitor-focus { position: fixed; inset: 0; display: none; pointer-events: none; }
+.monitor-focus.is-spatial { position: absolute; inset: auto; display: block; backface-visibility: hidden; }
+.mf-screen { position: absolute; inset: 0; width: 100%; height: 100%; overflow: hidden; background: #14241d; color: #e6f0e8; font-family: var(--font-ui); -webkit-font-smoothing: antialiased; touch-action: auto; }
+.mf-exit { position: fixed; z-index: 7; right: 30px; top: 20px; display: flex; align-items: center; gap: 8px; min-height: 37px; padding: 0 14px; background: var(--lab-paper); color: var(--lab-ink); border: 1px solid var(--lab-line); border-radius: 15px; font-size: 12px !important; }
+.mf-exit kbd { font: 10px var(--font-ui); opacity: .6; }
+.studio.is-at-monitor .lab-header-tools { margin-right: 130px; }
+.studio.is-computer-fallback .monitor-focus { display: block; z-index: 6; inset: 80px max(20px, calc((100vw - 1180px) / 2)) 95px; pointer-events: auto; }
+.studio.is-computer-fallback .lab-loader { display: none; }
 
 /* ---------- OS 骨架 ---------- */
 .os {
@@ -955,7 +875,6 @@
 .robot-suggestions button { height: auto; min-height: 38px; padding: 8px 12px; font-weight: 400; }
 
 @media (max-width: 600px) {
-    .mf-screen { width: calc(100vw - 20px); height: calc(100dvh - 82px - env(safe-area-inset-bottom)); aspect-ratio: auto; margin-top: 48px; }
     .mf-exit { top: max(12px, env(safe-area-inset-top)); right: 12px; padding: 8px 12px; font-size: 12px; }
     .mf-exit kbd { display: none; }
     .os-topbar { height: 46px; padding: 0 12px; gap: 8px; font-size: 12px; }
@@ -985,7 +904,6 @@
 }
 
 @media (max-height: 600px) and (min-width: 601px) {
-    .mf-screen { width: min(1000px, calc(100vw - 130px)); height: calc(100dvh - 24px); aspect-ratio: auto; }
     .mf-exit { right: 8px; top: 8px; font-size: 0; padding: 12px; }
     .mf-exit i { font-size: 14px; }
     .mf-exit kbd { display: none; }
@@ -1000,4 +918,44 @@
 
 @media (prefers-reduced-motion: reduce) {
     .studio *, .studio *::before, .studio *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+
+/* Layout is sized to the monitor, independent of its projected size on the page. */
+.is-spatial .os-topbar { height: 38px; font-size: 12px; }
+.is-spatial .os-desktop { gap: 24px; padding: 20px; }
+.is-spatial .os-clock .time { font-size: 78px; }
+.is-spatial .os-clock .date { font-size: 14px; margin-top: 10px; }
+.is-spatial .os-clock .greet { font-size: 15px; margin-top: 14px; }
+.is-spatial .os-dock { padding: 12px 20px; gap: 22px; }
+.is-spatial .os-dock-item { width: 110px; font-size: 14px !important; }
+.is-spatial .os-dock-item .icon { width: 56px; height: 56px; font-size: 25px; }
+.is-spatial .app-body { min-height: 0; overflow: auto; overscroll-behavior: contain; }
+.is-spatial .os-app.active, .is-spatial .robot-settings.open { animation: none; }
+.is-spatial .robot-settings { background: #13231d; }
+.is-spatial .robot-settings-card { background: #172b22; }
+.is-spatial .term-lock { padding: 14px; align-items: safe center; }
+.is-spatial .term-lock-card { padding: 18px 22px; }
+.is-spatial .term-lock-card .lock-icon { font-size: 28px; margin-bottom: 10px; }
+.is-spatial .term-lock-card h3 { margin-bottom: 12px; }
+.is-spatial .robot-welcome { padding: 12px; }
+.is-spatial .robot-welcome .welcome-avatar { width: 48px; height: 48px; font-size: 24px; margin-bottom: 12px; }
+@media (max-width: 700px) {
+    .studio.is-at-monitor .lab-header-tools { margin-right: 100px; }
+    .studio.is-at-monitor .lab-breeze, .studio.is-at-monitor #lab-theme { display: none; }
+    .mf-exit { right: 16px; top: 17px; min-height: 32px; }
+    .mf-exit kbd { display: none; }
+    .is-spatial .os-topbar { height: 32px; }
+    .is-spatial .os-desktop { padding: 12px; gap: 12px; flex-direction: row; }
+    .is-spatial .os-desktop-label, .is-spatial .os-clock .greet, .is-spatial .os-session, .is-spatial .os-dock-item small { display: none; }
+    .is-spatial .os-clock { flex: 0 0 120px; }
+    .is-spatial .os-clock .time { font-size: 42px; }
+    .is-spatial .os-clock .date { margin-top: 8px; font-size: 12px; line-height: 1.5; }
+    .is-spatial .os-dock { padding: 10px; gap: 10px; }
+    .is-spatial .os-dock-item { width: 62px; }
+    .is-spatial .os-dock-item .icon { width: 48px; height: 48px; font-size: 23px; }
+    .is-spatial .app-head { padding: 4px 10px; min-height: 36px; }
+    .is-spatial .term-lock-card { padding: 10px 16px; }
+    .is-spatial .term-lock-card .lock-icon, .is-spatial .term-lock-card h3 { display: none; }
+    .is-spatial .robot-composer { padding: 6px; }
+    .is-spatial .robot-messages { padding: 8px 12px; }
 }

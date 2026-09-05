@@ -4,14 +4,17 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { createStudioArt } from './studio-art.js';
+import { createStudioMonitor } from './studio-monitor.js';
+import { createStudioFigures } from './studio-figures.js';
+import { createStudioWindow } from './studio-window.js';
 
-export function createStudioRoom({ container, state, reducedMotion, onSelect, onFrame, onEvent, onError }) {
+export function createStudioRoom({ container, state, reducedMotion, onSelect, onFrame, onEvent, onError, onWindowToggle }) {
     const mobile = () => window.innerWidth <= 700;
     const scene = new THREE.Scene();
     scene.background = new THREE.Color('#eee5d2');
     scene.fog = new THREE.Fog('#eee5d2', 30, 65);
     const camera = new THREE.PerspectiveCamera(36, 1, .1, 100);
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, mobile() ? 1.35 : 1.5));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -21,7 +24,9 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     renderer.toneMappingExposure = 1.05;
     renderer.domElement.setAttribute('aria-label', '可交互的 3D 嵌入式工作室');
     container.appendChild(renderer.domElement);
-    const controls = new OrbitControls(camera, renderer.domElement);
+    // Keep touch gestures on a sibling of the HTML screen so native app scrolling works.
+    const orbitSurface=document.createElement('div');orbitSurface.className='lab-orbit-surface';container.prepend(orbitSurface);
+    const controls = new OrbitControls(camera, orbitSurface);
     controls.enableDamping = true;
     controls.dampingFactor = .065;
     controls.enablePan = false;
@@ -174,8 +179,9 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     m.floor.map=art.floor.texture;m.floor.color.set('#ffffff');
     art.floor.texture.wrapS=art.floor.texture.wrapT=THREE.RepeatWrapping;art.floor.texture.repeat.set(2,1.5);
     const fabric=material('fabric',{color:'#ffffff',map:art.cloth.texture,side:THREE.DoubleSide});
-    // The main camera sits inside the room. The complete room is still available as a separate view.
-    const ground=box(architecture,200,.1,200,0,-.24,0,material('ground',{color:'#eee5d2',roughness:1}),0); ground.castShadow=false;
+    // A bounded floor and open front keep the complete workspace visible.
+    // Catch the diorama's shadow without a lit backdrop edge or a floor behind the window.
+    const ground=box(architecture,105,.1,200,47.2,-.24,0,new THREE.ShadowMaterial({color:'#7b7357',opacity:.18,depthWrite:false}),0);ground.castShadow=false;
     box(architecture,10.7,.13,7.7,0,-.11,0,m.oak,.035);
     box(architecture,10.6,.09,7.6,0,-.025,0,m.floor,.025);
     box(architecture,10.65,5.9,.16,0,2.91,-3.82,m.wall,.025);
@@ -185,12 +191,9 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     box(architecture,.16,2.95,1.1,-5.25,2.95,3.25,m.wallSide,.02);
     box(architecture,10.6,.18,.09,0,.1,-3.65,m.oak);
     box(architecture,.09,.18,7.6,-5.1,.1,0,m.oak);
-    const floorExtension=box(scene,10.6,.09,12,0,-.025,9.8,m.floor,0);
-    const rightWall=new THREE.Mesh(new THREE.PlaneGeometry(13.5,5.9),m.wall);rightWall.position.set(5.33,2.91,2.85);rightWall.rotation.y=-Math.PI/2;rightWall.receiveShadow=true;scene.add(rightWall);
     box(architecture,.40,.11,5.45,-5.02,1.58,-.05,m.oak);
-    const windowPane=surface(architecture,5.15,2.72,-5.15,2.99,-.08,art.landscape.texture);windowPane.rotation.y=Math.PI/2;
-    for(const z of [-2.72,-.07,2.58])box(architecture,.16,2.89,.085,-5.06,2.99,z,m.cream,.014);
-    for(const y of [1.61,3.02,4.37])box(architecture,.17,.08,5.42,-5.045,y,-.07,m.cream,.012);
+    const studioWindow=createStudioWindow({scene,box,bar,sphere,group,material,resources,reducedMotion});
+    for(const leaf of studioWindow.root.children)if(leaf.name.endsWith('-casement'))batch(leaf);
     bar(architecture,[-4.91,4.50,-2.97],[-4.91,4.50,2.87],.026,m.oak);
     sphere(architecture,.07,-4.91,4.50,-2.98,m.oak);sphere(architecture,.07,-4.91,4.50,2.88,m.oak);
     const curtains=[];
@@ -209,52 +212,91 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     const sunPatch=surface(scene,5.7,4.4,-.85,.042,.7,art.sunlight.texture,-Math.PI/2);sunPatch.rotation.z=-.42;sunPatch.material.depthWrite=false;
     const carpet=surface(architecture,4.8,3.1,.25,.038,1.15,art.rug.texture,-Math.PI/2);
     carpet.material=new THREE.MeshStandardMaterial({map:art.rug.texture,transparent:true,roughness:1,depthWrite:false});carpet.receiveShadow=true;
-    function drawWallClock(ctx,w,h){
-        ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,w,h);
-        ctx.translate(w/2,h/2);ctx.fillStyle='#f6efd7';ctx.beginPath();ctx.arc(0,0,119,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#8c8766';ctx.lineWidth=4;ctx.stroke();
-        for(let i=0;i<12;i++){const a=i*Math.PI/6;ctx.lineWidth=i%3?2:4;ctx.beginPath();ctx.moveTo(Math.sin(a)*102,-Math.cos(a)*102);ctx.lineTo(Math.sin(a)*110,-Math.cos(a)*110);ctx.stroke();}
-        const now=new Date(),minute=now.getMinutes()*Math.PI/30,hour=(now.getHours()%12+now.getMinutes()/60)*Math.PI/6;
-        ctx.lineCap='round';for(const [a,l,width] of [[hour,58,6],[minute,86,4]]){ctx.lineWidth=width;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(Math.sin(a)*l,-Math.cos(a)*l);ctx.stroke();}
-        ctx.fillStyle='#a8835d';ctx.beginPath();ctx.arc(0,0,7,0,Math.PI*2);ctx.fill();
-    }
-    const clockFace=canvasTexture(256,256,drawWallClock);let clockMinute=new Date().getMinutes();
-    surface(architecture,.62,.62,.10,4.48,-3.716,clockFace.texture);
     // Pegboard and component shelving.
     box(architecture,2.45,1.25,.09,-3.52,3.31,-3.67,m.rim);
     for(let x=-4.65;x<-2.35;x+=.18)for(let y=2.78;y<3.85;y+=.17){const hole=cylinder(architecture,.016,.016,.007,x,y,-3.61,m.silver,6);hole.rotation.x=Math.PI/2;}
-    for(let i=0;i<5;i++){
-        const tool=group(architecture,-4.32+i*.37,3.2,-3.52);bar(tool,[0,-.2,0],[0,.24,0],.025,m.silver);box(tool,.095,.22,.10,0,-.24,0,i%2?m.orange:m.teal);
+    // Pegboard: five familiar hand tools have distinct silhouettes and hanging details.
+    const toolSteel=material('toolSteel',{color:'#aeb7a5',metalness:.48,roughness:.38});
+    const toolDark=material('toolDark',{color:'#293934',roughness:.64});
+    const toolRed=material('toolRed',{color:'#cf735d',roughness:.78});
+    const toolYellow=material('toolYellow',{color:'#e1b55e',roughness:.76});
+    const peg=(x,y)=>{cylinder(architecture,.024,.024,.055,x,y,-3.56,toolSteel,10).rotation.x=Math.PI/2;};
+    // Scissors, with two torus finger loops and crossed blades.
+    const scissors=group(architecture,-4.42,3.28,-3.52);peg(-4.42,3.62);
+    for(const side of [-1,1]){
+        const loop=new THREE.Mesh(new THREE.TorusGeometry(.105,.023,8,18),toolRed);loop.position.set(side*.09,-.12,0);scissors.add(loop);
+        bar(scissors,[side*.055,-.03,.02],[side*.30,.30,.02],.018,toolSteel);
+        const pivot=sphere(scissors,.027,0,.02,.035,toolDark);pivot.castShadow=true;
     }
+    // Phillips screwdriver: knurled handle, shaft, and a cross tip.
+    const driver=group(architecture,-3.91,3.31,-3.53);peg(-3.91,3.70);
+    cylinder(driver,.105,.12,.27,0,-.05,0,toolRed,16);cylinder(driver,.055,.055,.35,0,.24,0,toolSteel,10);
+    bar(driver,[-.025,.42,.01],[.025,.49,.01],.012,toolDark);bar(driver,[0,.45,-.035],[0,.45,.035],.012,toolDark);
+    // Diagonal cutters: two rubber handles, pivot, and short jaws.
+    const cutters=group(architecture,-3.39,3.30,-3.52);peg(-3.39,3.67);
+    for(const side of [-1,1]){
+        bar(cutters,[0,-.02,0],[side*.12,-.32,.01],.036,toolRed);
+        bar(cutters,[0,.03,.01],[side*.16,.30,.01],.021,toolSteel);
+    }
+    sphere(cutters,.042,0,.02,.04,toolDark);
+    // Utility knife: molded body, thumb slider, and exposed blade.
+    const knife=group(architecture,-2.89,3.30,-3.53);peg(-2.89,3.66);
+    box(knife,.22,.40,.11,0,-.02,0,toolYellow,.035);box(knife,.07,.11,.125,0,.08,.02,toolDark,.012);
+    box(knife,.055,.22,.035,0,.29,0,toolSteel,.006);box(knife,.03,.075,.05,0,.43,0,toolSteel,.004);
+    // Multimeter: casing, screen, dial, test sockets and two hanging probes.
+    const meter=group(architecture,-2.49,3.29,-3.52);peg(-2.49,3.74);
+    box(meter,.38,.57,.13,0,0,0,m.orange,.035);box(meter,.26,.15,.012,0,.13,.072,m.black,.008);
+    textLabel(meter,['VΩmA','DMM'],.22,.10,0,.145,.082,{size:29,color:'#9fdec0',align:'center',font:'monospace'});
+    cylinder(meter,.065,.065,.018,0,-.07,.078,toolDark,16).rotation.x=Math.PI/2;
+    for(const x of [-.10,.10]){cylinder(meter,.025,.025,.02,x,-.20,.08,toolRed,12).rotation.x=Math.PI/2;bar(meter,[x,-.22,.07],[x*1.6,-.49,.06],.009,x<0?toolRed:toolSteel);}
     for (const [cx,width] of [[-3.47,2.55],[3.36,3.0]]) {
-        box(architecture,width,.10,.57,cx,4.21,-3.46,m.oak);
+        box(architecture,width,.10,cx>0?.78:.57,cx,4.21,cx>0?-3.42:-3.46,m.oak);
         emissiveStrip(architecture,width-.16,cx,4.145,-3.22,m.amberGlow);
         for(const offset of [-width*.36,width*.36])bar(architecture,[cx+offset,3.96,-3.68],[cx+offset,4.16,-3.25],.025,m.black);
     }
-    for(let i=0;i<6;i++){
-        box(architecture,.23,.55+(i%3)*.07,.38,-4.35+i*.26,4.53,-3.42,[m.cream,m.orange,m.teal,m.blue][i%4],.015);
-        textLabel(architecture,['PCB','0'+(i+1)],.14,.19,-4.35+i*.26,4.57,-3.218,{size:43,color:'#142e32',align:'center'});
-    }
-    for(let i=0;i<3;i++){
-        box(architecture,.69,.41,.47,2.35+i*.83,4.47,-3.45,[m.cream,m.teal,m.orange][i]);
-        box(architecture,.38,.12,.012,2.35+i*.83,4.48,-3.202,m.white,.009);
-        textLabel(architecture,['SMD','0'+(i+1)],.31,.095,2.35+i*.83,4.48,-3.193,{size:33,color:'#28413c',align:'center'});
-        box(architecture,.23,.035,.14,2.35+i*.83,4.695,-3.45,m.black);
-    }
-    // Warm timber and painted drawers, with a soft green ESD mat.
+    // Left shelf: individually modeled books with raised spines, page blocks, bands and titles.
+    const bookSpines=['刻意练习','我们为什么要睡觉','foc 原理','嵌入式设计','信号与系统'];
+    const bookColors=[m.teal,m.orange,m.blue,m.cream,m.mint];
+    const bookInk=['#f7efd9','#fff2d8','#eef1df','#31453a','#31453a'];
+    const bookXs=[-4.40,-4.02,-3.64,-3.25,-2.84];
+    const bookHeights=[.63,.70,.56,.66,.58];
+    bookSpines.forEach((title,i)=>{
+        const book=group(architecture,bookXs[i],4.53,-3.42);book.rotation.z=(i===1?.055:i===3?-.035:0);
+        const h=bookHeights[i],w=i===1?.28:i===2?.23:.25;
+        box(book,w,h,.39,0,0,0,bookColors[i],.012);
+        // Recessed page block, raised spine ridge and cover bands keep each book
+        // readable as a bound volume instead of a row of coloured boxes.
+        box(book,w-.045,.025,.34,0,h/2-.028,.015,m.cream,.004);
+        box(book,.022,h-.065,.34,w/2-.025,-.006,.015,m.cream,.003);
+        box(book,.026,h-.08,.025,-w/2+.026,0,.217,bookColors[(i+2)%bookColors.length],.003);
+        const titlePlane=textLabel(book,title,h-.12,w-.075,0,0,.222,{size:145,color:bookInk[i],align:'center',bold:true,font:'Microsoft YaHei, sans-serif'});
+        titlePlane.rotation.z=-Math.PI/2;
+        for(const y of [-h*.39,h*.39])bar(book,[-w/2+.032,y,.222],[w/2-.032,y,.222],.005,bookInk[i]);
+    });
+    const shelfFigures=createStudioFigures({parent:architecture,box,cylinder,sphere,bar,group,material});
+    shelfFigures.position.set(3.36,4.26,-3.43);
+    // An L-shaped walnut workbench on rear cantilever frames, with a clear knee space.
     const wood=art.wood.texture;
     wood.wrapS=wood.wrapT=THREE.RepeatWrapping;wood.repeat.set(3,1);
-    const deskMat=material('wood',{color:'#ffffff',map:wood,roughness:1});
-    box(architecture,9.4,.18,1.88,-.25,1.68,-2.65,deskMat,.055);
-    box(architecture,9.28,.07,1.72,-.25,1.56,-2.65,m.oak);
-    for(const x of [-4.70,-1.9,2.25,4.19])for(const z of [-3.38,-1.94])box(architecture,.12,1.55,.12,x,.77,z,m.oak);
-    bar(architecture,[-4.7,.33,-3.37],[4.18,.33,-3.37],.04,m.silver);
-    for(const x of [-4.15,3.62]){
-        box(architecture,1.02,1.4,1.4,x,.77,-2.60,m.oak,.06);
-        for(let i=0;i<3;i++){
-            box(architecture,.93,.36,.05,x,.30+i*.43,-1.874,i===2?m.mint:m.cream);
-            box(architecture,.30,.045,.04,x,.35+i*.43,-1.83,m.oak);
-            textLabel(architecture,['parts','0'+(i+1)],.29,.10,x-.27,.30+i*.43,-1.835,{size:28,color:'#78826b'});
-        }
+    const deskMat=material('desktop',{color:'#94765b',map:wood,roughness:.85});
+    const deskSteel=material('deskSteel',{color:'#35413d',roughness:.72,metalness:.22});
+    function strut(parent,start,end,w=.10,d=.10){
+        const a=new THREE.Vector3(...start),b=new THREE.Vector3(...end),delta=b.clone().sub(a);
+        const beam=box(parent,w,delta.length(),d,0,0,0,deskSteel,.012);
+        beam.position.copy(a.add(b).multiplyScalar(.5));
+        beam.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),delta.normalize());
+        return beam;
+    }
+    box(architecture,9.4,.18,1.88,-.25,1.68,-2.65,deskMat,.045);
+    box(architecture,9.25,.12,.10,-.25,1.51,-1.86,deskSteel);
+    box(architecture,9.25,.12,.10,-.25,1.51,-3.44,deskSteel);
+    box(architecture,9.20,.09,.09,-.25,.52,-3.43,deskSteel);
+    for(const x of [-4.70,-.65,4.18]){
+        box(architecture,.13,1.49,.13,x,.79,-3.43,deskSteel);
+        box(architecture,.28,.07,.38,x,.055,-3.40,deskSteel);
+        box(architecture,.11,.12,1.62,x,1.51,-2.65,deskSteel);
+        strut(architecture,[x,.91,-3.43],[x,1.51,-2.08]);
+        for(const y of [.65,1.40])cylinder(architecture,.03,.03,.015,x,y,-3.351,m.silver,8).rotation.x=Math.PI/2;
     }
     contact(architecture,9.8,2.7,-.25,.036,-2.47);
     // ESD desk mat and signal-routing cable.
@@ -262,14 +304,12 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     textLabel(architecture,'a work in progress',1.05,.08,-1.15,1.795,-1.89,{rotation:-Math.PI/2,color:'#dce0be',font:'Georgia, serif'});
     cable(architecture,[[-2.4,1.80,-2.2],[-2.2,1.82,-1.84],[-1.4,1.84,-1.85],[-1.27,1.85,-2.2]],m.orange,.014);
 
-    // Workstation: screen, articulated support, individual keycaps, trackpad and a small status display.
-    const monitor=device('monitor',.30,1.79,-2.86,[.30,3.45,-2.8]);
-    box(monitor.fixed,.75,.045,.48,0,.025,0,m.black);
-    box(monitor.fixed,.13,.62,.10,0,.35,-.12,m.silver);
-    box(monitor.fixed,2.68,1.49,.10,0,1.19,0,m.black,.045);
-    const monitorTex=canvasTexture(1024,576,()=>{});
-    surface(monitor.root,2.55,1.36,0,1.21,.056,monitorTex.texture);
-    textLabel(monitor.fixed,'HUANFLY',.22,.035,0,.473,.058,{size:60,align:'center',color:'#7ca599'});
+    // Edge-to-edge live screen; the OS is rendered in this physical plane at every distance.
+    const monitor=device('monitor',.30,1.79,-2.86,[.30,4.02,-2.80]);
+    box(monitor.fixed,.70,.035,.45,0,.025,0,deskSteel);
+    box(monitor.fixed,.095,.66,.08,0,.35,-.12,deskSteel);
+    box(monitor.fixed,3.62,2.06,.065,0,1.22,0,m.black,.018);
+    const liveMonitor=createStudioMonitor({container,camera,monitor:monitor.root,width:3.60,height:2.025,y:1.22,z:.035});
     const keyboard=group(architecture,.28,1.84,-1.99);
     box(keyboard,1.69,.08,.52,0,0,0,m.black,.04);
     box(keyboard,1.61,.01,.44,0,.05,0,m.silver,.025);
@@ -278,10 +318,6 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
         const key=box(keyboard,row===4&&col===3?.70:.085,.035,.063,-.73+col*.104,.072,-.185+row*.084,(col===0||col===14)?m.orange:(row===0?m.teal:m.cream),.01);
         if(row===4&&col===3)key.position.x=-.09;
     }
-    box(architecture,.34,.045,.47,1.44,1.82,-2.05,m.black,.085);
-    box(architecture,.31,.035,.43,1.44,1.85,-2.05,m.cream,.08);
-    box(architecture,.022,.014,.065,1.44,1.876,-2.15,m.teal);
-    cable(architecture,[[.28,1.86,-2.26],[.12,1.81,-2.45],[.6,1.80,-2.53],[.75,1.80,-2.85]],m.black,.014);
     // A ceramic mug with a real handle and visible coffee.
     cylinder(architecture,.14,.12,.27,1.94,1.93,-2.55,m.cream);
     cylinder(architecture,.117,.117,.007,1.94,2.07,-2.55,m.darkOrange);
@@ -365,14 +401,9 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     const smokeGeo=new THREE.BufferGeometry(),smokeArray=new Float32Array(18*3);smokeGeo.setAttribute('position',new THREE.BufferAttribute(smokeArray,3));
     const smoke=new THREE.Points(smokeGeo,new THREE.PointsMaterial({color:'#b7cfc3',size:.085,map:glowTexture,transparent:true,opacity:.24,depthWrite:false}));solder.root.add(smoke);
 
-    // FDM printer on an independent rolling stand, with rails, lead screws, nozzle and a growing part.
-    const printer=device('printer',3.57,0,-.30,[3.57,3.26,-.30]);
-    box(printer.fixed,2.13,.11,1.97,0,.84,0,deskMat,.045);
-    for(const x of [-.86,.86])for(const z of [-.77,.77]){
-        box(printer.fixed,.075,.72,.075,x,.44,z,m.metal);
-        const wheel=cylinder(printer.fixed,.07,.07,.055,x,.074,z,m.black,16);wheel.rotation.z=Math.PI/2;
-    }
-    box(printer.fixed,1.84,.055,1.63,0,.29,0,m.rim);
+    // FDM printer stands on its own rubber feet at the front of the window wall.
+    const printer=device('printer',-4.15,-.78,3.0,[-4.15,2.8,3.0]);
+    for(const x of [-.56,.56])for(const z of [-.50,.50])cylinder(printer.fixed,.075,.075,.10,x,.86,z,m.black,12);
     box(printer.fixed,1.45,.28,1.35,0,1.03,0,m.black,.065);
     box(printer.fixed,1.43,.24,.10,0,1.07,.69,m.orange,.035);
     for(const x of [-.68,.68])for(const z of [-.59,.59]){
@@ -413,17 +444,20 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
         const band=new THREE.Mesh(new THREE.ExtrudeGeometry(shape,{depth:.019,bevelEnabled:false,steps:1}),partMat);band.rotation.x=-Math.PI/2;band.position.y=i*.02;band.castShadow=true;band.receiveShadow=true;printPart.add(band);
     }
     const printerTex=canvasTexture(256,112,()=>{});surface(printer.root,.38,.16,.44,1.069,.751,printerTex.texture);
-    contact(printer.fixed,2.7,2.5,0,.035,0);
+    contact(printer.fixed,1.9,1.8,0,.815,0);
 
     // Robotics island with a brushless-motor dynamometer and articulated pick-and-place arm.
     const island=group(architecture,-.55,0,1.49);
-    box(island,4.45,.15,1.82,0,1.20,0,deskMat,.05);
-    box(island,4.3,.095,1.69,0,1.085,0,m.metal,.025);
-    for(const x of [-1.98,1.98])for(const z of [-.72,.72])box(island,.09,1.05,.09,x,.55,z,m.metal);
-    bar(island,[-1.98,.28,.72],[1.98,.28,.72],.035,m.silver);
-    box(island,3.1,.04,1.36,0,.35,0,m.metal);
-    for(let i=0;i<3;i++){box(island,.67,.23,.66,-.86+i*.83,.49,0,[m.teal,m.cream,m.orange][i]);box(island,.19,.075,.016,-.86+i*.83,.51,.34,m.rim);}
-    textLabel(island,'small experiments',1.8,.10,0,1.183,.922,{size:57,color:'#72634b',font:'Georgia, serif'});
+    box(island,3.72,.18,1.82,.05,1.20,0,deskMat,.045);
+    // The open edge carries a shallow rail; all legs and low stretchers stay against the wall.
+    for(const z of [-.77,.77])box(island,3.72,.12,.10,0,1.03,z,deskSteel);
+    box(island,3.72,.09,.09,0,.04,.77,deskSteel);
+    for(const x of [-1.63,1.64]){
+        box(island,.13,1.45,.13,x,.30,.77,deskSteel);
+        box(island,.30,.07,.31,x,-.425,.77,deskSteel);
+        box(island,.11,.12,1.56,x,1.03,0,deskSteel);
+        strut(island,[x,.42,.77],[x,1.03,-.60]);
+    }
     const motor=device('motor',.65,1.30,1.64,[.80,2.29,1.95]);
     box(motor.fixed,1.35,.06,1.17,0,0,0,m.black,.045);
     for(const x of [-.50,.50])for(const z of [-.41,.41])cylinder(motor.fixed,.037,.037,.03,x,.04,z,m.silver,12);
@@ -472,38 +506,17 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     for(const item of [motor,arm])item.anchor.applyMatrix4(wingTransform);
     contact(architecture,2.4,4.8,-4.05,.035,.1);
 
-    // Network rack, task lamp, chair, books and a plant keep the room lived-in.
-    const rack=group(architecture,4.38,0,-2.62);
-    box(rack,.77,1.25,1.0,0,.67,0,m.black,.06);
+    // Compact network rack below the far end of the workbench.
+    // The tower sits beside the desktop's outer end, leaving every rear leg visible.
+    const rack=group(architecture,4.72,0,-2.42);
+    box(rack,.62,1.25,.86,0,.67,0,m.black,.06);
     for(let i=0;i<4;i++){
-        box(rack,.66,.20,.025,0,.27+i*.265,.516,m.metal,.018);
-        for(let j=0;j<7;j++)box(rack,.018,.095,.016,-.23+j*.057,.28+i*.265,.534,m.black,.003);
-        sphere(rack,.018,.26,.29+i*.265,.542,i%2?m.mintGlow:m.amberGlow);
+        box(rack,.53,.20,.025,0,.27+i*.265,.444,m.metal,.018);
+        for(let j=0;j<6;j++)box(rack,.018,.095,.016,-.19+j*.057,.28+i*.265,.462,m.black,.003);
+        sphere(rack,.018,.22,.29+i*.265,.47,i%2?m.mintGlow:m.amberGlow);
     }
-    box(rack,.57,.06,.38,0,1.34,0,m.silver);
-    for(const x of [-.23,.23])bar(rack,[x,1.35,-.12],[x,1.73,-.16],.018,m.black);
-    // A familiar reading lamp above the workstation.
-    cylinder(architecture,.16,.19,.05,1.86,1.83,-3.26,m.black);
-    bar(architecture,[1.86,1.86,-3.26],[1.86,2.70,-3.26],.027,m.silver);
-    bar(architecture,[1.86,2.70,-3.26],[1.2,3.65,-2.77],.03,m.metal);
-    cylinder(architecture,.12,.33,.25,1.2,3.59,-2.77,m.mint,28);
-    cylinder(architecture,.29,.29,.014,1.2,3.46,-2.77,m.amberGlow,28);
-    // A cushioned wooden chair and a casually folded throw.
-    const chair=group(architecture,.12,0,-.32);chair.rotation.y=-.18;
-    box(chair,.96,.12,.83,0,.98,0,m.oak,.12);
-    box(chair,.91,.11,.80,0,1.075,0,fabric,.12);
-    for(const x of [-.40,.40])bar(chair,[x,.9,.32],[x,1.91,.39],.035,m.oak);
-    box(chair,.95,.57,.12,0,1.67,.39,m.oak,.13);
-    box(chair,.81,.42,.10,0,1.68,.30,fabric,.09);
-    box(chair,.30,.035,.56,-.20,1.16,.08,m.cream,.05).rotation.z=-.06;
-    cylinder(chair,.055,.055,.83,0,.48,0,m.silver);
-    for(let i=0;i<5;i++){const a=i*Math.PI*2/5;bar(chair,[0,.17,0],[Math.cos(a)*.48,.08,Math.sin(a)*.48],.035,m.black);sphere(chair,.055,Math.cos(a)*.48,.07,Math.sin(a)*.48,m.black);}
-    const plant=group(architecture,-4.67,0,2.98);
-    cylinder(plant,.34,.25,.59,0,.31,0,m.cream,24);cylinder(plant,.30,.30,.01,0,.61,0,m.darkOrange);
-    for(let i=0;i<9;i++){
-        const a=i*2.4,h=.67+(i%3)*.25;bar(plant,[0,.60,0],[Math.cos(a)*.26,h+.40,Math.sin(a)*.26],.012,m.pcb);
-        const leaf=paintedLeaf(plant,.32,.81,Math.cos(a)*.29,h+.40,Math.sin(a)*.29,i%2?leafDark:leafLight);leaf.rotation.set(Math.sin(a)*.35,a,Math.cos(a)*.45);
-    }
+    box(rack,.46,.06,.32,0,1.34,0,m.silver);
+    for(const x of [-.19,.19])bar(rack,[x,1.35,-.10],[x,1.73,-.13],.018,m.black);
     const poster=group(architecture,3.53,3.19,-3.70);poster.rotation.z=.018;
     box(poster,1.78,1.18,.055,0,0,0,m.oak,.035);
     const memoArt=canvasTexture(768,512,(ctx,w,h)=>{
@@ -586,7 +599,7 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     Object.assign(key.shadow.camera,{left:-8,right:8,top:8,bottom:-8,near:.5,far:30});key.shadow.bias=-.0003;key.shadow.normalBias=.035;key.shadow.radius=4;scene.add(key);
     const rimLight=new THREE.DirectionalLight('#cfdebd',.4);rimLight.position.set(-6,4,-1);scene.add(rimLight);
     const deskLight=new THREE.PointLight('#b1cfaf',.3,5,2);deskLight.position.set(-.3,2.7,-2.2);scene.add(deskLight);
-    const warmLight=new THREE.PointLight('#ffd398',1.2,6,2);warmLight.position.set(1.2,3.4,-2.77);scene.add(warmLight);
+    const warmLight=new THREE.PointLight('#ffd398',1.2,9,2);warmLight.position.set(1.6,4.10,-3.10);scene.add(warmLight);
     const frontFill=new THREE.DirectionalLight('#e9ecd7',.5);frontFill.position.set(4,2,8);scene.add(frontFill);
     // Floating dust is subtle and pauses with reduced motion.
     const dustPositions=new Float32Array(16*3);
@@ -598,12 +611,12 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     let lastTime=performance.now(), elapsed=0, scopeTime=0, textureElapsed=0, reportElapsed=0, currentRPM=0, armTime=0, breezeTime=0, interactiveUntil=0;
     let renderedFrames=0,shadowUpdates=0,shadowUntil=3,lastMotionState='';
     const presets={
-        overview:{pos:[4.7,4.7,10.0],target:[-.45,2.0,-1.40]},
+        overview:{pos:[10.8,8.4,14.8],target:[-.20,2.0,0]},
         panorama:{pos:[11.8,9.2,13.8],target:[-.15,1.75,-.25]},
         bench:{pos:[1.0,4.4,4.4],target:[-.30,2.35,-2.5]},
-        fabrication:{pos:[6.0,4.2,5.8],target:[3.57,1.85,-.3]},
+        fabrication:{pos:[.2,4.3,8.6],target:[-4.15,1.28,3.0]},
         robotics:{pos:[.7,4.7,6.1],target:[-4.02,2.1,.10]},
-        monitor:{pos:[.3,3.12,1.5],target:[.3,2.99,-2.86]}
+        monitor:{pos:[.3,3.06,1.25],target:[.3,3.01,-2.86]}
     };
     const deviceViews={
         monitor:{pos:[3.4,4.65,3.2],target:[.25,2.85,-2.6]},
@@ -616,8 +629,17 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     };
     function destination(preset, forDevice=false) {
         const pos=new THREE.Vector3(...preset.pos), target=new THREE.Vector3(...preset.target);
+        if(view==='monitor'&&!forDevice){
+            const aspect=container.clientWidth/container.clientHeight;
+            const distance=Math.max(2.025/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2))*.65),3.60/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2))*aspect*.90));
+            pos.set(.3,3.025,-2.86+distance);target.set(.3,3.01,-2.86);
+            return {pos,target};
+        }
         if(mobile()){
-            if(view==='overview'&&!forDevice){pos.set(14.4,11.8,23.1);target.set(-.45,1.8,-.25);}
+            if(view==='overview'&&!forDevice){
+                pos.set(14.4,11.8,23.1);target.set(-.45,1.8,-.25);
+                pos.sub(target).multiplyScalar(Math.max(1,.58/camera.aspect)).add(target);
+            }
             else if(view==='panorama'&&!forDevice){pos.set(14.2,12,19.0);target.set(-.2,1.8,-.3);}
             else if(forDevice){const offset=pos.clone().sub(target).multiplyScalar(1.25);pos.copy(target).add(offset);target.y-=.62;}
             else {
@@ -634,64 +656,53 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     }
     function moveTo(preset,forDevice=false,instant=false){
         controls.minAzimuthAngle=forDevice?-.85:-.28;
-        controls.maxDistance=mobile()?34:27;
+        controls.maxDistance=mobile()?60:27;
         const dest=destination(preset,forDevice);
         tween={fromPos:camera.position.clone(),fromTarget:controls.target.clone(),toPos:dest.pos,toTarget:dest.target,start:performance.now(),duration:reducedMotion||instant?0:1250};
         controls.enabled=false;
         if(instant){camera.position.copy(dest.pos);controls.target.copy(dest.target);controls.update();tween=null;controls.enabled=!paused;}
     }
-    function setView(name,instant=false){view=presets[name]?name:'overview';selected=null;rightWall.visible=view!=='panorama'&&!mobile();floorExtension.visible=view!=='panorama'&&!mobile();renderer.shadowMap.needsUpdate=true;moveTo(presets[view],false,instant);}
-    function select(id){if(!devices.has(id))return;selected=id;rightWall.visible=false;floorExtension.visible=!mobile();renderer.shadowMap.needsUpdate=true;moveTo(deviceViews[id],true);}
+    function setView(name,instant=false){view=presets[name]?name:'overview';selected=null;renderer.shadowMap.needsUpdate=true;moveTo(presets[view],false,instant);}
+    function select(id){if(!devices.has(id))return;selected=id;renderer.shadowMap.needsUpdate=true;moveTo(deviceViews[id],true);}
     function focusMonitor(){selected=null;view='monitor';moveTo(presets.monitor);}
     function setNight(value){
         night=value;hemi.color.set(night?'#b5c4d1':'#fffaf0');hemi.groundColor.set(night?'#697862':'#a7b093');hemi.intensity=night?.7:2.1;
         key.color.set(night?'#c0cfdd':'#fff0d6');key.intensity=night?.55:1.85;rimLight.intensity=night?.25:.4;
         deskLight.intensity=night?1.2:.3;warmLight.intensity=night?16:1.2;frontFill.intensity=night?.20:.5;
-        scene.background.set(night?'#344840':'#eee5d2');scene.fog.color.copy(scene.background);ground.material.color.copy(scene.background);
+        scene.background.set(night?'#344840':'#eee5d2');scene.fog.color.copy(scene.background);ground.material.color.set(night?'#101c18':'#7b7357');ground.material.opacity=night?.24:.18;
         sunPatch.material.opacity=night?.07:.60;inkMaterial.color.set(night?'#374a40':'#586048');
         bracketMaterial.color.set(night?'#d2dfb9':'#72885d');m.amberGlow.emissiveIntensity=night?1.4:.4;
-        art.drawLandscape(art.landscape.ctx,1024,640,night);art.landscape.texture.needsUpdate=true;
+        studioWindow.setNight(night);
         renderer.shadowMap.needsUpdate=true;
     }
     const pointer=new THREE.Vector2(),raycaster=new THREE.Raycaster();let pointerStart=null,lastHover=0,multiTouch=false;
     const pointers=new Set();
-    function hitAt(event){const rect=renderer.domElement.getBoundingClientRect();pointer.set((event.clientX-rect.left)/rect.width*2-1,-(event.clientY-rect.top)/rect.height*2+1);raycaster.setFromCamera(pointer,camera);
+    function hitAt(event){const rect=container.getBoundingClientRect();pointer.set((event.clientX-rect.left)/rect.width*2-1,-(event.clientY-rect.top)/rect.height*2+1);raycaster.setFromCamera(pointer,camera);
         // Intersect all geometry so walls and furniture correctly occlude device hit areas.
-        const candidates=[];scene.traverseVisible(obj=>{if(obj.isMesh&&!obj.material?.transparent)candidates.push(obj);});
+        const candidates=[];scene.traverseVisible(obj=>{if(obj.isMesh&&(!obj.material?.transparent||obj.userData.windowHit))candidates.push(obj);});
         const hits=raycaster.intersectObjects(candidates,false);
-        for(const hit of hits){if(hit.object.isSprite||hit.object.isPoints||hit.object.isLine||hit.object.material?.transparent)continue;let node=hit.object;while(node){if(node.userData.device)return node.userData.device;node=node.parent;}return null;}return null;
+        for(const hit of hits){if(hit.object.isSprite||hit.object.isPoints||hit.object.isLine||(hit.object.material?.transparent&&!hit.object.userData.windowHit))continue;let node=hit.object;while(node){if(node.userData.device)return node.userData.device;if(node.userData.window)return 'window';node=node.parent;}return null;}return null;
     }
-    renderer.domElement.addEventListener('pointerdown',e=>{pointers.add(e.pointerId);multiTouch=multiTouch||pointers.size>1;pointerStart=multiTouch?null:{x:e.clientX,y:e.clientY,id:e.pointerId};});
-    renderer.domElement.addEventListener('pointerup',e=>{if(!multiTouch&&pointerStart&&pointerStart.id===e.pointerId&&Math.hypot(e.clientX-pointerStart.x,e.clientY-pointerStart.y)<7&&!paused){const hit=hitAt(e);if(hit)onSelect(hit);}pointerStart=null;pointers.delete(e.pointerId);if(!pointers.size)multiTouch=false;});
-    renderer.domElement.addEventListener('pointercancel',e=>{pointerStart=null;pointers.delete(e.pointerId);if(!pointers.size)multiTouch=false;});
-    renderer.domElement.addEventListener('pointermove',e=>{if(e.pointerType==='touch'||performance.now()-lastHover<80)return;lastHover=performance.now();hovered=hitAt(e);renderer.domElement.style.cursor=hovered?'pointer':'grab';});
-    renderer.domElement.addEventListener('pointerleave',()=>{hovered=null;});
+    orbitSurface.addEventListener('pointerdown',e=>{pointers.add(e.pointerId);multiTouch=multiTouch||pointers.size>1;pointerStart=multiTouch?null:{x:e.clientX,y:e.clientY,id:e.pointerId};});
+    orbitSurface.addEventListener('pointerup',e=>{if(!multiTouch&&pointerStart&&pointerStart.id===e.pointerId&&Math.hypot(e.clientX-pointerStart.x,e.clientY-pointerStart.y)<7&&!paused){const hit=hitAt(e);if(hit==='window')onWindowToggle();else if(hit)onSelect(hit);}pointerStart=null;pointers.delete(e.pointerId);if(!pointers.size)multiTouch=false;});
+    orbitSurface.addEventListener('pointercancel',e=>{pointerStart=null;pointers.delete(e.pointerId);if(!pointers.size)multiTouch=false;});
+    orbitSurface.addEventListener('pointermove',e=>{if(e.pointerType==='touch'||performance.now()-lastHover<80)return;lastHover=performance.now();hovered=hitAt(e);container.style.cursor=hovered?'pointer':'grab';});
+    orbitSurface.addEventListener('pointerleave',()=>{hovered=null;});
+    const guardScreenPointer=e=>{
+        if(!liveMonitor.element.contains(e.target))return;
+        const hit=hitAt(e);
+        if(hit!=='monitor'){e.preventDefault();e.stopImmediatePropagation();if(hit==='window')onWindowToggle();else if(hit)onSelect(hit);}
+    };
+    container.addEventListener('pointerdown',guardScreenPointer,true);
     controls.addEventListener('start',()=>{tween=null;interactiveUntil=performance.now()+2000;});
     controls.addEventListener('end',()=>{interactiveUntil=performance.now()+1600;});
     function projectedMarkers(){const result=[];camera.updateMatrixWorld();devices.forEach(item=>{const p=item.anchor.clone().project(camera);result.push({id:item.id,x:(p.x*.5+.5)*container.clientWidth,y:(-.5*p.y+.5)*container.clientHeight,hovered:item.id===hovered,visible:p.z>-1&&p.z<1&&Math.abs(p.x)<.94&&Math.abs(p.y)<.88});});return result;}
-    function resize(){const w=container.clientWidth,h=container.clientHeight;renderer.setPixelRatio(Math.min(window.devicePixelRatio,mobile()?1.35:1.5));renderer.setSize(w,h);camera.aspect=w/h;camera.fov=w/h<1?48:36;camera.updateProjectionMatrix();if(selected)moveTo(deviceViews[selected],true,true);else if(!paused)setView(view,true);}
+    function resize(){const w=container.clientWidth,h=container.clientHeight;renderer.setPixelRatio(Math.min(window.devicePixelRatio,mobile()?1.35:1.5));renderer.setSize(w,h);liveMonitor.resize(w,h);camera.aspect=w/h;camera.fov=w/h<1?48:36;camera.updateProjectionMatrix();if(selected)moveTo(deviceViews[selected],true,true);else if(!paused)setView(view,true);}
     const resizeObserver=new ResizeObserver(resize);resizeObserver.observe(container);
     function setPaused(value){paused=value;controls.enabled=!paused;if(!paused){lastTime=performance.now();if(!frameId&&!lost)frameId=requestAnimationFrame(render);}}
     renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();lost=true;cancelAnimationFrame(frameId);frameId=null;onError('显卡连接已中断，可以重新加载场景。');});
     document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelAnimationFrame(frameId);frameId=null;}else if(!paused&&!lost){lastTime=performance.now();frameId=requestAnimationFrame(render);}});
 
-    function drawScreen(ctx,w,h,t){
-        ctx.drawImage(art.landscape.canvas,0,0,w,h);
-        const wash=ctx.createLinearGradient(0,0,0,h);wash.addColorStop(0,'rgba(20,46,39,.65)');wash.addColorStop(1,'rgba(28,58,42,.80)');ctx.fillStyle=wash;ctx.fillRect(0,0,w,h);
-        ctx.fillStyle='#d7e0c7';ctx.font='18px monospace';ctx.fillText('huanfly-os',38,42);
-        ctx.textAlign='right';ctx.font='16px monospace';ctx.fillText('a place to think & make',w-38,42);
-        const now=new Date();ctx.textAlign='center';ctx.fillStyle='#f7f1dc';ctx.font='116px Georgia, serif';
-        ctx.fillText(String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'),w/2,230);
-        ctx.font='20px monospace';ctx.fillStyle='#dce1c6';ctx.fillText(`${now.getMonth()+1} / ${now.getDate()}   ·   ${['SUN','MON','TUE','WED','THU','FRI','SAT'][now.getDay()]}`,w/2,274);
-        ctx.font='italic 23px Georgia, serif';ctx.fillStyle='#cbd8b8';ctx.fillText('stay curious. take your time.',w/2,325);
-        if(state.firmware==='flashing'||state.firmware==='done'){
-            ctx.font='17px monospace';ctx.fillStyle='#ebdbb0';ctx.fillText(state.firmware==='flashing'?`writing a little idea… ${Math.round(state.flashProgress)}%`:`hello, little garden.  soil ${Math.round(state.soilMoisture)}%`,w/2,370);
-        }
-        ctx.fillStyle='#ecedcf24';ctx.beginPath();ctx.roundRect(w/2-160,410,320,94,22);ctx.fill();
-        const dock=[['>_','#c0d3a0'],['▧','#a7c9c3'],['··','#d5c4a5']];
-        dock.forEach(([label,tint],i)=>{const x=w/2-102+i*102;ctx.fillStyle=tint;ctx.beginPath();ctx.roundRect(x-27,424,54,46,12);ctx.fill();ctx.fillStyle='#344c3a';ctx.font='28px monospace';ctx.fillText(label,x,456);ctx.fillStyle='#dee5cb';ctx.font='12px monospace';ctx.fillText(['TERMINAL','ALBUM','ROBOT'][i],x,490);});
-        ctx.fillStyle='#c9d5ba';ctx.font='14px monospace';ctx.fillText('click to come closer',w/2,545);ctx.textAlign='left';
-    }
     function drawScope(ctx,w,h,t){
         ctx.fillStyle='#0b2325';ctx.fillRect(0,0,w,h);ctx.strokeStyle='#294446';ctx.lineWidth=1;for(let x=24;x<w;x+=46){ctx.beginPath();ctx.moveTo(x,30);ctx.lineTo(x,h-35);ctx.stroke();}for(let y=38;y<h-28;y+=36){ctx.beginPath();ctx.moveTo(20,y);ctx.lineTo(w-20,y);ctx.stroke();}
         ctx.font='15px monospace';ctx.fillStyle='#e0c583';ctx.fillText('CH1   '+(state.scope==='sine'?'SINE':state.scope==='square'?'PWM':'SAW'),20,24);ctx.fillStyle='#97bfac';ctx.textAlign='right';ctx.fillText(state.frequency.toFixed(1)+' kHz',w-20,24);ctx.textAlign='left';
@@ -704,6 +715,7 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
         const {ctx,canvas,texture}=display;ctx.fillStyle='#102b2b';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#698e83';ctx.font='16px monospace';ctx.fillText(top,13,25);ctx.fillStyle=tint;ctx.font='30px monospace';ctx.fillText(bottom,13,canvas.height-17);texture.needsUpdate=true;
     }
     function tickSimulation(dt){
+        if(studioWindow.update(dt,state.breeze))renderer.shadowMap.needsUpdate=true;
         if(state.scopeRunning)scopeTime+=dt;
         if(state.watering){
             state.waterProgress=Math.min(3,state.waterProgress+dt);state.soilMoisture=Math.min(72,42+state.waterProgress*10);
@@ -769,23 +781,22 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
         if(!paused){elapsed+=dt;tickSimulation(dt);}
         if(tween){const t=tween.duration?Math.min(1,(now-tween.start)/tween.duration):1;const eased=t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;camera.position.lerpVectors(tween.fromPos,tween.toPos,eased);controls.target.lerpVectors(tween.fromTarget,tween.toTarget,eased);if(t===1){tween=null;controls.enabled=!paused;}}
         controls.update();
-        devices.forEach(item=>{item.brackets.visible=!paused&&(item.id===selected||item.id===hovered);if(item.brackets.visible&&reportElapsed+dt>.1)updateBrackets(item);});
+        devices.forEach(item=>{item.brackets.visible=item.id!=='monitor'&&!paused&&(item.id===selected||item.id===hovered);if(item.brackets.visible&&reportElapsed+dt>.1)updateBrackets(item);});
         textureElapsed+=dt;reportElapsed+=dt;
-        if(clockMinute!==new Date().getMinutes()){clockMinute=new Date().getMinutes();drawWallClock(clockFace.ctx,256,256);clockFace.texture.needsUpdate=true;}
-        if(textureElapsed>(active?.15:.35)){textureElapsed=0;drawScreen(monitorTex.ctx,1024,576,elapsed);monitorTex.texture.needsUpdate=true;drawScope(scopeTex.ctx,512,320,reducedMotion?0:scopeTime);scopeTex.texture.needsUpdate=true;smallDisplay(solderTex,'T12 STATION',state.iron?'350°C':'STANDBY',state.iron?'#f0bd7e':'#7aaca0');smallDisplay(printerTex,'FDM / 0.2mm',state.printer==='idle'?'READY':Math.round(state.printProgress)+'%');smallDisplay(motorTex,'BLDC / FOC',Math.round(currentRPM)+' RPM');smallDisplay(boardOLED,state.firmware==='done'?'SOIL / ADC':'STM32 H7',state.firmware==='flashing'?Math.round(state.flashProgress)+'%':state.firmware==='done'?Math.round(state.soilMoisture)+'%':'480 MHz');smallDisplay(soilDisplay,'SOIL / DEMO',Math.round(state.soilMoisture)+'%');}
-        const motionState=`${state.arm}:${state.boardExploded}:${state.printer}:${state.iron}`;
+        if(textureElapsed>(active?.15:.35)){textureElapsed=0;drawScope(scopeTex.ctx,512,320,reducedMotion?0:scopeTime);scopeTex.texture.needsUpdate=true;smallDisplay(solderTex,'T12 STATION',state.iron?'350°C':'STANDBY',state.iron?'#f0bd7e':'#7aaca0');smallDisplay(printerTex,'FDM / 0.2mm',state.printer==='idle'?'READY':Math.round(state.printProgress)+'%');smallDisplay(motorTex,'BLDC / FOC',Math.round(currentRPM)+' RPM');smallDisplay(boardOLED,state.firmware==='done'?'SOIL / ADC':'STM32 H7',state.firmware==='flashing'?Math.round(state.flashProgress)+'%':state.firmware==='done'?Math.round(state.soilMoisture)+'%':'480 MHz');smallDisplay(soilDisplay,'SOIL / DEMO',Math.round(state.soilMoisture)+'%');}
+        const motionState=`${state.arm}:${state.boardExploded}:${state.printer}:${state.iron}:${state.breeze}`;
         if(motionState!==lastMotionState){lastMotionState=motionState;shadowUntil=elapsed+2;}
         if(elapsed<shadowUntil||state.printer==='printing'||currentRPM>1||state.arm||state.iron)renderer.shadowMap.needsUpdate=true;
         if(renderer.shadowMap.needsUpdate)shadowUpdates++;
+        liveMonitor.render();
         renderer.render(scene,camera);
         renderedFrames++;
         if(active||reportElapsed>.1){onFrame({markers:projectedMarkers(),selected,rpm:Math.round(currentRPM),armPhase:Math.round((armTime%10)/10*100),update:reportElapsed>.1});if(reportElapsed>.1)reportElapsed=0;}
         if(!paused||tween)frameId=requestAnimationFrame(render);
     }
-    function dispose(){cancelAnimationFrame(frameId);resizeObserver.disconnect();controls.dispose();const seen=new Set();scene.traverse(obj=>{if(obj.geometry&&!seen.has(obj.geometry)){seen.add(obj.geometry);obj.geometry.dispose();}if(obj.material){const list=Array.isArray(obj.material)?obj.material:[obj.material];list.forEach(mat=>{if(!seen.has(mat)){seen.add(mat);mat.dispose();}});}});resources.forEach(r=>r.dispose());renderer.dispose();renderer.domElement.remove();}
+    function dispose(){container.removeEventListener('pointerdown',guardScreenPointer,true);orbitSurface.remove();liveMonitor.dispose();cancelAnimationFrame(frameId);resizeObserver.disconnect();controls.dispose();const seen=new Set();scene.traverse(obj=>{if(obj.geometry&&!seen.has(obj.geometry)){seen.add(obj.geometry);obj.geometry.dispose();}if(obj.material){const list=Array.isArray(obj.material)?obj.material:[obj.material];list.forEach(mat=>{if(!seen.has(mat)){seen.add(mat);mat.dispose();}});}});studioWindow.dispose();resources.forEach(r=>r.dispose());renderer.dispose();renderer.domElement.remove();}
     resize();setView('overview',true);setNight(false);
-    // Render the first screen immediately, before exposing the workspace.
-    drawScreen(monitorTex.ctx,1024,576,0);monitorTex.texture.needsUpdate=true;
+    // Render the first instrument display before exposing the workspace.
     drawScope(scopeTex.ctx,512,320,0);scopeTex.texture.needsUpdate=true;
     frameId=requestAnimationFrame(render);
     return {setView,select,focusMonitor,setNight,setPaused,dispose,projectedMarkers,setHovered:id=>{hovered=id;},getStats:()=>({drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,geometries:renderer.info.memory.geometries,textures:renderer.info.memory.textures,renderedFrames,shadowUpdates}),getView:()=>view};

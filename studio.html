@@ -44,7 +44,7 @@
                     <button type="button" class="lab-breeze" id="lab-breeze" aria-label="关上窗，暂停微风" aria-pressed="true" data-needs-room disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 18C2 7 10 4 20 4c0 10-4 15-12 13M4 21 15 10"/></svg><span>微风入室</span></button>
                     <button type="button" class="lab-icon" id="lab-theme" title="切换夜间灯光" aria-label="切换夜间灯光"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg></button>
                     <button type="button" class="lab-icon" id="lab-fullscreen" title="进入全屏" aria-label="进入全屏" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5m6 0h5v5M4 15v5h5m6 0h5v-5"/></svg></button>
-                    <button type="button" class="lab-computer" id="studio-enter"><span>↗</span> 进入电脑</button>
+                    <button type="button" class="lab-computer" id="studio-enter"><span>⌕</span> 靠近屏幕</button>
                 </div>
             </header>
             <div class="lab-intro" id="lab-intro">
@@ -91,9 +91,8 @@
         </div>
         <div class="lab-announcement" id="lab-announcement" role="status" aria-live="polite"></div>
         <noscript><div class="lab-noscript">开启 JavaScript 后即可探索 3D 工作室。<a href="index.html">返回主页</a></div></noscript>
-        <!-- 显示器聚焦：遮罩 + huanfly-os -->
-        <div class="mf-dim" id="mf-dim"></div>
-        <div class="monitor-focus" id="monitor-focus" role="dialog" aria-modal="true" aria-label="huanfly-os" inert>
+        <!-- This same desktop lives on the physical 3D screen at every camera distance. -->
+        <div class="monitor-focus" id="monitor-focus" role="region" aria-label="显示器上的 huanfly-os 桌面" inert>
             <div class="mf-screen" id="mf-screen" tabindex="-1">
                 <div class="os">
                     <div class="os-topbar">
@@ -240,8 +239,8 @@
                     </div>
                 </div>
             </div>
-            <button class="mf-exit" id="mf-exit" type="button" inert><i class="fas fa-arrow-left"></i> 回到工作室 <kbd>Esc</kbd></button>
         </div>
+        <button class="mf-exit" id="mf-exit" type="button" hidden><i class="fas fa-arrow-left"></i> 退后看看 <kbd>Esc</kbd></button>
     </main>
     <script src="js/studio-apps.js"></script>
     <script type="module" src="js/studio.js"></script>

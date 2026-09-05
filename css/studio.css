@@ -38,7 +38,10 @@ body.studio-page {
 .studio-page :is(button, a, input, summary, textarea):focus-visible { outline: 2px solid var(--lab-mint); outline-offset: 4px; }
 .studio { position: fixed; inset: 0; isolation: isolate; }
 .lab-stage { position: absolute; inset: 0; z-index: 0; }
-.lab-stage canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.lab-stage { cursor: grab; }
+.lab-orbit-surface { position: absolute; inset: 0; z-index: 0; touch-action: none; }
+.lab-stage > canvas { display: block; position: absolute; inset: 0; z-index: 2; width: 100%; height: 100%; pointer-events: none; }
+.lab-screen-layer { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
 .lab-vignette { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, #f2ebd960, transparent 18%, transparent 79%, #eee4cd60); }
 .lab-vignette::after { content: ''; position: absolute; inset: 0; opacity: .075; mix-blend-mode: multiply; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.72' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' opacity='.6' filter='url(%23n)'/%3E%3C/svg%3E"); }
 [data-theme="dark"] .lab-vignette { background: linear-gradient(180deg, #162c3d40, transparent 22%, transparent 77%, #23372d50); }
@@ -122,9 +125,9 @@ body.studio-page {
 .studio.has-selection .lab-intro, .studio.is-close-view .lab-intro { opacity: 0; transform: translateY(-6px); pointer-events: none; }
 .studio.has-selection .lab-intro button, .studio.is-close-view .lab-intro button { pointer-events: none; }
 .studio.has-selection .lab-log { opacity: 0; }
-.studio.is-focused .lab-ui { opacity: 0; pointer-events: none; }
-.studio.is-focused .lab-ui :is(button, a) { pointer-events: none; }
-.studio.is-focused-ready .lab-stage { opacity: .12; transition: opacity .4s; }
+.studio.is-at-monitor .lab-intro, .studio.is-at-monitor .lab-log { opacity: 0; pointer-events: none; }
+.studio.is-at-monitor .lab-intro button { pointer-events: none; }
+.studio.is-computer-fallback .lab-ui { visibility: hidden; }
 .lab-loader { position: absolute; z-index: 8; inset: 79px 0 140px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--lab-paper); transition: opacity .5s, visibility .5s; }
 .lab-loader.ready { opacity: 0; visibility: hidden; pointer-events: none; }
 .loader-chip { display: grid; place-items: center; width: 58px; height: 58px; background: var(--lab-soft); color: var(--lab-mint); border: 1px solid var(--lab-mint); border-radius: var(--wobble-card); position: relative; margin-bottom: 25px; transform: rotate(-4deg); }
@@ -143,7 +146,7 @@ body.studio-page {
 @keyframes lab-load { 0% { transform: translateX(-100%); } 100% { transform: translateX(300%); } }
 @keyframes panel-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 /* Keep application text legible independently of the room lighting. */
-.studio-page .mf-screen { border-radius: 16px; font-family: var(--font-ui); }
+.studio-page .mf-screen { border-radius: 0; font-family: var(--font-ui); }
 .studio-page .os { background: radial-gradient(ellipse at 10% 0%, #c1d58d18, transparent 55%), linear-gradient(145deg, #293d2d, #14251f); }
 .studio-page .os-dock { border-radius: var(--wobble-card); }
 .studio-page .os-dock-item .icon { border-radius: 17px 14px 18px 13px; }
