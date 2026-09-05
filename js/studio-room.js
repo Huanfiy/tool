@@ -49,12 +49,13 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     scene.fog = new THREE.Fog('#eee5d2', 30, 65);
     const wall = { centerX: -5.25, thickness: .16, zMin: -3.8, zMax: 3.8 };
     wall.outerX = wall.centerX - wall.thickness / 2;
+    const floor = { top: -.025 + .09 / 2, bottom: -.11 - .13 / 2 };
     const layout = {
-        wall, floor: { top: -.025 + .09 / 2, bottom: -.11 - .13 / 2 },
+        wall, floor,
         opening: { bottom: .76 + 1.55 / 2, top: 5.055 - 1.57 / 2, zMin: -3.16 + 1.25 / 2, zMax: 3.25 - 1.1 / 2 },
         casement: { hingeX: -5.145, width: 2.58, maxAngle: Math.PI / 3, bottom: 1.655, top: 4.315, zMin: -2.66, zMax: 2.52 },
         garden: { xMin: wall.outerX - 6.2, xMax: wall.outerX, zMin: -8, zMax: 8 },
-        ground: { top: -.025 + .09 / 2 - .17, fadeCenter: [wall.outerX - 4.17, 0], fadeRadii: [16, 14] },
+        ground: { top: floor.top - .17, fadeCenter: [wall.outerX - 4.17, 0], fadeRadii: [16, 14] },
         background: { center: [wall.outerX, 0, 0], radius: 80, horizonUV: .5 },
         sunDirection: [-4.4, 7.8, 2.7]
     };
@@ -243,12 +244,12 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     // Catch the diorama's shadow without a lit backdrop edge or a floor behind the window.
     const ground=box(architecture,105,.1,200,47.2,-.24,0,new THREE.ShadowMaterial({color:'#7b7357',opacity:.18,depthWrite:false}),0);ground.castShadow=false;
     box(architecture,10.7,.13,7.7,0,-.11,0,m.oak,.035);
-    box(architecture,10.6,.09,7.6,0,-.025,0,m.floor,.025);
+    box(architecture,10.6,.09,7.6,0,floor.top-.09/2,0,m.floor,.025);
     box(architecture,10.65,5.9,.16,0,2.91,-3.82,m.wall,.025);
-    box(architecture,.16,1.55,7.6,-5.25,.76,0,m.wallSide,.02);
-    box(architecture,.16,1.57,7.6,-5.25,5.055,0,m.wallSide,.02);
-    box(architecture,.16,2.95,1.25,-5.25,2.95,-3.16,m.wallSide,.02);
-    box(architecture,.16,2.95,1.1,-5.25,2.95,3.25,m.wallSide,.02);
+    box(architecture,wall.thickness,1.55,wall.zMax-wall.zMin,wall.centerX,.76,0,m.wallSide,.02);
+    box(architecture,wall.thickness,1.57,wall.zMax-wall.zMin,wall.centerX,5.055,0,m.wallSide,.02);
+    box(architecture,wall.thickness,2.95,1.25,wall.centerX,2.95,-3.16,m.wallSide,.02);
+    box(architecture,wall.thickness,2.95,1.1,wall.centerX,2.95,3.25,m.wallSide,.02);
     box(architecture,10.6,.18,.09,0,.1,-3.65,m.oak);
     box(architecture,.09,.18,7.6,-5.1,.1,0,m.oak);
     box(architecture,.40,.11,5.45,-5.02,1.58,-.05,m.oak);
