@@ -7,6 +7,7 @@ import { createStudioArt } from './studio-art.js';
 import { createStudioMonitor } from './studio-monitor.js';
 import { createStudioFigures } from './studio-figures.js';
 import { createStudioWindow } from './studio-window.js';
+import { createStudioLandscape } from './studio-landscape.js';
 
 export function createStudioRoom({ container, state, reducedMotion, onSelect, onFrame, onEvent, onError, onWindowToggle }) {
     const mobile = () => window.innerWidth <= 700;
@@ -231,7 +232,11 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     box(architecture,.09,.18,7.6,-5.1,.1,0,m.oak);
     box(architecture,.40,.11,5.45,-5.02,1.58,-.05,m.oak);
     const studioWindow=createStudioWindow({scene,box,bar,sphere,group,material,resources,reducedMotion,disposeOnce});
+    scene.add(studioWindow.root);
     cleanups.push(() => { disposeTree(studioWindow.root); studioWindow.dispose(); });
+    const landscape=createStudioLandscape({box,bar,sphere,group,resources,reducedMotion,disposeOnce});
+    scene.add(landscape.root);
+    cleanups.push(() => { disposeTree(landscape.root); landscape.dispose(); });
     for(const leaf of studioWindow.root.children)if(leaf.name.endsWith('-casement'))batch(leaf);
     bar(architecture,[-4.91,4.50,-2.97],[-4.91,4.50,2.87],.026,m.oak);
     sphere(architecture,.07,-4.91,4.50,-2.98,m.oak);sphere(architecture,.07,-4.91,4.50,2.88,m.oak);
@@ -715,6 +720,7 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
         sunPatch.material.opacity=night?.07:.60;inkMaterial.color.set(night?'#374a40':'#586048');
         bracketMaterial.color.set(night?'#d2dfb9':'#72885d');m.amberGlow.emissiveIntensity=night?1.4:.4;
         studioWindow.setNight(night);
+        landscape.setTheme({night});
         renderer.shadowMap.needsUpdate=true;
     }
     const pointer=new THREE.Vector2(),raycaster=new THREE.Raycaster();let pointerStart=null,lastHover=0,multiTouch=false;
@@ -760,6 +766,7 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     function tickSimulation(dt){
         if(disposed)return;
         if(studioWindow.update(dt,state.breeze))renderer.shadowMap.needsUpdate=true;
+        landscape.update(dt,{reducedMotion,wind:.18+.82*studioWindow.getOpenAmount()});
         if(state.scopeRunning)scopeTime+=dt;
         if(state.watering){
             state.waterProgress=Math.min(3,state.waterProgress+dt);state.soilMoisture=Math.min(72,42+state.waterProgress*10);
