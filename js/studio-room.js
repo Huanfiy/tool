@@ -47,7 +47,28 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     try {
     scene.background = new THREE.Color('#eee5d2');
     scene.fog = new THREE.Fog('#eee5d2', 30, 65);
-    const camera = new THREE.PerspectiveCamera(36, 1, .1, 100);
+    const wall = { centerX: -5.25, thickness: .16, zMin: -3.8, zMax: 3.8 };
+    wall.outerX = wall.centerX - wall.thickness / 2;
+    const layout = {
+        wall, floor: { top: -.025 + .09 / 2, bottom: -.11 - .13 / 2 },
+        opening: { bottom: .76 + 1.55 / 2, top: 5.055 - 1.57 / 2, zMin: -3.16 + 1.25 / 2, zMax: 3.25 - 1.1 / 2 },
+        casement: { hingeX: -5.145, width: 2.58, maxAngle: Math.PI / 3, bottom: 1.655, top: 4.315, zMin: -2.66, zMax: 2.52 },
+        garden: { xMin: wall.outerX - 6.2, xMax: wall.outerX, zMin: -8, zMax: 8 },
+        ground: { top: -.025 + .09 / 2 - .17, fadeCenter: [wall.outerX - 4.17, 0], fadeRadii: [16, 14] },
+        background: { center: [wall.outerX, 0, 0], radius: 80, horizonUV: .5 },
+        sunDirection: [-4.4, 7.8, 2.7]
+    };
+    layout.casement.sweepX = layout.casement.hingeX - layout.casement.width * Math.sin(layout.casement.maxAngle);
+    function outdoorPalette(night) {
+        return night ? {
+            night: true, paper: '#344840', ground: '#526950', crown: '#526c60', grass: '#566e55', bark: '#695f53', stone: '#697767', flower: '#9da9a2',
+            sky: '#405960', haze: '#567163', hills: ['#4c655b', '#466052', '#3e594c'], cloud: '#a4b9b1', bird: '#b8c6b6'
+        } : {
+            night: false, paper: '#eee5d2', ground: '#93a574', crown: '#78a274', grass: '#8d9c66', bark: '#8f7256', stone: '#d0c5ab', flower: '#fff6e3',
+            sky: '#b7d8d4', haze: '#dde5cc', hills: ['#becbb1', '#a7bd9b', '#93ad86'], cloud: '#fcf5df', bird: '#6c8077'
+        };
+    }
+    const camera = new THREE.PerspectiveCamera(36, 1, .1, 160);
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, mobile() ? 1.35 : 1.5));
     renderer.shadowMap.enabled = true;
@@ -93,8 +114,8 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     m.amberGlow = material('amberGlow', { color: '#ffe4a4', emissive: '#ffcf85', emissiveIntensity: .8 });
     m.blueGlow = material('blueGlow', { color: '#c0dbd6', emissive: '#8fbabc', emissiveIntensity: .5 });
     const leafDark=material('leafDark',{color:'#78965f',side:THREE.DoubleSide}),leafLight=material('leafLight',{color:'#a4bb7c',side:THREE.DoubleSide});
-    const inkMaterial = new THREE.LineBasicMaterial({color:'#586048',transparent:true,opacity:.24,depthWrite:false});
-    const contourMaterial = new THREE.MeshBasicMaterial({color:'#515942',side:THREE.BackSide,transparent:true,opacity:.48,depthWrite:false});
+    const inkMaterial = own(new THREE.LineBasicMaterial({color:'#586048',transparent:true,opacity:.24,depthWrite:false}));
+    const contourMaterial = own(new THREE.MeshBasicMaterial({color:'#515942',side:THREE.BackSide,transparent:true,opacity:.48,depthWrite:false}));
     const architecture = new THREE.Group(); scene.add(architecture);
     function group(parent, x = 0, y = 0, z = 0) { const g = new THREE.Group(); g.position.set(x,y,z); parent.add(g); return g; }
     function box(parent, w,h,d, x,y,z, mat = m.metal, radius = .025) {
@@ -231,12 +252,12 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     box(architecture,10.6,.18,.09,0,.1,-3.65,m.oak);
     box(architecture,.09,.18,7.6,-5.1,.1,0,m.oak);
     box(architecture,.40,.11,5.45,-5.02,1.58,-.05,m.oak);
-    const studioWindow=createStudioWindow({scene,box,bar,sphere,group,material,resources,reducedMotion,disposeOnce});
+    const studioWindow=createStudioWindow({box,bar,group,material,reducedMotion,disposeOnce,layout});
     scene.add(studioWindow.root);
     cleanups.push(() => { disposeTree(studioWindow.root); studioWindow.dispose(); });
-    const landscape=createStudioLandscape({box,bar,sphere,group,resources,reducedMotion,disposeOnce});
+    const landscape=createStudioLandscape({layout,palette:outdoorPalette(false),compact:mobile(),disposeOnce});
     scene.add(landscape.root);
-    cleanups.push(() => { disposeTree(landscape.root); landscape.dispose(); });
+    cleanups.push(() => landscape.dispose());
     for(const leaf of studioWindow.root.children)if(leaf.name.endsWith('-casement'))batch(leaf);
     bar(architecture,[-4.91,4.50,-2.97],[-4.91,4.50,2.87],.026,m.oak);
     sphere(architecture,.07,-4.91,4.50,-2.98,m.oak);sphere(architecture,.07,-4.91,4.50,2.88,m.oak);
@@ -699,6 +720,21 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
         }
         return {pos,target};
     }
+    function fitOutdoorCoverage() {
+        const center = new THREE.Vector3(...layout.background.center), previousView = view;
+        let targetBound = 0;
+        for (const [name, preset] of Object.entries(presets)) {
+            view = name; targetBound = Math.max(targetBound, destination(preset).target.distanceTo(center));
+        }
+        for (const preset of Object.values(deviceViews)) targetBound = Math.max(targetBound, destination(preset, true).target.distanceTo(center));
+        view = previousView;
+        // Triangle inequality covers every orbit and the convex hull of tweened
+        // targets, not only preset screenshots. Keep near unchanged for depth.
+        const cameraBound = (mobile() ? 60 : 27) + targetBound;
+        const radius = Math.max(layout.background.radius, Math.ceil(cameraBound + 6));
+        camera.far = Math.max(160, Math.ceil(radius + cameraBound + 8));
+        landscape.configure(mobile(), radius);
+    }
     function moveTo(preset,forDevice=false,instant=false){
         if(disposed)return;
         controls.minAzimuthAngle=forDevice?-.85:-.28;
@@ -708,19 +744,20 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
         controls.enabled=false;
         if(instant){camera.position.copy(dest.pos);controls.target.copy(dest.target);controls.update();tween=null;controls.enabled=!paused;}
     }
-    function setView(name,instant=false){view=presets[name]?name:'overview';selected=null;renderer.shadowMap.needsUpdate=true;moveTo(presets[view],false,instant);}
-    function select(id){if(!devices.has(id))return;selected=id;renderer.shadowMap.needsUpdate=true;moveTo(deviceViews[id],true);}
-    function focusMonitor(){selected=null;view='monitor';moveTo(presets.monitor);}
+    function setView(name,instant=false){if(disposed)return;view=presets[name]?name:'overview';selected=null;renderer.shadowMap.needsUpdate=true;moveTo(presets[view],false,instant);}
+    function select(id){if(disposed||!devices.has(id))return;selected=id;renderer.shadowMap.needsUpdate=true;moveTo(deviceViews[id],true);}
+    function focusMonitor(){if(disposed)return;selected=null;view='monitor';moveTo(presets.monitor);}
     function setNight(value){
         if(disposed)return;
         night=value;hemi.color.set(night?'#b5c4d1':'#fffaf0');hemi.groundColor.set(night?'#697862':'#a7b093');hemi.intensity=night?.7:2.1;
         key.color.set(night?'#c0cfdd':'#fff0d6');key.intensity=night?.55:1.85;rimLight.intensity=night?.25:.4;
         deskLight.intensity=night?1.2:.3;warmLight.intensity=night?16:1.2;frontFill.intensity=night?.20:.5;
-        scene.background.set(night?'#344840':'#eee5d2');scene.fog.color.copy(scene.background);ground.material.color.set(night?'#101c18':'#7b7357');ground.material.opacity=night?.24:.18;
+        const palette=outdoorPalette(night);
+        scene.background.set(palette.paper);scene.fog.color.copy(scene.background);ground.material.color.set(night?'#101c18':'#7b7357');ground.material.opacity=night?.24:.18;
         sunPatch.material.opacity=night?.07:.60;inkMaterial.color.set(night?'#374a40':'#586048');
         bracketMaterial.color.set(night?'#d2dfb9':'#72885d');m.amberGlow.emissiveIntensity=night?1.4:.4;
         studioWindow.setNight(night);
-        landscape.setTheme({night});
+        landscape.setTheme(palette);
         renderer.shadowMap.needsUpdate=true;
     }
     const pointer=new THREE.Vector2(),raycaster=new THREE.Raycaster();let pointerStart=null,lastHover=0,multiTouch=false;
@@ -738,14 +775,20 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     listen(orbitSurface,'pointerleave',()=>{hovered=null;});
     const guardScreenPointer=e=>{
         if(!liveMonitor.element.contains(e.target))return;
-        const hit=hitAt(e);
-        if(hit!=='monitor'){e.preventDefault();e.stopImmediatePropagation();if(hit==='window')onWindowToggle();else if(hit)onSelect(hit);}
+        // Cancelling pointerdown does not cancel the subsequent native click.
+        // Keyboard activation has no pointer coordinates; test the control centre.
+        const rect=e.type==='click'&&e.detail===0?e.target.getBoundingClientRect():null;
+        const hit=hitAt(rect?{clientX:rect.left+rect.width/2,clientY:rect.top+rect.height/2}:e);
+        if(hit!=='monitor'){
+            e.preventDefault();e.stopImmediatePropagation();
+            if(e.type==='pointerdown'){if(hit==='window')onWindowToggle();else if(hit)onSelect(hit);}
+        }
     };
-    listen(container,'pointerdown',guardScreenPointer,true);
+    for(const type of ['pointerdown','click','dblclick','contextmenu','wheel'])listen(container,type,guardScreenPointer,{capture:true,passive:false});
     listen(controls,'start',()=>{tween=null;interactiveUntil=performance.now()+2000;});
     listen(controls,'end',()=>{interactiveUntil=performance.now()+1600;});
     function projectedMarkers(){const result=[];camera.updateMatrixWorld();devices.forEach(item=>{const p=item.anchor.clone().project(camera);result.push({id:item.id,x:(p.x*.5+.5)*container.clientWidth,y:(-.5*p.y+.5)*container.clientHeight,hovered:item.id===hovered,visible:p.z>-1&&p.z<1&&Math.abs(p.x)<.94&&Math.abs(p.y)<.88});});return result;}
-    function resize(){if(disposed)return;const w=container.clientWidth,h=container.clientHeight;renderer.setPixelRatio(Math.min(window.devicePixelRatio,mobile()?1.35:1.5));renderer.setSize(w,h);liveMonitor.resize(w,h);camera.aspect=w/h;camera.fov=w/h<1?48:36;camera.updateProjectionMatrix();if(selected)moveTo(deviceViews[selected],true,true);else if(!paused)setView(view,true);}
+    function resize(){if(disposed)return;const w=container.clientWidth,h=container.clientHeight;renderer.setPixelRatio(Math.min(window.devicePixelRatio,mobile()?1.35:1.5));renderer.setSize(w,h);liveMonitor.resize(w,h);camera.aspect=w/h;camera.fov=w/h<1?48:36;fitOutdoorCoverage();camera.updateProjectionMatrix();if(selected)moveTo(deviceViews[selected],true,true);else if(!paused)setView(view,true);}
     const resizeObserver=new ResizeObserver(resize);resizeObserver.observe(container);
     cleanups.push(() => resizeObserver.disconnect());
     function setPaused(value){if(disposed)return;paused=value;controls.enabled=!paused;if(!paused){lastTime=performance.now();if(!frameId&&!lost&&!document.hidden)frameId=requestAnimationFrame(render);}}
@@ -766,7 +809,8 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     function tickSimulation(dt){
         if(disposed)return;
         if(studioWindow.update(dt,state.breeze))renderer.shadowMap.needsUpdate=true;
-        landscape.update(dt,{reducedMotion,wind:.18+.82*studioWindow.getOpenAmount()});
+        const wind=.18+.82*studioWindow.getOpenAmount();
+        landscape.update(dt,{reducedMotion,wind});
         if(state.scopeRunning)scopeTime+=dt;
         if(state.watering){
             state.waterProgress=Math.min(3,state.waterProgress+dt);state.soilMoisture=Math.min(72,42+state.waterProgress*10);
@@ -774,11 +818,11 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
         }
         droplets.visible=state.watering&&!reducedMotion;
         if(droplets.visible){for(let i=0;i<12;i++){const t=(elapsed*.9+i/12)%1;waterPositions[i*3]=.1+Math.sin(i*4)*.08;waterPositions[i*3+1]=.85-t*.48;waterPositions[i*3+2]=.02+Math.cos(i*3)*.08;}waterGeo.attributes.position.needsUpdate=true;}
-        if(state.breeze&&!reducedMotion)breezeTime+=dt;
-        leaves.rotation.z=Math.sin(breezeTime*.7)*.025;
+        if(!reducedMotion)breezeTime+=dt*wind;
+        leaves.rotation.z=Math.sin(breezeTime*.7)*.025*wind;
         for(const {mesh,base} of curtains){
             const attr=mesh.geometry.attributes.position;
-            for(let i=0;i<attr.count;i++){const weight=Math.max(0,1-(base[i*3+1]+1.44)/2.88);attr.setZ(i,base[i*3+2]+Math.sin(breezeTime*.7+base[i*3]*3)*.075*weight*weight);}
+            for(let i=0;i<attr.count;i++){const weight=Math.max(0,1-(base[i*3+1]+1.44)/2.88);attr.setZ(i,base[i*3+2]+Math.sin(breezeTime*.7+base[i*3]*3)*.075*weight*weight*(reducedMotion?0:wind));}
             attr.needsUpdate=true;
         }
         sunPatch.rotation.z=-.42+Math.sin(breezeTime*.19)*.013;
@@ -849,7 +893,7 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     // Render the first instrument display before exposing the workspace.
     drawScope(scopeTex.ctx,512,320,0);scopeTex.texture.needsUpdate=true;
     frameId=requestAnimationFrame(render);
-    return {setView,select,focusMonitor,setNight,setPaused,dispose,projectedMarkers,setHovered:id=>{hovered=id;},getStats:()=>({drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,geometries:renderer.info.memory.geometries,textures:renderer.info.memory.textures,renderedFrames,shadowUpdates}),getView:()=>view};
+    return {setView,select,focusMonitor,setNight,setPaused,dispose,projectedMarkers,setHovered:id=>{if(!disposed)hovered=id;},getStats:()=>({drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,geometries:renderer.info.memory.geometries,textures:renderer.info.memory.textures,renderedFrames,shadowUpdates}),getView:()=>view};
     } catch (error) {
         dispose();
         throw error;

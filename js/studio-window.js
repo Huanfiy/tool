@@ -1,14 +1,22 @@
 /* Mechanical casements only. The room owns the exterior and the shared clock. */
 import * as THREE from 'three';
 
-export function createStudioWindow({ scene, box, bar, sphere, group, material, resources, reducedMotion, disposeOnce }) {
+export function createStudioWindow({ box, bar, group, material, reducedMotion, disposeOnce, layout }) {
     const root = new THREE.Group();
     root.name = 'opening-studio-window';
     root.userData.window = true;
     root.userData.windowOpen = true;
     const owned = new Set();
     let disposed = false, night = false;
-    const own = value => { owned.add(value); resources.add(value); return value; };
+    const own = value => { owned.add(value); return value; };
+    function dispose() {
+        if (disposed) return;
+        disposed = true;
+        owned.forEach(disposeOnce);
+        owned.clear();
+        root.removeFromParent();
+    }
+    try {
     const frame = material('windowFrame', { color: '#e9e8d9', roughness: .72 });
     const seal = material('windowSeal', { color: '#7f8e80', roughness: 1 });
     const handle = material('windowHandle', { color: '#a8b5a9', metalness: .45, roughness: .42 });
@@ -25,11 +33,11 @@ export function createStudioWindow({ scene, box, bar, sphere, group, material, r
     for (const y of [1.60, 4.37]) box(root, .17, .095, 5.39, -5.105, y, -.07, frame, .014);
     for (const z of [-2.655, 2.515]) box(root, .04, 2.66, .026, -5.17, 2.985, z, seal, .004);
 
-    const openingAngle = Math.PI / 3;
+    const openingAngle = layout.casement.maxAngle;
     const casements = [];
     for (const direction of [1, -1]) {
-        const leaf = group(root, -5.145, 2.985, direction === 1 ? -2.66 : 2.52);
-        const width = 2.58, height = 2.66, centre = direction * width / 2;
+        const leaf = group(root, layout.casement.hingeX, (layout.casement.top + layout.casement.bottom) / 2, direction === 1 ? layout.casement.zMin : layout.casement.zMax);
+        const width = layout.casement.width, height = layout.casement.top - layout.casement.bottom, centre = direction * width / 2;
         leaf.name = direction === 1 ? 'window-left-casement' : 'window-right-casement';
         for (const z of [0, direction * width]) box(leaf, .075, height, .077, 0, 0, z, frame, .011);
         for (const y of [-height / 2 + .042, height / 2 - .042]) box(leaf, .075, .084, width, 0, y, centre, frame, .011);
@@ -69,12 +77,12 @@ export function createStudioWindow({ scene, box, bar, sphere, group, material, r
     function update(dt, open = true) {
         if (disposed) return false;
         const target = open ? openingAngle : 0;
-        const moving = Math.abs(angle - target) > .0001;
+        const previousAngle = angle;
         angle = reducedMotion ? target : THREE.MathUtils.damp(angle, target, 7, Math.max(0, dt));
         if (Math.abs(angle - target) < .0001) angle = target;
         for (const { leaf, direction } of casements) leaf.rotation.y = -direction * angle;
         root.userData.windowOpen = !!open;
-        return moving;
+        return angle !== previousAngle;
     }
     function setNight(value) {
         if (disposed || night === !!value) return;
@@ -82,12 +90,8 @@ export function createStudioWindow({ scene, box, bar, sphere, group, material, r
         glass.color.set(night ? '#91abc4' : '#c3e0dc');
         glint.opacity = night ? .09 : .20;
     }
-    function dispose() {
-        if (disposed) return;
-        disposed = true;
-        owned.forEach(value => { disposeOnce(value); resources.delete(value); });
-        owned.clear();
-        root.removeFromParent();
-    }
     return { root, update, setNight, dispose, getOpenAmount: () => angle / openingAngle };
+    } catch (error) {
+        dispose(); throw error;
+    }
 }

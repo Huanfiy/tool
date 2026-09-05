@@ -1,53 +1,87 @@
-/* Local countryside canvas; drawing is owned by the room clock. */
-export function createLandscapeArt() {
-    let night = false;
-    const pastoralCanvas=document.createElement('canvas');pastoralCanvas.width=1024;pastoralCanvas.height=640;
-    const pastoralCtx=pastoralCanvas.getContext('2d');
-    function drawPastoral(t=0){
-        const w=pastoralCanvas.width,h=pastoralCanvas.height;
-        const sky=pastoralCtx.createLinearGradient(0,0,0,h);
-        sky.addColorStop(0,night?'#435b70':'#9fd6df');sky.addColorStop(.60,night?'#9ab3ae':'#d7e9cf');sky.addColorStop(1,night?'#607969':'#f3e3b4');
-        pastoralCtx.fillStyle=sky;pastoralCtx.fillRect(0,0,w,h);
-        // Sun, warm halo and slow cloud strokes.
-        const sx=w*.47,sy=h*.20;pastoralCtx.fillStyle=night?'#ffe4a0':'#ffd978';
-        pastoralCtx.globalAlpha=.22;pastoralCtx.beginPath();pastoralCtx.arc(sx,sy,h*.17,0,Math.PI*2);pastoralCtx.fill();pastoralCtx.globalAlpha=1;
-        pastoralCtx.fillStyle=night?'#fff0b2':'#ffeaa0';pastoralCtx.beginPath();pastoralCtx.arc(sx,sy,h*.078,0,Math.PI*2);pastoralCtx.fill();
-        // Soft rays and a few drifting bird marks make the sky read clearly even
-        // in the wide room view where the window occupies only a small region.
-        pastoralCtx.strokeStyle=night?'#ffe9a544':'#fff5b866';pastoralCtx.lineWidth=5;pastoralCtx.lineCap='round';
-        for(let i=0;i<8;i++){const a=i*Math.PI/4+.18;pastoralCtx.beginPath();pastoralCtx.moveTo(sx+Math.cos(a)*h*.09,sy+Math.sin(a)*h*.09);pastoralCtx.lineTo(sx+Math.cos(a)*h*.15,sy+Math.sin(a)*h*.15);pastoralCtx.stroke();}
-        pastoralCtx.fillStyle=night?'#dbe6d5a0':'#fffdf0b5';
-        for(const [x,y,s] of [[.18,.18,1],[.47,.26,.72],[.84,.31,.9]]){
-            const drift=Math.sin(t*.08+x*7)*w*.018;pastoralCtx.beginPath();pastoralCtx.ellipse(w*x+drift,h*y,w*.105*s,h*.028*s,0,0,Math.PI*2);pastoralCtx.fill();
-            pastoralCtx.beginPath();pastoralCtx.ellipse(w*x-w*.055+drift,h*y+h*.01,w*.07*s,h*.024*s,0,0,Math.PI*2);pastoralCtx.fill();
+/* Deterministic, world-oriented countryside painting. No scene or animation loop. */
+export function landscapeRandom(seed = 741) {
+    return () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
+}
+
+export function createLandscapeArt(width, height) {
+    const canvas = document.createElement('canvas'), layer = document.createElement('canvas');
+    canvas.width = layer.width = width;
+    canvas.height = layer.height = height;
+    const ctx = canvas.getContext('2d'), ink = layer.getContext('2d');
+    if (!ctx || !ink) throw new Error('Landscape canvas is unavailable');
+
+    function draw(palette, layout) {
+        const { paper, sky, haze, hills, night } = palette;
+        const w = width, h = height, horizon = layout.background.horizonUV * h;
+        const random = landscapeRandom();
+        ctx.fillStyle = paper; ctx.fillRect(0, 0, w, h);
+        ink.clearRect(0, 0, w, h);
+        // Sphere longitude .5 faces -X; image y=.5 is world elevation zero.
+        // Unlike the former window-height UV, these angles do not depend on a camera.
+        const wash = ink.createLinearGradient(0, h * .10, 0, horizon);
+        wash.addColorStop(0, sky); wash.addColorStop(.72, haze); wash.addColorStop(1, paper);
+        ink.fillStyle = wash; ink.fillRect(0, 0, w, horizon);
+        const [sx, sy, sz] = layout.sunDirection;
+        const sunX = w * (.5 + Math.atan2(sz, -sx) / (Math.PI * 2));
+        const sunY = horizon - h * Math.atan2(sy, Math.hypot(sx, sz)) / Math.PI;
+        const halo = ink.createRadialGradient(sunX, sunY, 0, sunX, sunY, h * .065);
+        halo.addColorStop(0, night ? '#f1e2b451' : '#fff0b58a');
+        halo.addColorStop(1, '#fff0b500');
+        ink.fillStyle = halo; ink.fillRect(sunX - h * .07, sunY - h * .07, h * .14, h * .14);
+        ink.fillStyle = night ? '#e5e8d0' : '#ffedb2';
+        ink.beginPath(); ink.arc(sunX, sunY, h * .015, 0, Math.PI * 2); ink.fill();
+        if (night) {
+            ink.fillStyle = sky;
+            ink.beginPath(); ink.arc(sunX + h * .008, sunY - h * .005, h * .014, 0, Math.PI * 2); ink.fill();
+            ink.fillStyle = '#d8e2cb';
+            for (let i = 0; i < 46; i++) {
+                const x = w * (.27 + random() * .46), y = h * (.16 + random() * .26);
+                ink.globalAlpha = .25 + random() * .40;
+                ink.beginPath(); ink.arc(x, y, Math.max(.55, w / 2300), 0, Math.PI * 2); ink.fill();
+            }
+            ink.globalAlpha = 1;
         }
-        const birdColour=night?'#d7e3d3':'#4d6c6c';
-        for(const [x,y,phase,size] of [[.28,.34,.2,1],[.53,.29,1.6,.78],[.76,.40,3.4,.92],[.90,.25,4.8,.60]]){
-            const drift=Math.sin(t*.34+phase)*w*.045,cx=w*x+drift,cy=h*y+Math.cos(t*.46+phase)*h*.012,s=size;
-            pastoralCtx.strokeStyle=birdColour;pastoralCtx.globalAlpha=night?.72:.88;pastoralCtx.lineWidth=4*s;pastoralCtx.beginPath();
-            pastoralCtx.moveTo(cx-w*.025*s,cy);pastoralCtx.quadraticCurveTo(cx-w*.012*s,cy-h*.018*s,cx,cy);
-            pastoralCtx.quadraticCurveTo(cx+w*.012*s,cy-h*.018*s,cx+w*.025*s,cy);pastoralCtx.stroke();
+        // Low fields occupy only the outward-facing horizon, not a 360° colour band.
+        for (let row = 0; row < 3; row++) {
+            ink.fillStyle = hills[row];
+            ink.beginPath(); ink.moveTo(w * .22, horizon);
+            for (let i = 0; i <= 140; i++) {
+                const u = .22 + i / 140 * .56;
+                const envelope = Math.sin((u - .22) / .56 * Math.PI);
+                const rise = (.013 + .012 * Math.sin(u * 31 + row * 1.8) + (2 - row) * .011) * envelope;
+                ink.lineTo(w * u, horizon - h * Math.max(.001, rise));
+            }
+            ink.lineTo(w * .78, horizon); ink.closePath(); ink.fill();
         }
-        pastoralCtx.globalAlpha=1;
-        const hills=[['#83b579',.53],['#679f6c',.63],['#528b62',.76],['#3f7655',.90]];
-        hills.forEach(([colour,y],layer)=>{pastoralCtx.fillStyle=night&&layer>1?['#527266','#466356','#385448','#2c443d'][layer]:colour;pastoralCtx.beginPath();pastoralCtx.moveTo(0,h*y);pastoralCtx.bezierCurveTo(w*.17,h*(y-.17),w*.31,h*(y+.10),w*.51,h*(y-.06));pastoralCtx.bezierCurveTo(w*.75,h*(y-.20),w*.87,h*(y+.04),w,h*(y-.08));pastoralCtx.lineTo(w,h);pastoralCtx.lineTo(0,h);pastoralCtx.fill();});
-        // Small orchard silhouettes add a recognisable tree line above the fields.
-        for(const [x,y,s] of [[.08,.59,1.12],[.89,.57,.90]]){
-            pastoralCtx.fillStyle=night?'#3c5b4b':'#735f4e';pastoralCtx.fillRect(w*x-w*.009,h*(y-.01),w*.018,h*.16*s);
-            pastoralCtx.fillStyle=night?'#4f7b5c':'#5f9864';
-            for(const [dx,dy,r] of [[-.035,-.05,.055],[.02,-.08,.07],[.075,-.03,.052],[.02,.01,.062]]){pastoralCtx.beginPath();pastoralCtx.arc(w*x+w*dx*s,h*y+h*dy*s,h*r*s,0,Math.PI*2);pastoralCtx.fill();}
+        // Orchard silhouettes, fine field rows and a tiny distant cottage.
+        for (let i = 0; i < 32; i++) {
+            const u = .34 + random() * .34, x = w * u;
+            const y = horizon - h * (.008 + random() * .010), s = h * (.002 + random() * .003);
+            ink.fillStyle = hills[2];
+            ink.fillRect(x - s * .12, y, s * .24, s * 1.6);
+            ink.beginPath(); ink.ellipse(x, y - s * .6, s, s * 1.4, 0, 0, Math.PI * 2); ink.fill();
         }
-        // A winding path and tiny cottage make the view read as a lived-in valley.
-        pastoralCtx.fillStyle=night?'#756f58':'#dfc78e';pastoralCtx.beginPath();pastoralCtx.moveTo(w*.43,h);pastoralCtx.quadraticCurveTo(w*.56,h*.79,w*.48,h*.68);pastoralCtx.quadraticCurveTo(w*.61,h*.78,w*.70,h);pastoralCtx.fill();
-        pastoralCtx.fillStyle=night?'#785a4e':'#d5986b';pastoralCtx.fillRect(w*.18,h*.58,w*.11,h*.08);pastoralCtx.fillStyle=night?'#513f4b':'#9e6250';pastoralCtx.beginPath();pastoralCtx.moveTo(w*.16,h*.58);pastoralCtx.lineTo(w*.235,h*.51);pastoralCtx.lineTo(w*.31,h*.58);pastoralCtx.closePath();pastoralCtx.fill();pastoralCtx.fillStyle='#f0e8bb';pastoralCtx.fillRect(w*.215,h*.61,w*.022,h*.05);pastoralCtx.fillRect(w*.26,h*.61,w*.022,h*.05);
-        for(let i=0;i<75;i++){
-            const x=(i*83%w),y=h*(.74+((i*47)%170)/1000);pastoralCtx.strokeStyle=night?'#9fbe8855':'#477b5268';pastoralCtx.lineWidth=2;pastoralCtx.beginPath();pastoralCtx.moveTo(x,y+12);pastoralCtx.quadraticCurveTo(x-3,y,x+2,y-9);pastoralCtx.stroke();
-            if(i%3===0){pastoralCtx.fillStyle=night?'#d7a3bd':'#e99082';pastoralCtx.beginPath();pastoralCtx.arc(x+3,y-10,4,0,Math.PI*2);pastoralCtx.fill();}
+        const x = w * .457, y = horizon - h * .009, cw = w * .011, ch = h * .013;
+        ink.fillStyle = night ? '#6b7064' : '#d9ba87'; ink.fillRect(x, y - ch, cw, ch);
+        ink.fillStyle = night ? '#525c60' : '#a88165';
+        ink.beginPath(); ink.moveTo(x - cw * .15, y - ch); ink.lineTo(x + cw * .5, y - ch * 1.65); ink.lineTo(x + cw * 1.15, y - ch); ink.fill();
+        ink.fillStyle = night ? '#dac68b' : '#eee3b5'; ink.fillRect(x + cw * .58, y - ch * .69, cw * .19, ch * .34);
+        ink.strokeStyle = night ? '#a4b89a22' : '#ebdfae55'; ink.lineWidth = Math.max(.7, w / 1700);
+        for (let i = 0; i < 4; i++) {
+            ink.beginPath(); ink.moveTo(w * .36, horizon - h * (.002 + i * .002));
+            ink.quadraticCurveTo(w * .53, horizon - h * (.008 + i * .002), w * .68, horizon - h * .003); ink.stroke();
         }
-        // Curved rows of crops create depth between the hills and the near grass.
-        pastoralCtx.strokeStyle=night?'#b4c99545':'#577d5360';pastoralCtx.lineWidth=3;
-        for(let row=0;row<5;row++){const yy=h*(.70+row*.055);pastoralCtx.beginPath();pastoralCtx.moveTo(w*.03,yy);pastoralCtx.quadraticCurveTo(w*.38,yy-h*.025,w*.95,yy-h*.045);pastoralCtx.stroke();}
-        pastoralCtx.globalAlpha=1;
+        // Wide longitude and elevation feathering. The seam, poles and lower
+        // hemisphere are exactly paper, so the finite ground cannot expose a rim.
+        ink.globalCompositeOperation = 'destination-in';
+        const horizontal = ink.createLinearGradient(0, 0, w, 0);
+        for (const [at, alpha] of [[0, 0], [.31, 0], [.44, 1], [.58, 1], [.70, 0], [1, 0]]) horizontal.addColorStop(at, `rgba(0,0,0,${alpha})`);
+        ink.fillStyle = horizontal; ink.fillRect(0, 0, w, h);
+        const vertical = ink.createLinearGradient(0, 0, 0, h);
+        for (const [at, alpha] of [[0, 0], [.07, 0], [.22, .8], [.40, 1], [.494, 1], [.5, 0], [1, 0]]) vertical.addColorStop(at, `rgba(0,0,0,${alpha})`);
+        ink.fillStyle = vertical; ink.fillRect(0, 0, w, h);
+        ink.globalCompositeOperation = 'source-over';
+        ctx.drawImage(layer, 0, 0);
     }
-    return { canvas: pastoralCanvas, draw(time, value) { night = !!value; drawPastoral(time); } };
+    return { canvas, draw };
 }
