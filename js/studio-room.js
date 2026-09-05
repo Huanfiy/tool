@@ -370,12 +370,16 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     textLabel(architecture,'a work in progress',1.05,.08,-1.15,1.795,-1.89,{rotation:-Math.PI/2,color:'#dce0be',font:'Georgia, serif'});
     cable(architecture,[[-2.4,1.80,-2.2],[-2.2,1.82,-1.84],[-1.4,1.84,-1.85],[-1.27,1.85,-2.2]],m.orange,.014);
 
-    // Edge-to-edge live screen; the OS is rendered in this physical plane at every distance.
+    // Keep the 16:9 desktop full-size, with a uniform, near-borderless rim.
     const monitor=device('monitor',.30,1.79,-2.86,[.30,4.02,-2.80]);
+    const monitorScreen={width:3.60,height:2.025,y:1.22,z:.035},monitorBezel=.018;
     box(monitor.fixed,.70,.035,.45,0,.025,0,deskSteel);
     box(monitor.fixed,.095,.66,.08,0,.35,-.12,deskSteel);
-    box(monitor.fixed,3.62,2.06,.065,0,1.22,0,m.black,.018);
-    const liveMonitor=createStudioMonitor({container,camera,monitor:monitor.root,width:3.60,height:2.025,y:1.22,z:.035});
+    // Deliberately outside fixed: batch()'s expanded ink shell creates a second
+    // silhouette around this thin panel, making the live screen look misaligned.
+    const monitorPanel=box(monitor.root,monitorScreen.width+2*monitorBezel,monitorScreen.height+2*monitorBezel,.065,0,monitorScreen.y,0,m.black,.012);
+    monitorPanel.name='monitor-panel';
+    const liveMonitor=createStudioMonitor({container,camera,monitor:monitor.root,...monitorScreen});
     cleanups.push(() => liveMonitor.dispose());
     const keyboard=group(architecture,.28,1.84,-1.99);
     box(keyboard,1.69,.08,.52,0,0,0,m.black,.04);
@@ -698,7 +702,7 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
         const pos=new THREE.Vector3(...preset.pos), target=new THREE.Vector3(...preset.target);
         if(view==='monitor'&&!forDevice){
             const aspect=container.clientWidth/container.clientHeight;
-            const distance=Math.max(2.025/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2))*.65),3.60/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2))*aspect*.90));
+            const distance=Math.max(monitorScreen.height/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2))*.65),monitorScreen.width/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2))*aspect*.90));
             pos.set(.3,3.025,-2.86+distance);target.set(.3,3.01,-2.86);
             return {pos,target};
         }

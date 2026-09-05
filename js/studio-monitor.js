@@ -24,6 +24,7 @@ export function createStudioMonitor({ container, camera, monitor, width, height,
     // hides HTML behind foreground furniture, while the rest of the room stays opaque.
     const aperture = new THREE.Mesh(new THREE.PlaneGeometry(width, height),
         new THREE.MeshBasicMaterial({ color: 0x000000, opacity: 0, blending: THREE.NoBlending, side: THREE.FrontSide, fog: false, toneMapped: false }));
+    aperture.name = 'monitor-aperture';
     aperture.position.set(0, y, z);
     aperture.renderOrder = 1;
     monitor.add(aperture);

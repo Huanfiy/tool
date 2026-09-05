@@ -1,6 +1,9 @@
 /* huanfly-os is always mounted on the physical monitor, with a WebGL-free fallback. */
 .monitor-focus { position: fixed; inset: 0; display: none; pointer-events: none; }
-.monitor-focus.is-spatial { position: absolute; inset: auto; display: block; backface-visibility: hidden; }
+/* Bleed only the dark backing beneath the opaque WebGL rim. The HTML viewport
+   and its hit area stay unchanged; coincident CSS/WebGL antialiasing cannot
+   reveal the paper background through a hairline at the aperture edge. */
+.monitor-focus.is-spatial { position: absolute; inset: auto; display: block; backface-visibility: hidden; background: var(--st-screen); box-shadow: 0 0 0 3px var(--st-screen); }
 .mf-screen { position: absolute; inset: 0; width: 100%; height: 100%; overflow: hidden; background: #14241d; color: #e6f0e8; font-family: var(--font-ui); -webkit-font-smoothing: antialiased; touch-action: auto; }
 .mf-exit { position: fixed; z-index: 7; right: 30px; top: 20px; display: flex; align-items: center; gap: 8px; min-height: 37px; padding: 0 14px; background: var(--lab-paper); color: var(--lab-ink); border: 1px solid var(--lab-line); border-radius: 15px; font-size: 12px !important; }
 .mf-exit kbd { font: 10px var(--font-ui); opacity: .6; }

@@ -39,7 +39,37 @@ const layout = {
     casement:{hingeX:-5.145,width:2.58,maxAngle:Math.PI/3,bottom:1.655,top:4.315,zMin:-2.66,zMax:2.52}
 };
 const palette = night => ({night,paper:night?'#344840':'#eee5d2',sky:night?'#405960':'#b7d8d4',haze:night?'#567163':'#dde5cc',hills:['#becbb1','#a7bd9b','#93ad86'],ground:'#93a574',crown:'#78a274',grass:'#8d9c66',bark:'#8f7256',stone:'#d0c5ab',flower:'#fff6e3',cloud:'#fcf5df',bird:'#6c8077'});
-let landscape, renderer, room;
+let landscape, renderer, room, roomFrame;
+// Observe the real room camera/geometry without exporting production internals.
+const sceneBeforeRender = THREE.Scene.prototype.onBeforeRender;
+THREE.Scene.prototype.onBeforeRender = function(renderer, scene, camera, ...args) {
+    sceneBeforeRender.call(this, renderer, scene, camera, ...args);
+    if (scene.getObjectByName('monitor-aperture')) roomFrame = {scene, camera};
+};
+let maxScreenCornerError = 0;
+function assertMonitorAlignment() {
+    const {scene, camera} = roomFrame;
+    const aperture = scene.getObjectByName('monitor-aperture'), panel = scene.getObjectByName('monitor-panel');
+    const {width, height} = aperture.geometry.parameters;
+    panel.geometry.computeBoundingBox();
+    const size = panel.geometry.boundingBox.getSize(new THREE.Vector3());
+    assert(Math.abs(width / height - 16 / 9) < 1e-8, 'desktop aspect ratio changed');
+    assert(Math.abs((size.x - width) / 2 - .018) < 1e-6 && Math.abs((size.y - height) / 2 - .018) < 1e-6, 'monitor rim is not uniform');
+    assert(panel.parent === aperture.parent && !panel.children.length, 'monitor panel rejoined the expanded outline batch');
+    assert(panel.position.y === aperture.position.y && size.z / 2 < aperture.position.z, 'screen is not aligned with the panel front');
+    assert(aperture.material.blending === THREE.NoBlending && aperture.material.opacity === 0 && aperture.material.depthTest && aperture.material.depthWrite, 'screen aperture lost depth occlusion');
+    const stage = document.getElementById('stage'), desktop = document.getElementById('monitor-focus'), bounds = stage.getBoundingClientRect();
+    for (const [u,v] of [[0,0],[1,0],[1,1],[0,1]]) {
+        const dot = document.createElement('span');
+        dot.style.cssText = `position:absolute;left:${u * 100}%;top:${v * 100}%;width:0;height:0;pointer-events:none`;
+        desktop.append(dot);
+        const actual = dot.getBoundingClientRect(); dot.remove();
+        const p = new THREE.Vector3((u - .5) * width, (.5 - v) * height, 0).applyMatrix4(aperture.matrixWorld).project(camera);
+        const error = Math.hypot(actual.x - bounds.left - (p.x * .5 + .5) * stage.clientWidth, actual.y - bounds.top - (.5 - p.y * .5) * stage.clientHeight);
+        maxScreenCornerError = Math.max(maxScreenCornerError, error);
+        assert(error < .1, `HTML/WebGL screen corner drift: ${error}px`);
+    }
+}
 try {
     for (const reducedMotion of [false,true]) {
         const window = createStudioWindow({...helpers,layout,reducedMotion,disposeOnce});
@@ -118,8 +148,14 @@ try {
         while(room.getStats().renderedFrames<2)await frame();
         assert(readyCount===i+1,'first-frame readiness must fire exactly once');
         assert(stage.contains(desktop)&&desktop.style.transform.includes('matrix3d(')&&!desktop.inert&&getComputedStyle(desktop).visibility==='visible','ready desktop not projected onto the monitor');
-        for(const view of ['overview','panorama','bench','fabrication','robotics','monitor']){room.setView(view,true);await frame();await frame();}
+        for(const view of ['overview','panorama','bench','fabrication','robotics','monitor']){room.setView(view,true);await frame();await frame();if(i===0)assertMonitorAlignment();}
         if(i===0) {
+            for(const [width,height] of [[390,844],[700,900],[701,900],[844,390]]) {
+                stage.style.width=`${width}px`;stage.style.height=`${height}px`;
+                await frame();await frame();await frame();assertMonitorAlignment();
+            }
+            stage.style.width='';stage.style.height='';await frame();await frame();await frame();
+            pass(`显示器：均匀实体窄边、无重复描边、深度孔洞及多视角/尺寸四角对齐（最大 ${maxScreenCornerError.toFixed(4)}px）`);
             const desktop=document.getElementById('monitor-focus');
             const control=document.createElement('button');control.textContent='app control';
             control.style.cssText='position:absolute;width:8px;height:8px;padding:0;border:0;transform:translate(-50%,-50%)';
@@ -199,6 +235,7 @@ try {
 } finally {
     room?.dispose();landscape?.dispose();renderer?.dispose();shared.forEach(disposeOnce);
     for(const [Type,original] of originals)Type.prototype.dispose=original;
+    THREE.Scene.prototype.onBeforeRender = sceneBeforeRender;
 }
 </script>
 </html>
