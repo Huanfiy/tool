@@ -1,10 +1,10 @@
 /* =============================================================
  * Huanfly · 工作室场景交互（studio.html）
  * 1. 悬停 / 触摸 / 键盘聚焦 → 手绘说明卡
- * 2. 物件互动：焊台、热风枪、风扇、元件柜、示波器、打印机、台灯、小黑…
- * 3. 显示器聚焦：以屏幕为中心推近，HTML 层 huanfly-os 精确覆盖
- * 4. 待机屏时钟、昼夜（主题）联动、窄屏初始平移
- * 依赖：js/script.js（主题切换按钮 .theme-toggle）
+ * 2. 物件互动：焊台、热风枪、风扇、元件柜、示波器、打印机、小黑…
+ * 3. 显示器聚焦：以屏幕为中心推近，展开自适应 huanfly-os
+ * 4. 待机屏时钟、昼夜（主题）联动、全景与显示器聚焦
+ * 依赖：js/script.js（站点主题初始化）
  * 对外：window.Studio = { focusMonitor, unfocusMonitor, toggleTheme, isFocused }
  * ============================================================= */
 (function () {
@@ -143,7 +143,6 @@
         gun: false,
         fan: false,
         fanManual: null,      // 用户手动指定风扇开关后不再自动跟随
-        lampManual: null,
         drawer: false,
         scope: 'sine',
         printer: 'idle',      // idle | printing | done
@@ -179,14 +178,6 @@
         $('gun-station').classList.toggle('on', on);
         $('gun-temp').textContent = on ? '380°' : 'OFF';
         syncFan();
-    }
-
-    function setLamp(on) {
-        root.classList.toggle('lamp-on', on);
-    }
-
-    function syncLampWithTheme() {
-        if (state.lampManual === null) setLamp(isDark());
     }
 
     /* ---- 3D 打印机 ---- */
@@ -306,12 +297,23 @@
         try { localStorage.setItem('theme', next); } catch (e) { /* ignore */ }
     }
 
-    const themeObserver = new MutationObserver(() => syncLampWithTheme());
+    function syncThemeControls() {
+        const dark = isDark();
+        const control = $('studio-daynight');
+        control.querySelector('i').className = dark ? 'fas fa-sun' : 'fas fa-moon';
+        control.setAttribute('aria-label', dark ? '切换到日间工作室' : '切换到夜间工作室');
+        control.title = control.getAttribute('aria-label');
+    }
+
+    const themeObserver = new MutationObserver(() => {
+        syncThemeControls();
+    });
     themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
     /* ---- 点击分发 ---- */
     const actions = {
         monitor: () => focusMonitor(),
+        mouse: () => focusMonitor(),
         keyboard: () => {
             const kb = $('keyboard');
             kb.classList.remove('wave');
@@ -320,10 +322,6 @@
             setTimeout(() => { window.location.href = 'tools/keyboard.html'; }, 650);
         },
         mug: () => $('mug').classList.toggle('on'),
-        lamp: () => {
-            state.lampManual = !root.classList.contains('lamp-on');
-            setLamp(state.lampManual);
-        },
         cat: () => pokeCat(),
         window: () => toggleTheme(),
         toolbox: () => {
@@ -353,7 +351,7 @@
             hs.dataset.touchArmed = '1';
             return;
         }
-        dismissHint();
+        hideTip();
         const fn = actions[hs.dataset.id];
         if (fn) fn(hs, e);
     });
@@ -389,8 +387,11 @@
     const mfScreen = $('mf-screen');
     const mfExit = $('mf-exit');
     const mfDim = $('mf-dim');
+    const focusLayer = $('monitor-focus');
+    const background = [stage, $('studio-leave'), $('studio-toolbar')];
     let focused = false;
     let focusTransitionTimer = null;
+    let returnFocus = null;
 
     function computeFocusTransform() {
         // 同一任务内先去掉 transform 再测量，中间不会绘制帧，不会闪
@@ -415,7 +416,6 @@
         const { s, tx, ty } = computeFocusTransform();
         if (!animate) scene.style.transition = 'none';
         scene.style.transform = `translate(${tx}px, ${ty}px) scale(${s})`;
-        mfScreen.style.borderRadius = (8 * s) + 'px';
         if (!animate) {
             void scene.getBoundingClientRect();
             scene.style.transition = '';
@@ -424,16 +424,21 @@
 
     function focusMonitor() {
         if (focused) return;
+        returnFocus = document.activeElement;
         focused = true;
         hideTip();
-        clearTouched();
         dismissHint();
+        clearTouched();
         root.classList.add('is-focused');
         document.body.classList.add('is-focused');
+        background.forEach((el) => { el.inert = true; });
         applyFocusTransform(!reducedMotion);
         const done = () => {
             if (!focused) return;
             root.classList.add('is-focused-ready');
+            focusLayer.inert = false;
+            mfExit.inert = false;
+            mfScreen.focus({ preventScroll: true });
             if (window.StudioOS && typeof window.StudioOS.wake === 'function') {
                 window.StudioOS.wake();
             }
@@ -446,6 +451,8 @@
         if (!focused) return;
         focused = false;
         clearTimeout(focusTransitionTimer);
+        focusLayer.inert = true;
+        mfExit.inert = true;
         if (window.StudioOS && typeof window.StudioOS.sleep === 'function') {
             window.StudioOS.sleep();
         }
@@ -454,6 +461,12 @@
         focusTransitionTimer = setTimeout(() => {
             root.classList.remove('is-focused');
             document.body.classList.remove('is-focused');
+            background.forEach((el) => { el.inert = false; });
+            if (returnFocus && returnFocus !== document.body && returnFocus.isConnected) {
+                returnFocus.focus({ preventScroll: true });
+            } else {
+                $('studio-enter').focus({ preventScroll: true });
+            }
         }, reducedMotion ? 30 : 700);
     }
 
@@ -461,6 +474,19 @@
     mfDim.addEventListener('click', unfocusMonitor);
 
     document.addEventListener('keydown', (e) => {
+        if (e.key === 'Tab' && focused) {
+            const controls = [...focusLayer.querySelectorAll('button, input, textarea, select, a[href], summary, [tabindex="0"]')]
+                .filter((el) => !el.disabled && !el.closest('[inert]') && el.getClientRects().length && getComputedStyle(el).visibility !== 'hidden');
+            if (!controls.length) { e.preventDefault(); return; }
+            const first = controls[0];
+            const last = controls[controls.length - 1];
+            if (e.shiftKey && (document.activeElement === first || !controls.includes(document.activeElement))) {
+                e.preventDefault(); last.focus();
+            } else if (!e.shiftKey && (document.activeElement === last || !controls.includes(document.activeElement))) {
+                e.preventDefault(); first.focus();
+            }
+            return;
+        }
         if (e.key !== 'Escape' || !focused) return;
         if (window.StudioOS && typeof window.StudioOS.handleEscape === 'function' && window.StudioOS.handleEscape()) {
             return;
@@ -474,41 +500,67 @@
         resizeTimer = setTimeout(() => {
             if (focused) {
                 applyFocusTransform(false);
-            } else {
-                centerStage();
             }
+            hideTip();
         }, 80);
     }, { passive: true });
 
     /* -------------------------------------------------------------
-     * 入场 / 引导 / 窄屏平移
+     * 入场 / 引导 / 全屏
      * ----------------------------------------------------------- */
     const hint = $('studio-hint');
-    let hintDismissed = false;
+    let hintTimer = null;
+
     function dismissHint() {
-        if (hintDismissed) return;
-        hintDismissed = true;
-        hint.classList.add('hide');
+        clearTimeout(hintTimer);
+        hint.classList.add('is-dismissed');
     }
 
-    function centerStage() {
-        // 窄屏时场景比视口宽：默认对准显示器所在位置（约 62%）
-        const overflow = scene.clientWidth - stage.clientWidth;
-        if (overflow > 0) {
-            stage.scrollLeft = Math.max(0, Math.min(overflow, scene.clientWidth * 0.62 - stage.clientWidth / 2));
+    $('studio-enter').addEventListener('click', focusMonitor);
+    $('studio-daynight').addEventListener('click', toggleTheme);
+    $('studio-guides').addEventListener('click', (e) => {
+        const visible = root.classList.toggle('show-guides');
+        e.currentTarget.setAttribute('aria-pressed', String(visible));
+    });
+
+    const fullscreenButton = $('studio-fullscreen');
+    fullscreenButton.hidden = !document.fullscreenEnabled;
+    fullscreenButton.addEventListener('click', async () => {
+        try {
+            if (document.fullscreenElement) {
+                await document.exitFullscreen();
+            } else {
+                await document.documentElement.requestFullscreen();
+            }
+        } catch (error) {
+            hint.textContent = '浏览器暂时无法进入全屏，仍可在当前窗口探索。';
+            hint.classList.remove('is-dismissed');
+            hintTimer = setTimeout(dismissHint, 6000);
         }
-        const overflowY = scene.clientHeight - stage.clientHeight;
-        if (overflowY > 0) stage.scrollTop = overflowY / 2;
-    }
+    });
+    document.addEventListener('fullscreenchange', () => {
+        const fullscreen = !!document.fullscreenElement;
+        fullscreenButton.setAttribute('aria-pressed', String(fullscreen));
+        fullscreenButton.setAttribute('aria-label', fullscreen ? '退出全屏' : '全屏查看工作室');
+        fullscreenButton.title = fullscreenButton.getAttribute('aria-label');
+        fullscreenButton.querySelector('i').className = fullscreen ? 'fas fa-compress' : 'fas fa-expand';
+    });
+
+    $('studio-toolbar').addEventListener('click', dismissHint);
+    stage.addEventListener('pointerdown', dismissHint, { passive: true });
+    stage.addEventListener('keydown', dismissHint);
+    scene.addEventListener('pointercancel', () => { clearTouched(); hideTip(); });
 
     function init() {
-        centerStage();
-        syncLampWithTheme();
+        hint.textContent = window.matchMedia('(pointer: coarse)').matches
+            ? '轻点查看，再点互动 · 点击显示器进入电脑'
+            : '点击物件探索 · 点击显示器进入电脑';
+        syncThemeControls();
         renderPrinter();
         requestAnimationFrame(() => {
             root.classList.add('is-ready');
         });
-        setTimeout(dismissHint, 9000);
+        hintTimer = setTimeout(dismissHint, 6000);
     }
 
     if (document.readyState === 'loading') {

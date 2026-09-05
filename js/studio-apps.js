@@ -77,7 +77,7 @@
         if (h < 12) return '上午好，适合焊点东西 ☀️';
         if (h < 14) return '午安，先吃饭，板子不会跑 🍃';
         if (h < 18) return '下午好，泡杯茶继续 🍵';
-        if (h < 22) return '晚上好，台灯已就位 ✨';
+        if (h < 22) return '晚上好，窗外的星星亮了 ✨';
         return '夜猫子模式已开启 🐈‍⬛';
     }
 
@@ -503,7 +503,7 @@
                     const rows = [
                         ['help', '显示本帮助'], ['ls', '列出文件'], ['cat <file>', '查看文件'],
                         ['posts', '列出博客文章'], ['open <n|blog|tools|about|home>', '打开文章或页面'],
-                        ['neofetch', '系统信息'], ['studio <lamp|iron|gun|fan|printer|window>', '操控工作室里的物件'],
+                        ['neofetch', '系统信息'], ['studio <iron|gun|fan|printer|window>', '操控工作室里的物件'],
                         ['theme', '切换昼夜'], ['date', '当前时间'], ['echo <text>', '回显'],
                         ['history', '命令历史'], ['clear', '清屏 (Ctrl+L)'], ['exit', '回到桌面']
                     ];
@@ -587,9 +587,9 @@
                     writeln('用法: open <编号|blog|tools|about|home>');
                 },
                 studio(args) {
-                    const map = { lamp: 'lamp', iron: 'iron-station', gun: 'gun-station', fan: 'fan', printer: 'printer', window: 'window', cat: 'cat', mug: 'mug', toolbox: 'toolbox', scope: 'scope' };
+                    const map = { iron: 'iron-station', gun: 'gun-station', fan: 'fan', printer: 'printer', window: 'window', cat: 'cat', mug: 'mug', toolbox: 'toolbox', scope: 'scope' };
                     const id = map[(args[0] || '').toLowerCase()];
-                    if (!id) { writeln('用法: studio <lamp|iron|gun|fan|printer|window|cat|mug|toolbox|scope>'); return; }
+                    if (!id) { writeln('用法: studio <iron|gun|fan|printer|window|cat|mug|toolbox|scope>'); return; }
                     const el = document.getElementById(id);
                     if (el) {
                         el.dispatchEvent(new MouseEvent('click', { bubbles: true }));
@@ -794,12 +794,17 @@
             viewerIndex.textContent = `${idx + 1} / ${items.length} · ${SOURCES[current].label}`;
             viewer.classList.add('open');
             viewer.setAttribute('aria-hidden', 'false');
+            grid.inert = true;
+            if (!viewer.contains(document.activeElement)) $('album-close').focus({ preventScroll: true });
         }
 
         function closeViewer() {
+            const previous = viewerIdx;
             viewer.classList.remove('open');
             viewer.setAttribute('aria-hidden', 'true');
+            grid.inert = false;
             viewerIdx = -1;
+            if (previous >= 0) grid.querySelector(`[data-idx="${previous}"]`)?.focus({ preventScroll: true });
         }
 
         function step(d) {
@@ -822,11 +827,12 @@
         });
         $('album-prev').addEventListener('click', () => step(-1));
         $('album-next').addEventListener('click', () => step(1));
+        $('album-close').addEventListener('click', closeViewer);
         viewer.addEventListener('click', (e) => {
             if (e.target === viewer || e.target.classList.contains('viewer-stage')) closeViewer();
         });
         document.addEventListener('keydown', (e) => {
-            if (currentApp !== 'album' || viewerIdx < 0) return;
+            if (!awake || currentApp !== 'album' || viewerIdx < 0) return;
             if (e.key === 'ArrowLeft') { e.preventDefault(); step(-1); }
             if (e.key === 'ArrowRight') { e.preventDefault(); step(1); }
         });
@@ -977,9 +983,20 @@
 
         function welcome() {
             const configured = !!settings.apiKey;
-            appendMessage('assistant', configured
-                ? '喵。我是小黑，工作室里的 AI 助手。焊接、固件、电路、随便聊，都可以问我。'
-                : '喵。我是小黑。要开始聊天，先点右上角「设置」填入 OpenAI 兼容接口的 Base URL、API Key 和模型——配置只存在你自己的浏览器里。');
+            const welcome = document.createElement('div');
+            welcome.className = 'robot-welcome';
+            welcome.innerHTML = `<div class="welcome-avatar"><i class="fas fa-cat" aria-hidden="true"></i></div>
+                <h3>喵，今天有什么新想法？</h3>
+                <p>${configured ? '我是小黑。电路、代码，或者一个还没成形的灵感，都可以聊聊。' : '我是小黑，工作室里的 AI 助手。连接你自己的模型，就可以坐下来聊聊了。'}</p>
+                <div class="robot-suggestions">${configured
+                    ? ['给我一个周末小制作的灵感', '怎样开始学习嵌入式？'].map((text) => `<button type="button" class="os-btn" data-prompt="${text}">${text}</button>`).join('')
+                    : '<button type="button" class="os-btn" data-configure><i class="fas fa-sliders" aria-hidden="true"></i> 设置聊天模型</button>'}</div>`;
+            welcome.addEventListener('click', (e) => {
+                const prompt = e.target.closest('[data-prompt]');
+                if (prompt) { els.input.value = prompt.dataset.prompt; els.input.focus(); }
+                if (e.target.closest('[data-configure]')) openSettings();
+            });
+            els.messages.appendChild(welcome);
         }
 
         function renderAll() {
@@ -1003,6 +1020,7 @@
                 return;
             }
             history.push({ role: 'user', content: text });
+            els.messages.querySelector('.robot-welcome')?.remove();
             appendMessage('user', text);
             saveHistory();
 
@@ -1122,11 +1140,18 @@
             els.status.textContent = msg || '';
             els.status.className = 'status' + (msg ? ' err' : '');
             els.settings.classList.add('open');
-            setTimeout(() => (settings.apiKey ? els.model : els.key).focus(), 50);
+            focusLayer.querySelector('.robot-body').inert = true;
+            setTimeout(() => {
+                if (awake && currentApp === 'robot' && els.settings.classList.contains('open')) {
+                    (settings.apiKey ? els.model : els.key).focus();
+                }
+            }, 50);
         }
 
         function closeSettings() {
             els.settings.classList.remove('open');
+            focusLayer.querySelector('.robot-body').inert = false;
+            if (awake && currentApp === 'robot') els.settingsBtn.focus();
         }
 
         async function fetchModels() {
@@ -1210,8 +1235,17 @@
 
         hooks.robot = {
             onOpen() {
-                if (!rendered) { rendered = true; renderAll(); ensureMarked().then(() => { if (window.marked && !controller) renderAll(); }); }
-                setTimeout(() => els.input.focus(), 60);
+                if (!rendered) {
+                    rendered = true;
+                    renderAll();
+                    // 首次发送可能早于 Markdown 加载完成，保留正在接收回复的节点。
+                    ensureMarked().then(() => { if (window.marked && !controller) renderAll(); });
+                }
+                if (window.matchMedia('(pointer: fine)').matches) {
+                    setTimeout(() => {
+                        if (awake && currentApp === 'robot' && !els.settings.classList.contains('open')) els.input.focus();
+                    }, 60);
+                }
             },
             onClose() { /* 流式请求继续在后台完成 */ },
             onEscape() {

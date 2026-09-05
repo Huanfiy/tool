@@ -52,40 +52,32 @@
 </head>
 <body class="studio-page">
 
-    <header>
-        <div class="container">
-            <a href="index.html" class="logo">
-                <img src="picture/icon.png" alt="Logo">
-                <span>Huanfly</span>
-            </a>
-            <div class="menu-toggle"><i class="fas fa-bars"></i></div>
-            <nav class="nav-links">
-                <a href="index.html">主页</a>
-                <a href="blog.html">博客</a>
-                <a href="tool.html">工具</a>
-                <a href="studio.html" class="active">工作室</a>
-                <a href="about.html">关于</a>
-                <button class="theme-toggle" aria-label="切换主题" title="切换主题">
-                    <i class="fas fa-moon"></i>
-                </button>
-            </nav>
-        </div>
-    </header>
-
-    <main class="studio" id="studio">
+    <main class="studio" id="studio" aria-label="Huanfly 的工作室">
+        <a class="studio-leave" id="studio-leave" href="index.html" aria-label="离开工作室，返回主页" title="离开工作室"><i class="fas fa-arrow-left" aria-hidden="true"></i></a>
         <div class="studio-stage" id="studio-stage">
-            <svg class="studio-scene" id="studio-scene" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice"
+            <svg class="studio-scene" id="studio-scene" viewBox="0 0 1600 960" preserveAspectRatio="xMidYMid meet"
                  xmlns="http://www.w3.org/2000/svg" role="group" aria-label="Huanfly 的极客工作室，可交互场景">
                 <defs>
-                    <linearGradient id="g-wall" x1="0" y1="0" x2="0" y2="1">
+                    <pattern id="p-wall" width="38" height="38" patternUnits="userSpaceOnUse">
+                        <circle cx="4" cy="9" r="0.7" fill="var(--st-ink)" opacity="0.08"/>
+                        <circle cx="25" cy="29" r="0.5" fill="var(--st-ink)" opacity="0.06"/>
+                    </pattern>
+                    <pattern id="p-wood" width="180" height="34" patternUnits="userSpaceOnUse">
+                        <path d="M0 8 Q45 3 90 8 T180 8 M0 24 Q60 30 120 24 T240 24" fill="none" stroke="var(--st-desk-grain)" stroke-width="1"/>
+                    </pattern>
+                    <radialGradient id="g-contact">
+                        <stop stop-color="var(--st-ink)" stop-opacity="0.24"/>
+                        <stop offset="1" stop-color="var(--st-ink)" stop-opacity="0"/>
+                    </radialGradient>
+                    <linearGradient id="g-wall" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="590">
                         <stop offset="0" style="stop-color: var(--st-wall)"/>
                         <stop offset="1" style="stop-color: var(--st-wall-2)"/>
                     </linearGradient>
-                    <linearGradient id="g-side-wall" x1="0" y1="0" x2="1" y2="0">
+                    <linearGradient id="g-side-wall" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="520" y2="0">
                         <stop offset="0" style="stop-color: var(--st-side-wall-2)"/>
                         <stop offset="1" style="stop-color: var(--st-side-wall)"/>
                     </linearGradient>
-                    <linearGradient id="g-floor" x1="0" y1="0" x2="0" y2="1">
+                    <linearGradient id="g-floor" gradientUnits="userSpaceOnUse" x1="0" y1="590" x2="0" y2="900">
                         <stop offset="0" style="stop-color: var(--st-floor-2)"/>
                         <stop offset="1" style="stop-color: var(--st-floor)"/>
                     </linearGradient>
@@ -126,15 +118,30 @@
                         <stop offset="0.5" stop-color="#6fd8e2" stop-opacity="0.22"/>
                         <stop offset="1" stop-color="#6fd8e2" stop-opacity="0"/>
                     </radialGradient>
-                    <radialGradient id="g-lamp" cx="0.5" cy="0.5" r="0.5">
-                        <stop offset="0" stop-color="#ffd98a" stop-opacity="0.75"/>
-                        <stop offset="1" stop-color="#ffd98a" stop-opacity="0"/>
-                    </radialGradient>
                     <radialGradient id="g-night" gradientUnits="userSpaceOnUse" cx="1000" cy="380" r="900">
                         <stop offset="0" stop-color="#060c10" stop-opacity="0"/>
-                        <stop offset="0.3" stop-color="#060c10" stop-opacity="0.26"/>
-                        <stop offset="1" stop-color="#060c10" stop-opacity="0.62"/>
+                        <stop offset="0.3" stop-color="#060c10" stop-opacity="0.12"/>
+                        <stop offset="1" stop-color="#060c10" stop-opacity="0.34"/>
                     </radialGradient>
+                    <linearGradient id="g-keycap" x1="0" y1="0" x2="0" y2="1">
+                        <stop stop-color="var(--st-key-top)"/>
+                        <stop offset="1" stop-color="var(--st-key-face)"/>
+                    </linearGradient>
+                    <linearGradient id="g-keyboard-case" x1="0" y1="0" x2="0" y2="1">
+                        <stop stop-color="var(--st-metal)"/>
+                        <stop offset="0.5" stop-color="var(--st-metal-2)"/>
+                        <stop offset="1" stop-color="var(--st-metal-3)"/>
+                    </linearGradient>
+                    <radialGradient id="g-mouse-shell" cx="0.32" cy="0.22" r="0.85">
+                        <stop stop-color="var(--st-key-top)"/>
+                        <stop offset="0.65" stop-color="var(--st-key-face)"/>
+                        <stop offset="1" stop-color="var(--st-metal-2)"/>
+                    </radialGradient>
+                    <linearGradient id="g-mouse-wheel" x1="0" y1="0" x2="1" y2="0">
+                        <stop stop-color="var(--st-ink)"/>
+                        <stop offset="0.45" stop-color="var(--st-metal-2)"/>
+                        <stop offset="1" stop-color="var(--st-metal-3)"/>
+                    </linearGradient>
                     <filter id="f-blur30" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="30"/></filter>
                     <filter id="f-blur14" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="14"/></filter>
                     <filter id="f-blur6" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="6"/></filter>
@@ -143,12 +150,46 @@
                     <clipPath id="c-scope"><rect x="411" y="477" width="40" height="40"/></clipPath>
                 </defs>
 
+                <!-- 延展墙面与地板：全景等比缩放，屏幕余量仍属于房间。 -->
+                <g id="room-extension" class="fx" aria-hidden="true">
+                    <rect x="-8000" y="-8000" width="17600" height="8600" fill="url(#g-wall)"/>
+                    <rect x="-8000" y="590" width="17600" height="8500" fill="url(#g-floor)"/>
+                    <g stroke="var(--st-floor-line)" stroke-width="2">
+                        <line x1="123.08" y1="900" x2="-10800.00" y2="8000"/>
+                        <line x1="342.31" y1="900" x2="-7850.00" y2="8000"/>
+                        <line x1="561.54" y1="900" x2="-4900.00" y2="8000"/>
+                        <line x1="780.77" y1="900" x2="-1950.00" y2="8000"/>
+                        <line x1="1000.00" y1="900" x2="1000.00" y2="8000"/>
+                        <line x1="1219.23" y1="900" x2="3950.00" y2="8000"/>
+                        <line x1="1438.46" y1="900" x2="6900.00" y2="8000"/>
+                        <line x1="1657.69" y1="900" x2="9850.00" y2="8000"/>
+                        <line x1="1876.92" y1="900" x2="12800.00" y2="8000"/>
+                        <line x1="2096.15" y1="900" x2="15750.00" y2="8000"/>
+                        <line x1="-8000" y1="970" x2="9600" y2="970" opacity="0.5"/>
+                        <line x1="-8000" y1="1160" x2="9600" y2="1160" opacity="0.5"/>
+                        <line x1="-8000" y1="1440" x2="9600" y2="1440" opacity="0.5"/>
+                        <line x1="-8000" y1="1860" x2="9600" y2="1860" opacity="0.5"/>
+                        <line x1="-8000" y1="2460" x2="9600" y2="2460" opacity="0.5"/>
+                        <line x1="-8000" y1="3300" x2="9600" y2="3300" opacity="0.5"/>
+                        <line x1="-8000" y1="4440" x2="9600" y2="4440" opacity="0.5"/>
+                        <line x1="-8000" y1="6000" x2="9600" y2="6000" opacity="0.5"/>
+                        <line x1="-8000" y1="7900" x2="9600" y2="7900" opacity="0.5"/>
+                    </g>
+                    <polygon points="-8000,-8000 520,-8000 520,590 -8000,5210" fill="url(#g-side-wall)"/>
+                    <rect x="520" y="-8000" width="60" height="8590" fill="var(--st-corner)" opacity="0.6"/>
+                    <rect x="520" y="576" width="9080" height="14" fill="var(--st-baseboard)"/>
+                    <polygon points="520,576 520,590 -8000,5210.62 -8000,5065.38" fill="var(--st-baseboard)"/>
+                    <path d="M520 -8000 V590 M-8000 5065.38 L520 576 H9600" fill="none" class="ink" opacity="0.2"/>
+                </g>
+
                 <!-- ================= 房间 ================= -->
                 <g id="room">
                     <rect x="520" y="0" width="1080" height="590" fill="url(#g-wall)"/>
                     <polygon points="0,0 520,0 520,590 0,872" fill="url(#g-side-wall)"/>
                     <rect x="520" y="0" width="60" height="590" fill="var(--st-corner)" opacity="0.6"/>
-                    <line x1="520" y1="0" x2="520" y2="590" class="ink" opacity="0.35"/>
+                    <line x1="520" y1="0" x2="520" y2="590" class="ink" opacity="0.2"/>
+                    <rect x="0" y="0" width="1600" height="590" fill="url(#p-wall)"/>
+                    <path d="M540 18 H1580" stroke="var(--st-paper)" stroke-width="3" opacity="0.35"/>
 
                     <!-- 地板 -->
                     <polygon points="0,872 520,590 1600,590 1600,900 0,900" fill="url(#g-floor)"/>
@@ -172,6 +213,8 @@
                     <ellipse cx="1000" cy="835" rx="440" ry="80" fill="none" stroke="var(--st-rug-2)" stroke-width="3" stroke-dasharray="14 10"/>
                     <ellipse cx="1000" cy="835" rx="480" ry="98" fill="none" class="ink" opacity="0.5"/>
 
+                    <ellipse cx="1000" cy="708" rx="550" ry="120" fill="url(#g-contact)"/>
+                    <ellipse cx="250" cy="813" rx="210" ry="55" fill="url(#g-contact)"/>
                     <!-- 踢脚线 -->
                     <rect x="520" y="576" width="1080" height="14" fill="var(--st-baseboard)"/>
                     <polygon points="520,576 520,590 0,872 0,850" fill="var(--st-baseboard)"/>
@@ -267,6 +310,8 @@
 
                 <!-- ================= 后墙装饰 ================= -->
                 <g id="wall-decor">
+                    <text x="576" y="57" fill="var(--st-ink)" opacity="0.48" font-size="14" letter-spacing="3">保持好奇，慢慢创造。</text>
+                    <g id="wall-shelf" transform="translate(0 -94)">
                     <!-- 搁板 -->
                     <polygon points="560,262 900,262 906,276 554,276" fill="var(--st-desk-2)" class="ink"/>
                     <polygon points="586,276 586,300 606,276" fill="var(--st-desk-edge)" class="ink-thin"/>
@@ -306,7 +351,7 @@
                     <!-- 小黑手办 -->
                     <g id="shelf-figure" class="hotspot" data-id="figure" role="button" tabindex="0" aria-label="小黑手办"
                        data-tip-title="小黑手办" data-tip="站点吉祥物，因为踩坏过一块板子被罚站在书架上。">
-                        <g class="lift" transform="translate(772 226) scale(0.26)">
+                        <g transform="translate(772 226) scale(0.26)"><g class="lift">
                             <path d="M112 102 C 138 100 146 76 132 62" fill="none" stroke="var(--st-cat)" stroke-width="11" stroke-linecap="round"/>
                             <ellipse cx="78" cy="96" rx="36" ry="26" fill="var(--st-cat)"/>
                             <ellipse cx="64" cy="118" rx="9" ry="6" fill="var(--st-cat)"/>
@@ -316,7 +361,7 @@
                             <circle cx="74" cy="46" r="31" fill="var(--st-cat)"/>
                             <ellipse cx="63" cy="46" rx="4.5" ry="6.5" fill="#8fe3d9"/>
                             <ellipse cx="85" cy="46" rx="4.5" ry="6.5" fill="#8fe3d9"/>
-                        </g>
+                        </g></g>
                     </g>
 
                     <!-- 四旋翼 -->
@@ -336,13 +381,14 @@
                         </g>
                     </g>
 
+                    </g>
                     <!-- 灵感墙 -->
                     <g id="board" class="hotspot" data-id="board" role="button" tabindex="0" aria-label="灵感墙"
                        data-tip-title="灵感墙" data-tip="PCB 打样单、待办便签，还有一张手画的 FOC 电流环波形。" data-tip-action="点击整理便签">
                         <g class="lift">
                             <rect x="1340" y="150" width="200" height="180" rx="6" fill="var(--st-desk-2)" class="ink"/>
                             <rect x="1348" y="158" width="184" height="164" rx="4" fill="none" stroke="var(--st-desk-edge)" stroke-width="2"/>
-                            <g class="note" transform="rotate(-4 1390 190)">
+                            <g class="note" style="--note-x: 1390px; --note-y: 190px; --note-angle: -4deg">
                                 <rect x="1360" y="176" width="56" height="52" fill="#fff4b8" class="ink-thin"/>
                                 <g stroke="var(--st-ink)" stroke-width="1.5" opacity="0.5">
                                     <line x1="1368" y1="190" x2="1408" y2="190"/>
@@ -351,7 +397,7 @@
                                 </g>
                                 <circle cx="1388" cy="176" r="3" fill="var(--rose)" class="ink-thin"/>
                             </g>
-                            <g class="note" transform="rotate(3 1470 200)">
+                            <g class="note" style="--note-x: 1470px; --note-y: 200px; --note-angle: 3deg">
                                 <rect x="1436" y="172" width="68" height="60" fill="var(--st-pcb)" class="ink-thin"/>
                                 <g stroke="#b9e6a1" stroke-width="1.5" fill="none" opacity="0.8">
                                     <path d="M1444 186 h20 v14 h24"/>
@@ -363,7 +409,7 @@
                                 </g>
                                 <circle cx="1470" cy="172" r="3" fill="var(--accent-color)" class="ink-thin"/>
                             </g>
-                            <g class="note" transform="rotate(-2 1430 280)">
+                            <g class="note" style="--note-x: 1430px; --note-y: 280px; --note-angle: -2deg">
                                 <rect x="1392" y="252" width="88" height="56" fill="var(--st-paper)" class="ink-thin"/>
                                 <path d="M1400 288 q8 -30 16 0 t16 0 t16 0 t16 0" fill="none" stroke="var(--primary-color)" stroke-width="2"/>
                                 <line x1="1400" y1="288" x2="1472" y2="288" stroke="var(--st-ink)" stroke-width="1" opacity="0.4"/>
@@ -375,7 +421,10 @@
 
                 <!-- ================= L 形转角桌 ================= -->
                 <g id="desk">
-                    <polygon points="520,490 1380,490 1532,554 461,554 326,610 160,610" fill="url(#g-desk)" class="ink"/>
+                    <path d="M474 607 H1538 V635 H474 L326 661 H158 V635" fill="none" stroke="var(--st-ink)" stroke-width="16" opacity="0.07"/>
+                    <polygon points="520,490 1380,490 1532,592 461,592 326,610 160,610" fill="url(#g-desk)" class="ink"/>
+                    <polygon points="520,490 1380,490 1532,592 461,592 326,610 160,610" fill="url(#p-wood)"/>
+                    <polyline points="162,610 326,610 461,592 1530,592" fill="none" stroke="var(--st-paper)" stroke-width="2" opacity="0.38"/>
                     <g stroke="var(--st-desk-grain)" stroke-width="2" fill="none" stroke-linecap="round">
                         <path d="M700 500 C 800 504 900 498 1000 503 S 1200 506 1300 500"/>
                         <path d="M640 528 C 760 532 900 526 1040 531 S 1300 534 1440 528"/>
@@ -384,15 +433,15 @@
                     <!-- 台面阳光 -->
                     <polygon points="352,562 458,530 430,600 300,606" fill="var(--st-sun-floor)" opacity="0.55" class="fx"/>
                     <!-- 桌面前沿 -->
-                    <polygon points="461,554 1532,554 1532,580 461,580" fill="var(--st-desk-edge)" class="ink"/>
-                    <polygon points="461,554 326,610 326,642 461,580" fill="var(--st-desk-side)" class="ink"/>
+                    <polygon points="461,592 1532,592 1532,618 461,618" fill="var(--st-desk-edge)" class="ink"/>
+                    <polygon points="461,592 326,610 326,642 461,618" fill="var(--st-desk-side)" class="ink"/>
                     <polygon points="160,610 326,610 326,642 160,642" fill="var(--st-desk-edge)" class="ink"/>
                     <!-- 桌腿 -->
                     <rect x="166" y="642" width="12" height="143" fill="var(--st-desk-side)" class="ink-thin"/>
                     <rect x="308" y="642" width="12" height="143" fill="var(--st-desk-side)" class="ink-thin"/>
-                    <rect x="453" y="580" width="10" height="114" fill="var(--st-desk-side)" class="ink-thin"/>
+                    <rect x="453" y="618" width="10" height="76" fill="var(--st-desk-side)" class="ink-thin"/>
                     <!-- 抽屉柜 -->
-                    <g id="pedestal" class="hotspot no-lift" data-id="pedestal" role="button" tabindex="0" aria-label="抽屉柜"
+                    <g id="pedestal" transform="translate(0 38)" class="hotspot no-lift" data-id="pedestal" role="button" tabindex="0" aria-label="抽屉柜"
                        data-tip-title="抽屉柜" data-tip="上层杜邦线和各种模块，下层说明书和舍不得扔的旧板子。">
                         <g class="lift">
                             <rect x="1350" y="580" width="170" height="114" fill="var(--st-desk-side)" class="ink"/>
@@ -548,14 +597,14 @@
                 </g>
 
                 <!-- ================= 3D 打印机 ================= -->
-                <g id="printer" class="hotspot no-lift" data-id="printer" role="button" tabindex="0" aria-label="3D 打印机，点击开始打印"
-                   data-tip-title="3D 打印机" data-tip="FDM 机，工作室的第三只手。外壳、支架、无刷电机的转子都从这里出来。" data-tip-action="点击开始 / 停止打印">
+                <g id="printer" transform="translate(130 32)" class="hotspot no-lift" data-id="printer" role="button" tabindex="0" aria-label="3D 打印机，点击开始打印"
+                   data-tip-title="3D 打印机" data-tip="放在地上的 FDM 机，工作室的第三只手。外壳、支架、无刷电机的转子都从这里出来。" data-tip-action="点击开始 / 停止打印">
                     <g class="lift">
-                        <!-- 矮柜 -->
-                        <rect x="30" y="808" width="220" height="100" fill="var(--st-desk-side)" class="ink"/>
-                        <rect x="30" y="808" width="220" height="10" fill="var(--st-desk)"/>
-                        <rect x="44" y="830" width="192" height="50" rx="3" fill="var(--st-desk)" class="ink-thin"/>
-                        <rect x="126" y="852" width="28" height="6" rx="3" fill="var(--st-metal-2)" class="ink-thin"/>
+                        <ellipse cx="140" cy="823" rx="125" ry="24" fill="url(#g-contact)" class="fx"/>
+                        <g id="printer-feet" fill="var(--st-metal-3)" stroke="var(--st-ink)" stroke-width="1">
+                            <rect x="62" y="804" width="18" height="14" rx="4"/>
+                            <rect x="198" y="804" width="18" height="14" rx="4"/>
+                        </g>
                         <!-- 机身 -->
                         <rect x="50" y="772" width="180" height="36" rx="4" fill="var(--st-metal-3)" class="ink"/>
                         <rect x="172" y="776" width="54" height="28" rx="3" fill="var(--st-metal)" class="ink-thin"/>
@@ -592,30 +641,15 @@
 
                 <!-- ================= 光影层（夜间压暗 + 屏幕光晕） ================= -->
                 <g class="fx">
-                    <rect id="night-tint" x="0" y="0" width="1600" height="900" fill="url(#g-night)"/>
+                    <rect id="night-tint" x="-8000" y="-8000" width="17600" height="17600" fill="url(#g-night)"/>
                     <ellipse id="screen-glow" cx="1000" cy="350" rx="440" ry="280" fill="url(#g-glow)" filter="url(#f-blur30)"/>
-                    <circle id="lamp-glow" cx="676" cy="384" r="130" fill="url(#g-lamp)" filter="url(#f-blur14)"/>
                 </g>
 
                 <!-- ================= 主工作区 ================= -->
                 <g id="desk-items">
-                    <!-- 台灯 -->
-                    <g id="lamp" class="hotspot" data-id="lamp" role="button" tabindex="0" aria-label="台灯，点击开关"
-                       data-tip-title="护眼台灯" data-tip="夜里只留这一盏，配合显示器的冷光刚刚好。" data-tip-action="点击开关">
-                        <g class="lift">
-                            <ellipse id="lamp-pool" cx="690" cy="548" rx="110" ry="14" fill="#ffd98a" opacity="0.35" class="fx"/>
-                            <ellipse cx="597" cy="514" rx="24" ry="7" fill="var(--st-metal-3)" class="ink"/>
-                            <line x1="597" y1="510" x2="622" y2="410" class="ink" stroke-width="6"/>
-                            <line x1="597" y1="510" x2="622" y2="410" stroke="var(--st-metal)" stroke-width="2.5"/>
-                            <circle cx="622" cy="410" r="4.5" fill="var(--st-metal-2)" class="ink-thin"/>
-                            <line x1="622" y1="410" x2="658" y2="352" class="ink" stroke-width="6"/>
-                            <line x1="622" y1="410" x2="658" y2="352" stroke="var(--st-metal)" stroke-width="2.5"/>
-                            <path d="M652 344 C 660 330 676 326 688 332 L 700 376 C 686 386 664 388 650 380 Z" fill="var(--primary-color)" class="ink"/>
-                            <path d="M650 380 C 664 388 686 386 700 376" fill="none" class="ink-thin" opacity="0.6"/>
-                            <circle id="lamp-bulb" cx="676" cy="380" r="6" class="ink-thin"/>
-                        </g>
-                    </g>
-
+                    <ellipse cx="1010" cy="526" rx="272" ry="22" fill="url(#g-contact)"/>
+                    <polygon points="791,520 1287,520 1328,590 748,590" fill="var(--st-rug-2)" opacity="0.6"/>
+                    <path d="M798 524 H1282 L1318 586 H759 Z" fill="none" stroke="var(--st-paper)" stroke-width="0.7" opacity="0.3"/>
                     <!-- 马克杯 -->
                     <g id="mug" class="hotspot on" data-id="mug" role="button" tabindex="0" aria-label="马克杯，点击看热气"
                        data-tip-title="马克杯" data-tip="咖啡续命。杯子上印着「先看手册」四个字。" data-tip-action="点击开关热气">
@@ -634,7 +668,7 @@
                     </g>
 
                     <!-- 灵感本 -->
-                    <g id="notebook" class="hotspot no-lift" data-id="notebook" role="button" tabindex="0" aria-label="灵感本"
+                    <g id="notebook" transform="translate(-76 15)" class="hotspot no-lift" data-id="notebook" role="button" tabindex="0" aria-label="灵感本"
                        data-tip-title="灵感本" data-tip="随手记的电路草图、待办和一句「别忘了拉高 BOOT0」。">
                         <g class="lift">
                             <polygon points="766,538 836,538 842,551 760,551" fill="var(--st-paper)" class="ink"/>
@@ -648,7 +682,7 @@
                     </g>
 
                     <!-- 无边框显示器 -->
-                    <g id="monitor" class="hotspot no-lift" data-id="monitor" role="button" tabindex="0" aria-label="无边框显示器，点击进入 huanfly-os"
+                    <g id="monitor" transform="translate(120 56) scale(0.88)" class="hotspot no-lift" data-id="monitor" role="button" tabindex="0" aria-label="无边框显示器，点击进入 huanfly-os"
                        data-tip-title="无边框显示器" data-tip="工作台的核心。里面跑着 huanfly-os：终端 · 相册 · Robot。" data-tip-action="点击靠近，进入系统 →">
                         <g class="lift">
                             <rect x="986" y="505" width="28" height="14" fill="var(--st-metal-3)" class="ink-thin"/>
@@ -695,20 +729,464 @@
                         </g>
                     </g>
 
-                    <!-- 键盘 + 鼠标 -->
+                    <!-- 75% 键盘：铝壳、倒角、分行键帽与独立字符。 -->
                     <g id="keyboard" class="hotspot no-lift" data-id="keyboard" role="button" tabindex="0" aria-label="机械键盘，点击去练习键位"
-                       data-tip-title="机械键盘" data-tip="75% 配列，静音线性轴。盲打是靠刻意练习磕出来的。" data-tip-action="点击去练习键位 →">
+                       data-tip-title="机械键盘" data-tip="75% 配列，铝合金外壳、PBT 键帽和静音线性轴。" data-tip-action="点击去练习键位 →">
                         <g class="lift">
-                            <rect id="keyboard-glow" x="800" y="546" width="400" height="8" fill="url(#g-rgb)" filter="url(#f-blur6)" class="fx"/>
-                            <polygon points="822,533 1178,533 1190,548 810,548" fill="var(--st-metal-3)" class="ink"/>
-                            <g fill="var(--st-plastic)" stroke="var(--st-ink)" stroke-width="0.6" stroke-dasharray="6 1.6">
-                                <rect class="key-row" x="827" y="535" width="346" height="2.4" rx="0.8"/>
-                                <rect class="key-row" x="825" y="538.4" width="350" height="2.4" rx="0.8"/>
-                                <rect class="key-row" x="822" y="541.8" width="356" height="2.4" rx="0.8"/>
-                                <rect class="key-row" x="819" y="545.2" width="362" height="2.2" rx="0.8"/>
+                            <ellipse cx="1000" cy="583" rx="203" ry="10" fill="url(#g-contact)" class="fx"/>
+                            <path d="M995 527 C982 514 967 526 952 518 L952 513" fill="none" stroke="var(--st-metal-3)" stroke-width="2"/>
+                            <path d="M823 524 L1177 524 Q1181 524 1182 528 L1196 579 L1194 585 Q1000 590 806 585 L804 579 L818 528 Q819 524 823 524 Z" fill="url(#g-keyboard-case)" stroke="var(--st-ink)" stroke-width="1.3"/>
+                            <path d="M823 525 H1177 L1192 578 Q1000 582 808 578 Z" fill="var(--st-metal-3)" stroke="var(--st-metal)" stroke-width="1.1"/>
+                            <path d="M809 580 Q1000 585 1191 580" fill="none" stroke="var(--st-key-top)" stroke-width="0.8" opacity="0.6"/>
+                            <path id="keyboard-glow" d="M815 585 Q1000 589 1185 585" fill="none" stroke="url(#g-rgb)" stroke-width="1.6" class="fx"/>
+                            <rect x="989" y="524" width="12" height="2.2" rx="1" fill="var(--st-ink)"/>
+                            <g id="keyboard-keys">
+                                <g class="key-row" style="--key-delay: 0.00s">
+                                    <g class="keycap"><polygon points="846.92,533.68 863.80,533.68 863.80,535.88 846.92,535.88" fill="var(--st-key-side)"/>
+                                        <polygon points="848.68,528.50 865.36,528.50 863.80,533.68 846.92,533.68" fill="var(--st-key-accent)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="846.92,533.68 848.68,528.50 865.36,528.50" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="856.16" y="532.69" font-size="3.2" text-anchor="middle" fill="var(--st-key-legend)" class="mono">Esc</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="870.84,533.68 885.80,533.68 885.80,535.88 870.84,535.88" fill="var(--st-key-side)"/>
+                                        <polygon points="872.32,528.50 887.12,528.50 885.80,533.68 870.84,533.68" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="870.84,533.68 872.32,528.50 887.12,528.50" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="878.99" y="532.69" font-size="3.2" text-anchor="middle" fill="var(--st-key-legend)" class="mono">F1</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="888.06,533.68 903.02,533.68 903.02,535.88 888.06,535.88" fill="var(--st-key-side)"/>
+                                        <polygon points="889.35,528.50 904.14,528.50 903.02,533.68 888.06,533.68" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="888.06,533.68 889.35,528.50 904.14,528.50" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="896.12" y="532.69" font-size="3.2" text-anchor="middle" fill="var(--st-key-legend)" class="mono">F2</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="905.28,533.68 920.25,533.68 920.25,535.88 905.28,535.88" fill="var(--st-key-side)"/>
+                                        <polygon points="906.37,528.50 921.16,528.50 920.25,533.68 905.28,533.68" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="905.28,533.68 906.37,528.50 921.16,528.50" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="913.25" y="532.69" font-size="3.2" text-anchor="middle" fill="var(--st-key-legend)" class="mono">F3</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="922.50,533.68 937.47,533.68 937.47,535.88 922.50,535.88" fill="var(--st-key-side)"/>
+                                        <polygon points="923.39,528.50 938.19,528.50 937.47,533.68 922.50,533.68" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="922.50,533.68 923.39,528.50 938.19,528.50" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="930.37" y="532.69" font-size="3.2" text-anchor="middle" fill="var(--st-key-legend)" class="mono">F4</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="943.55,533.68 958.52,533.68 958.52,535.88 943.55,535.88" fill="var(--st-key-side)"/>
+                                        <polygon points="944.20,528.50 958.99,528.50 958.52,533.68 943.55,533.68" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="943.55,533.68 944.20,528.50 958.99,528.50" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="951.30" y="532.69" font-size="3.2" text-anchor="middle" fill="var(--st-key-legend)" class="mono">F5</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="960.77,533.68 975.74,533.68 975.74,535.88 960.77,535.88" fill="var(--st-key-side)"/>
+                                        <polygon points="961.22,528.50 976.02,528.50 975.74,533.68 960.77,533.68" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="960.77,533.68 961.22,528.50 976.02,528.50" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="968.43" y="532.69" font-size="3.2" text-anchor="middle" fill="var(--st-key-legend)" class="mono">F6</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="977.99,533.68 992.96,533.68 992.96,535.88 977.99,535.88" fill="var(--st-key-side)"/>
+                                        <polygon points="978.25,528.50 993.04,528.50 992.96,533.68 977.99,533.68" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="977.99,533.68 978.25,528.50 993.04,528.50" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="985.56" y="532.69" font-size="3.2" text-anchor="middle" fill="var(--st-key-legend)" class="mono">F7</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="995.22,533.68 1010.18,533.68 1010.18,535.88 995.22,535.88" fill="var(--st-key-side)"/>
+                                        <polygon points="995.27,528.50 1010.06,528.50 1010.18,533.68 995.22,533.68" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="995.22,533.68 995.27,528.50 1010.06,528.50" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="1002.68" y="532.69" font-size="3.2" text-anchor="middle" fill="var(--st-key-legend)" class="mono">F8</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="1016.26,533.68 1031.23,533.68 1031.23,535.88 1016.26,535.88" fill="var(--st-key-side)"/>
+                                        <polygon points="1016.08,528.50 1030.87,528.50 1031.23,533.68 1016.26,533.68" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="1016.26,533.68 1016.08,528.50 1030.87,528.50" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="1023.62" y="532.69" font-size="3.2" text-anchor="middle" fill="var(--st-key-legend)" class="mono">F9</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="1033.49,533.68 1048.45,533.68 1048.45,535.88 1033.49,535.88" fill="var(--st-key-side)"/>
+                                        <polygon points="1033.10,528.50 1047.89,528.50 1048.45,533.68 1033.49,533.68" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="1033.49,533.68 1033.10,528.50 1047.89,528.50" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="1040.74" y="532.69" font-size="3.2" text-anchor="middle" fill="var(--st-key-legend)" class="mono">F10</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="1050.71,533.68 1065.67,533.68 1065.67,535.88 1050.71,535.88" fill="var(--st-key-side)"/>
+                                        <polygon points="1050.12,528.50 1064.92,528.50 1065.67,533.68 1050.71,533.68" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="1050.71,533.68 1050.12,528.50 1064.92,528.50" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="1057.87" y="532.69" font-size="3.2" text-anchor="middle" fill="var(--st-key-legend)" class="mono">F11</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="1067.93,533.68 1082.89,533.68 1082.89,535.88 1067.93,535.88" fill="var(--st-key-side)"/>
+                                        <polygon points="1067.15,528.50 1081.94,528.50 1082.89,533.68 1067.93,533.68" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="1067.93,533.68 1067.15,528.50 1081.94,528.50" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="1075.00" y="532.69" font-size="3.2" text-anchor="middle" fill="var(--st-key-legend)" class="mono">F12</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="1085.15,533.68 1102.03,533.68 1102.03,535.88 1085.15,535.88" fill="var(--st-key-side)"/>
+                                        <polygon points="1084.17,528.50 1100.86,528.50 1102.03,533.68 1085.15,533.68" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="1085.15,533.68 1084.17,528.50 1100.86,528.50" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="1093.07" y="532.69" font-size="3.2" text-anchor="middle" fill="var(--st-key-legend)" class="mono">Del</text>
+                                    </g>
+                                </g>
+                                <g class="key-row" style="--key-delay: 0.06s">
+                                    <g class="keycap"><polygon points="843.77,542.93 861.00,542.93 861.00,545.13 843.77,545.13" fill="var(--st-key-side)"/>
+                                        <polygon points="845.91,536.64 862.90,536.64 861.00,542.93 843.77,542.93" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="843.77,542.93 845.91,536.64 862.90,536.64" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="853.36" y="541.41" font-size="3.8" text-anchor="middle" fill="var(--st-key-legend)" class="mono">~</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="863.30,542.93 880.53,542.93 880.53,545.13 863.30,545.13" fill="var(--st-key-side)"/>
+                                        <polygon points="865.17,536.64 882.16,536.64 880.53,542.93 863.30,542.93" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="863.30,542.93 865.17,536.64 882.16,536.64" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="872.76" y="541.41" font-size="3.8" text-anchor="middle" fill="var(--st-key-legend)" class="mono">1</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="882.83,542.93 900.06,542.93 900.06,545.13 882.83,545.13" fill="var(--st-key-side)"/>
+                                        <polygon points="884.43,536.64 901.42,536.64 900.06,542.93 882.83,542.93" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="882.83,542.93 884.43,536.64 901.42,536.64" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="892.16" y="541.41" font-size="3.8" text-anchor="middle" fill="var(--st-key-legend)" class="mono">2</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="902.36,542.93 919.58,542.93 919.58,545.13 902.36,545.13" fill="var(--st-key-side)"/>
+                                        <polygon points="903.70,536.64 920.68,536.64 919.58,542.93 902.36,542.93" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="902.36,542.93 903.70,536.64 920.68,536.64" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="911.56" y="541.41" font-size="3.8" text-anchor="middle" fill="var(--st-key-legend)" class="mono">3</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="921.89,542.93 939.11,542.93 939.11,545.13 921.89,545.13" fill="var(--st-key-side)"/>
+                                        <polygon points="922.96,536.64 939.95,536.64 939.11,542.93 921.89,542.93" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="921.89,542.93 922.96,536.64 939.95,536.64" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="930.96" y="541.41" font-size="3.8" text-anchor="middle" fill="var(--st-key-legend)" class="mono">4</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="941.42,542.93 958.64,542.93 958.64,545.13 941.42,545.13" fill="var(--st-key-side)"/>
+                                        <polygon points="942.22,536.64 959.21,536.64 958.64,542.93 941.42,542.93" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="941.42,542.93 942.22,536.64 959.21,536.64" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="950.36" y="541.41" font-size="3.8" text-anchor="middle" fill="var(--st-key-legend)" class="mono">5</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="960.94,542.93 978.17,542.93 978.17,545.13 960.94,545.13" fill="var(--st-key-side)"/>
+                                        <polygon points="961.48,536.64 978.47,536.64 978.17,542.93 960.94,542.93" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="960.94,542.93 961.48,536.64 978.47,536.64" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="969.76" y="541.41" font-size="3.8" text-anchor="middle" fill="var(--st-key-legend)" class="mono">6</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="980.47,542.93 997.70,542.93 997.70,545.13 980.47,545.13" fill="var(--st-key-side)"/>
+                                        <polygon points="980.74,536.64 997.73,536.64 997.70,542.93 980.47,542.93" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="980.47,542.93 980.74,536.64 997.73,536.64" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="989.16" y="541.41" font-size="3.8" text-anchor="middle" fill="var(--st-key-legend)" class="mono">7</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="1000.00,542.93 1017.22,542.93 1017.22,545.13 1000.00,545.13" fill="var(--st-key-side)"/>
+                                        <polygon points="1000.00,536.64 1016.99,536.64 1017.22,542.93 1000.00,542.93" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="1000.00,542.93 1000.00,536.64 1016.99,536.64" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="1008.56" y="541.41" font-size="3.8" text-anchor="middle" fill="var(--st-key-legend)" class="mono">8</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="1019.53,542.93 1036.75,542.93 1036.75,545.13 1019.53,545.13" fill="var(--st-key-side)"/>
+                                        <polygon points="1019.26,536.64 1036.25,536.64 1036.75,542.93 1019.53,542.93" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="1019.53,542.93 1019.26,536.64 1036.25,536.64" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="1027.96" y="541.41" font-size="3.8" text-anchor="middle" fill="var(--st-key-legend)" class="mono">9</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="1039.06,542.93 1056.28,542.93 1056.28,545.13 1039.06,545.13" fill="var(--st-key-side)"/>
+                                        <polygon points="1038.52,536.64 1055.51,536.64 1056.28,542.93 1039.06,542.93" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="1039.06,542.93 1038.52,536.64 1055.51,536.64" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="1047.36" y="541.41" font-size="3.8" text-anchor="middle" fill="var(--st-key-legend)" class="mono">0</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="1058.58,542.93 1075.81,542.93 1075.81,545.13 1058.58,545.13" fill="var(--st-key-side)"/>
+                                        <polygon points="1057.78,536.64 1074.77,536.64 1075.81,542.93 1058.58,542.93" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="1058.58,542.93 1057.78,536.64 1074.77,536.64" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="1066.76" y="541.41" font-size="3.8" text-anchor="middle" fill="var(--st-key-legend)" class="mono">-</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="1078.11,542.93 1095.34,542.93 1095.34,545.13 1078.11,545.13" fill="var(--st-key-side)"/>
+                                        <polygon points="1077.04,536.64 1094.03,536.64 1095.34,542.93 1078.11,542.93" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="1078.11,542.93 1077.04,536.64 1094.03,536.64" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="1086.16" y="541.41" font-size="3.8" text-anchor="middle" fill="var(--st-key-legend)" class="mono">=</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="1097.64,542.93 1134.39,542.93 1134.39,545.13 1097.64,545.13" fill="var(--st-key-side)"/>
+                                        <polygon points="1096.30,536.64 1132.55,536.64 1134.39,542.93 1097.64,542.93" fill="var(--st-key-mod)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="1097.64,542.93 1096.30,536.64 1132.55,536.64" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="1115.26" y="541.41" font-size="2.7" text-anchor="middle" fill="var(--st-key-legend)" class="mono">Back</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="1136.70,542.93 1153.92,542.93 1153.92,545.13 1136.70,545.13" fill="var(--st-key-side)"/>
+                                        <polygon points="1134.83,536.64 1151.82,536.64 1153.92,542.93 1136.70,542.93" fill="var(--st-key-mod)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="1136.70,542.93 1134.83,536.64 1151.82,536.64" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="1144.36" y="541.41" font-size="2.7" text-anchor="middle" fill="var(--st-key-legend)" class="mono">Home</text>
+                                    </g>
+                                </g>
+                                <g class="key-row" style="--key-delay: 0.12s">
+                                    <g class="keycap"><polygon points="841.26,550.33 868.68,550.33 868.68,552.53 841.26,552.53" fill="var(--st-key-side)"/>
+                                        <polygon points="843.40,544.04 870.45,544.04 868.68,550.33 841.26,550.33" fill="var(--st-key-mod)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="841.26,550.33 843.40,544.04 870.45,544.04" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="855.91" y="548.81" font-size="3.2" text-anchor="middle" fill="var(--st-key-legend)" class="mono">Tab</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="871.02,550.33 888.52,550.33 888.52,552.53 871.02,552.53" fill="var(--st-key-side)"/>
+                                        <polygon points="872.76,544.04 890.03,544.04 888.52,550.33 871.02,550.33" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="871.02,550.33 872.76,544.04 890.03,544.04" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="880.55" y="548.81" font-size="3.8" text-anchor="middle" fill="var(--st-key-legend)" class="mono">Q</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="890.86,550.33 908.37,550.33 908.37,552.53 890.86,552.53" fill="var(--st-key-side)"/>
+                                        <polygon points="892.33,544.04 909.60,544.04 908.37,550.33 890.86,550.33" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="890.86,550.33 892.33,544.04 909.60,544.04" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="900.26" y="548.81" font-size="3.8" text-anchor="middle" fill="var(--st-key-legend)" class="mono">W</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="910.71,550.33 928.21,550.33 928.21,552.53 910.71,552.53" fill="var(--st-key-side)"/>
+                                        <polygon points="911.91,544.04 929.18,544.04 928.21,550.33 910.71,550.33" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="910.71,550.33 911.91,544.04 929.18,544.04" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="919.98" y="548.81" font-size="3.8" text-anchor="middle" fill="var(--st-key-legend)" class="mono">E</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="930.55,550.33 948.05,550.33 948.05,552.53 930.55,552.53" fill="var(--st-key-side)"/>
+                                        <polygon points="931.49,544.04 948.75,544.04 948.05,550.33 930.55,550.33" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="930.55,550.33 931.49,544.04 948.75,544.04" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="939.69" y="548.81" font-size="3.8" text-anchor="middle" fill="var(--st-key-legend)" class="mono">R</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="950.39,550.33 967.90,550.33 967.90,552.53 950.39,552.53" fill="var(--st-key-side)"/>
+                                        <polygon points="951.06,544.04 968.33,544.04 967.90,550.33 950.39,550.33" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="950.39,550.33 951.06,544.04 968.33,544.04" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="959.41" y="548.81" font-size="3.8" text-anchor="middle" fill="var(--st-key-legend)" class="mono">T</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="970.24,550.33 987.74,550.33 987.74,552.53 970.24,552.53" fill="var(--st-key-side)"/>
+                                        <polygon points="970.64,544.04 987.90,544.04 987.74,550.33 970.24,550.33" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="970.24,550.33 970.64,544.04 987.90,544.04" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="979.12" y="548.81" font-size="3.8" text-anchor="middle" fill="var(--st-key-legend)" class="mono">Y</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="990.08,550.33 1007.58,550.33 1007.58,552.53 990.08,552.53" fill="var(--st-key-side)"/>
+                                        <polygon points="990.21,544.04 1007.48,544.04 1007.58,550.33 990.08,550.33" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="990.08,550.33 990.21,544.04 1007.48,544.04" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="998.84" y="548.81" font-size="3.8" text-anchor="middle" fill="var(--st-key-legend)" class="mono">U</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="1009.92,550.33 1027.42,550.33 1027.42,552.53 1009.92,552.53" fill="var(--st-key-side)"/>
+                                        <polygon points="1009.79,544.04 1027.05,544.04 1027.42,550.33 1009.92,550.33" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="1009.92,550.33 1009.79,544.04 1027.05,544.04" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="1018.55" y="548.81" font-size="3.8" text-anchor="middle" fill="var(--st-key-legend)" class="mono">I</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="1029.76,550.33 1047.27,550.33 1047.27,552.53 1029.76,552.53" fill="var(--st-key-side)"/>
+                                        <polygon points="1029.36,544.04 1046.63,544.04 1047.27,550.33 1029.76,550.33" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="1029.76,550.33 1029.36,544.04 1046.63,544.04" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="1038.27" y="548.81" font-size="3.8" text-anchor="middle" fill="var(--st-key-legend)" class="mono">O</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="1049.61,550.33 1067.11,550.33 1067.11,552.53 1049.61,552.53" fill="var(--st-key-side)"/>
+                                        <polygon points="1048.94,544.04 1066.21,544.04 1067.11,550.33 1049.61,550.33" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="1049.61,550.33 1048.94,544.04 1066.21,544.04" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="1057.98" y="548.81" font-size="3.8" text-anchor="middle" fill="var(--st-key-legend)" class="mono">P</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="1069.45,550.33 1086.95,550.33 1086.95,552.53 1069.45,552.53" fill="var(--st-key-side)"/>
+                                        <polygon points="1068.51,544.04 1085.78,544.04 1086.95,550.33 1069.45,550.33" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="1069.45,550.33 1068.51,544.04 1085.78,544.04" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="1077.70" y="548.81" font-size="3.8" text-anchor="middle" fill="var(--st-key-legend)" class="mono">[</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="1089.29,550.33 1106.80,550.33 1106.80,552.53 1089.29,552.53" fill="var(--st-key-side)"/>
+                                        <polygon points="1088.09,544.04 1105.36,544.04 1106.80,550.33 1089.29,550.33" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="1089.29,550.33 1088.09,544.04 1105.36,544.04" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="1097.41" y="548.81" font-size="3.8" text-anchor="middle" fill="var(--st-key-legend)" class="mono">]</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="1109.14,550.33 1136.56,550.33 1136.56,552.53 1109.14,552.53" fill="var(--st-key-side)"/>
+                                        <polygon points="1107.67,544.04 1134.72,544.04 1136.56,550.33 1109.14,550.33" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="1109.14,550.33 1107.67,544.04 1134.72,544.04" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="1122.05" y="548.81" font-size="3.8" text-anchor="middle" fill="var(--st-key-legend)" class="mono">\</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="1138.90,550.33 1156.40,550.33 1156.40,552.53 1138.90,552.53" fill="var(--st-key-side)"/>
+                                        <polygon points="1137.03,544.04 1154.29,544.04 1156.40,550.33 1138.90,550.33" fill="var(--st-key-mod)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="1138.90,550.33 1137.03,544.04 1154.29,544.04" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="1146.70" y="548.81" font-size="2.7" text-anchor="middle" fill="var(--st-key-legend)" class="mono">PgUp</text>
+                                    </g>
+                                </g>
+                                <g class="key-row" style="--key-delay: 0.18s">
+                                    <g class="keycap"><polygon points="838.74,557.73 871.64,557.73 871.64,559.93 838.74,559.93" fill="var(--st-key-side)"/>
+                                        <polygon points="840.88,551.44 873.34,551.44 871.64,557.73 838.74,557.73" fill="var(--st-key-mod)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="838.74,557.73 840.88,551.44 873.34,551.44" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="856.11" y="556.21" font-size="2.7" text-anchor="middle" fill="var(--st-key-legend)" class="mono">Caps</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="874.02,557.73 891.80,557.73 891.80,559.93 874.02,559.93" fill="var(--st-key-side)"/>
+                                        <polygon points="875.69,551.44 893.23,551.44 891.80,557.73 874.02,557.73" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="874.02,557.73 875.69,551.44 893.23,551.44" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="883.65" y="556.21" font-size="3.8" text-anchor="middle" fill="var(--st-key-legend)" class="mono">A</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="894.17,557.73 911.95,557.73 911.95,559.93 894.17,559.93" fill="var(--st-key-side)"/>
+                                        <polygon points="895.58,551.44 913.12,551.44 911.95,557.73 894.17,557.73" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="894.17,557.73 895.58,551.44 913.12,551.44" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="903.68" y="556.21" font-size="3.8" text-anchor="middle" fill="var(--st-key-legend)" class="mono">S</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="914.33,557.73 932.11,557.73 932.11,559.93 914.33,559.93" fill="var(--st-key-side)"/>
+                                        <polygon points="915.47,551.44 933.01,551.44 932.11,557.73 914.33,557.73" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="914.33,557.73 915.47,551.44 933.01,551.44" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="923.71" y="556.21" font-size="3.8" text-anchor="middle" fill="var(--st-key-legend)" class="mono">D</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="934.49,557.73 952.27,557.73 952.27,559.93 934.49,559.93" fill="var(--st-key-side)"/>
+                                        <polygon points="935.36,551.44 952.90,551.44 952.27,557.73 934.49,557.73" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="934.49,557.73 935.36,551.44 952.90,551.44" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="943.74" y="556.21" font-size="3.8" text-anchor="middle" fill="var(--st-key-legend)" class="mono">F</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="954.65,557.73 972.43,557.73 972.43,559.93 954.65,559.93" fill="var(--st-key-side)"/>
+                                        <polygon points="955.25,551.44 972.79,551.44 972.43,557.73 954.65,557.73" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="954.65,557.73 955.25,551.44 972.79,551.44" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="963.77" y="556.21" font-size="3.8" text-anchor="middle" fill="var(--st-key-legend)" class="mono">G</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="974.80,557.73 992.58,557.73 992.58,559.93 974.80,559.93" fill="var(--st-key-side)"/>
+                                        <polygon points="975.14,551.44 992.68,551.44 992.58,557.73 974.80,557.73" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="974.80,557.73 975.14,551.44 992.68,551.44" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="983.80" y="556.21" font-size="3.8" text-anchor="middle" fill="var(--st-key-legend)" class="mono">H</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="994.96,557.73 1012.74,557.73 1012.74,559.93 994.96,559.93" fill="var(--st-key-side)"/>
+                                        <polygon points="995.03,551.44 1012.57,551.44 1012.74,557.73 994.96,557.73" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="994.96,557.73 995.03,551.44 1012.57,551.44" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="1003.83" y="556.21" font-size="3.8" text-anchor="middle" fill="var(--st-key-legend)" class="mono">J</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="1015.12,557.73 1032.90,557.73 1032.90,559.93 1015.12,559.93" fill="var(--st-key-side)"/>
+                                        <polygon points="1014.92,551.44 1032.46,551.44 1032.90,557.73 1015.12,557.73" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="1015.12,557.73 1014.92,551.44 1032.46,551.44" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="1023.86" y="556.21" font-size="3.8" text-anchor="middle" fill="var(--st-key-legend)" class="mono">K</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="1035.28,557.73 1053.06,557.73 1053.06,559.93 1035.28,559.93" fill="var(--st-key-side)"/>
+                                        <polygon points="1034.81,551.44 1052.35,551.44 1053.06,557.73 1035.28,557.73" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="1035.28,557.73 1034.81,551.44 1052.35,551.44" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="1043.88" y="556.21" font-size="3.8" text-anchor="middle" fill="var(--st-key-legend)" class="mono">L</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="1055.43,557.73 1073.21,557.73 1073.21,559.93 1055.43,559.93" fill="var(--st-key-side)"/>
+                                        <polygon points="1054.70,551.44 1072.24,551.44 1073.21,557.73 1055.43,557.73" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="1055.43,557.73 1054.70,551.44 1072.24,551.44" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="1063.91" y="556.21" font-size="3.8" text-anchor="middle" fill="var(--st-key-legend)" class="mono">;</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="1075.59,557.73 1093.37,557.73 1093.37,559.93 1075.59,559.93" fill="var(--st-key-side)"/>
+                                        <polygon points="1074.59,551.44 1092.13,551.44 1093.37,557.73 1075.59,557.73" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="1075.59,557.73 1074.59,551.44 1092.13,551.44" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="1083.94" y="556.21" font-size="3.8" text-anchor="middle" fill="var(--st-key-legend)" class="mono">&#x27;</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="1095.75,557.73 1138.72,557.73 1138.72,559.93 1095.75,559.93" fill="var(--st-key-side)"/>
+                                        <polygon points="1094.48,551.44 1136.88,551.44 1138.72,557.73 1095.75,557.73" fill="var(--st-key-accent)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="1095.75,557.73 1094.48,551.44 1136.88,551.44" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="1116.49" y="556.21" font-size="2.7" text-anchor="middle" fill="var(--st-key-legend)" class="mono">Enter</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="1141.10,557.73 1158.88,557.73 1158.88,559.93 1141.10,559.93" fill="var(--st-key-side)"/>
+                                        <polygon points="1139.23,551.44 1156.77,551.44 1158.88,557.73 1141.10,557.73" fill="var(--st-key-mod)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="1141.10,557.73 1139.23,551.44 1156.77,551.44" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="1149.04" y="556.21" font-size="2.7" text-anchor="middle" fill="var(--st-key-legend)" class="mono">PgDn</text>
+                                    </g>
+                                </g>
+                                <g class="key-row" style="--key-delay: 0.24s">
+                                    <g class="keycap"><polygon points="836.23,565.13 879.87,565.13 879.87,567.33 836.23,567.33" fill="var(--st-key-side)"/>
+                                        <polygon points="838.36,558.84 881.44,558.84 879.87,565.13 836.23,565.13" fill="var(--st-key-mod)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="836.23,565.13 838.36,558.84 881.44,558.84" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="858.94" y="563.61" font-size="2.7" text-anchor="middle" fill="var(--st-key-legend)" class="mono">Shift</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="882.29,565.13 900.34,565.13 900.34,567.33 882.29,567.33" fill="var(--st-key-side)"/>
+                                        <polygon points="883.82,558.84 901.65,558.84 900.34,565.13 882.29,565.13" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="882.29,565.13 883.82,558.84 901.65,558.84" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="892.00" y="563.61" font-size="3.8" text-anchor="middle" fill="var(--st-key-legend)" class="mono">Z</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="902.76,565.13 920.82,565.13 920.82,567.33 902.76,567.33" fill="var(--st-key-side)"/>
+                                        <polygon points="904.03,558.84 921.85,558.84 920.82,565.13 902.76,565.13" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="902.76,565.13 904.03,558.84 921.85,558.84" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="912.34" y="563.61" font-size="3.8" text-anchor="middle" fill="var(--st-key-legend)" class="mono">X</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="923.23,565.13 941.29,565.13 941.29,567.33 923.23,567.33" fill="var(--st-key-side)"/>
+                                        <polygon points="924.23,558.84 942.05,558.84 941.29,565.13 923.23,565.13" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="923.23,565.13 924.23,558.84 942.05,558.84" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="932.68" y="563.61" font-size="3.8" text-anchor="middle" fill="var(--st-key-legend)" class="mono">C</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="943.70,565.13 961.76,565.13 961.76,567.33 943.70,567.33" fill="var(--st-key-side)"/>
+                                        <polygon points="944.44,558.84 962.26,558.84 961.76,565.13 943.70,565.13" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="943.70,565.13 944.44,558.84 962.26,558.84" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="953.03" y="563.61" font-size="3.8" text-anchor="middle" fill="var(--st-key-legend)" class="mono">V</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="964.17,565.13 982.23,565.13 982.23,567.33 964.17,567.33" fill="var(--st-key-side)"/>
+                                        <polygon points="964.64,558.84 982.46,558.84 982.23,565.13 964.17,565.13" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="964.17,565.13 964.64,558.84 982.46,558.84" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="973.37" y="563.61" font-size="3.8" text-anchor="middle" fill="var(--st-key-legend)" class="mono">B</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="984.65,565.13 1002.70,565.13 1002.70,567.33 984.65,567.33" fill="var(--st-key-side)"/>
+                                        <polygon points="984.85,558.84 1002.67,558.84 1002.70,565.13 984.65,565.13" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="984.65,565.13 984.85,558.84 1002.67,558.84" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="993.71" y="563.61" font-size="3.8" text-anchor="middle" fill="var(--st-key-legend)" class="mono">N</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="1005.12,565.13 1023.18,565.13 1023.18,567.33 1005.12,567.33" fill="var(--st-key-side)"/>
+                                        <polygon points="1005.05,558.84 1022.87,558.84 1023.18,565.13 1005.12,565.13" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="1005.12,565.13 1005.05,558.84 1022.87,558.84" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="1014.06" y="563.61" font-size="3.8" text-anchor="middle" fill="var(--st-key-legend)" class="mono">M</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="1025.59,565.13 1043.65,565.13 1043.65,567.33 1025.59,567.33" fill="var(--st-key-side)"/>
+                                        <polygon points="1025.26,558.84 1043.08,558.84 1043.65,565.13 1025.59,565.13" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="1025.59,565.13 1025.26,558.84 1043.08,558.84" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="1034.40" y="563.61" font-size="3.8" text-anchor="middle" fill="var(--st-key-legend)" class="mono">,</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="1046.06,565.13 1064.12,565.13 1064.12,567.33 1046.06,567.33" fill="var(--st-key-side)"/>
+                                        <polygon points="1045.46,558.84 1063.28,558.84 1064.12,565.13 1046.06,565.13" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="1046.06,565.13 1045.46,558.84 1063.28,558.84" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="1054.74" y="563.61" font-size="3.8" text-anchor="middle" fill="var(--st-key-legend)" class="mono">.</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="1066.53,565.13 1084.59,565.13 1084.59,567.33 1066.53,567.33" fill="var(--st-key-side)"/>
+                                        <polygon points="1065.66,558.84 1083.49,558.84 1084.59,565.13 1066.53,565.13" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="1066.53,565.13 1065.66,558.84 1083.49,558.84" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="1075.09" y="563.61" font-size="3.8" text-anchor="middle" fill="var(--st-key-legend)" class="mono">/</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="1087.01,565.13 1120.42,565.13 1120.42,567.33 1087.01,567.33" fill="var(--st-key-side)"/>
+                                        <polygon points="1085.87,558.84 1118.84,558.84 1120.42,565.13 1087.01,565.13" fill="var(--st-key-mod)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="1087.01,565.13 1085.87,558.84 1118.84,558.84" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="1103.06" y="563.61" font-size="2.7" text-anchor="middle" fill="var(--st-key-legend)" class="mono">Shift</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="1122.83,565.13 1140.89,565.13 1140.89,567.33 1122.83,567.33" fill="var(--st-key-side)"/>
+                                        <polygon points="1121.23,558.84 1139.05,558.84 1140.89,565.13 1122.83,565.13" fill="var(--st-key-mod)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="1122.83,565.13 1121.23,558.84 1139.05,558.84" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="1131.03" y="563.61" font-size="3.8" text-anchor="middle" fill="var(--st-key-legend)" class="mono">↑</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="1143.30,565.13 1161.36,565.13 1161.36,567.33 1143.30,567.33" fill="var(--st-key-side)"/>
+                                        <polygon points="1141.43,558.84 1159.25,558.84 1161.36,565.13 1143.30,565.13" fill="var(--st-key-mod)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="1143.30,565.13 1141.43,558.84 1159.25,558.84" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="1151.38" y="563.61" font-size="3.2" text-anchor="middle" fill="var(--st-key-legend)" class="mono">End</text>
+                                    </g>
+                                </g>
+                                <g class="key-row" style="--key-delay: 0.30s">
+                                    <g class="keycap"><polygon points="833.71,572.53 857.24,572.53 857.24,574.73 833.71,574.73" fill="var(--st-key-side)"/>
+                                        <polygon points="835.85,566.24 859.08,566.24 857.24,572.53 833.71,572.53" fill="var(--st-key-mod)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="833.71,572.53 835.85,566.24 859.08,566.24" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="846.43" y="571.01" font-size="2.7" text-anchor="middle" fill="var(--st-key-legend)" class="mono">Ctrl</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="859.69,572.53 883.22,572.53 883.22,574.73 859.69,574.73" fill="var(--st-key-side)"/>
+                                        <polygon points="861.50,566.24 884.73,566.24 883.22,572.53 859.69,572.53" fill="var(--st-key-mod)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="859.69,572.53 861.50,566.24 884.73,566.24" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="872.25" y="571.01" font-size="3.2" text-anchor="middle" fill="var(--st-key-legend)" class="mono">Win</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="885.67,572.53 909.21,572.53 909.21,574.73 885.67,574.73" fill="var(--st-key-side)"/>
+                                        <polygon points="887.15,566.24 910.37,566.24 909.21,572.53 885.67,572.53" fill="var(--st-key-mod)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="885.67,572.53 887.15,566.24 910.37,566.24" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="898.07" y="571.01" font-size="3.2" text-anchor="middle" fill="var(--st-key-legend)" class="mono">Alt</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="913.74,572.53 1039.12,572.53 1039.12,574.73 913.74,574.73" fill="var(--st-key-side)"/>
+                                        <polygon points="914.85,566.24 1038.62,566.24 1039.12,572.53 913.74,572.53" fill="url(#g-keycap)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="913.74,572.53 914.85,566.24 1038.62,566.24" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                    </g>
+                                    <g class="keycap"><polygon points="1041.57,572.53 1059.91,572.53 1059.91,574.73 1041.57,574.73" fill="var(--st-key-side)"/>
+                                        <polygon points="1041.04,566.24 1059.14,566.24 1059.91,572.53 1041.57,572.53" fill="var(--st-key-mod)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="1041.57,572.53 1041.04,566.24 1059.14,566.24" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="1050.43" y="571.01" font-size="3.2" text-anchor="middle" fill="var(--st-key-legend)" class="mono">Alt</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="1062.36,572.53 1080.69,572.53 1080.69,574.73 1062.36,574.73" fill="var(--st-key-side)"/>
+                                        <polygon points="1061.56,566.24 1079.66,566.24 1080.69,572.53 1062.36,572.53" fill="var(--st-key-mod)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="1062.36,572.53 1061.56,566.24 1079.66,566.24" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="1071.08" y="571.01" font-size="3.2" text-anchor="middle" fill="var(--st-key-legend)" class="mono">Fn</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="1083.15,572.53 1101.48,572.53 1101.48,574.73 1083.15,574.73" fill="var(--st-key-side)"/>
+                                        <polygon points="1082.08,566.24 1100.17,566.24 1101.48,572.53 1083.15,572.53" fill="var(--st-key-mod)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="1083.15,572.53 1082.08,566.24 1100.17,566.24" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="1091.74" y="571.01" font-size="3.8" text-anchor="middle" fill="var(--st-key-legend)" class="mono">←</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="1103.93,572.53 1122.27,572.53 1122.27,574.73 1103.93,574.73" fill="var(--st-key-side)"/>
+                                        <polygon points="1102.60,566.24 1120.69,566.24 1122.27,572.53 1103.93,572.53" fill="var(--st-key-mod)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="1103.93,572.53 1102.60,566.24 1120.69,566.24" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="1112.40" y="571.01" font-size="3.8" text-anchor="middle" fill="var(--st-key-legend)" class="mono">↓</text>
+                                    </g>
+                                    <g class="keycap"><polygon points="1124.72,572.53 1143.05,572.53 1143.05,574.73 1124.72,574.73" fill="var(--st-key-side)"/>
+                                        <polygon points="1123.11,566.24 1141.21,566.24 1143.05,572.53 1124.72,572.53" fill="var(--st-key-mod)" stroke="var(--st-ink)" stroke-width="0.45" stroke-linejoin="round"/>
+                                        <polyline points="1124.72,572.53 1123.11,566.24 1141.21,566.24" fill="none" stroke="var(--st-key-top)" stroke-width="0.45" opacity="0.65"/>
+                                        <text x="1133.06" y="571.01" font-size="3.8" text-anchor="middle" fill="var(--st-key-legend)" class="mono">→</text>
+                                    </g>
+                                </g>
                             </g>
-                            <ellipse cx="1262" cy="541" rx="13" ry="17" fill="var(--st-plastic)" class="ink" transform="rotate(-8 1262 541)"/>
-                            <line x1="1263" y1="526" x2="1262" y2="536" class="ink-thin" opacity="0.6"/>
+                            <g id="keyboard-knob">
+                                <ellipse cx="1161" cy="533" rx="8" ry="3.1" fill="var(--st-ink)"/>
+                                <path d="M1153 529 V532 A8 3 0 0 0 1169 532 V529" fill="var(--st-metal-2)" stroke="var(--st-ink)" stroke-width="0.6"/>
+                                <ellipse cx="1161" cy="529" rx="8" ry="3" fill="var(--st-metal)" stroke="var(--st-key-top)" stroke-width="0.6"/>
+                                <path d="M1161 526 V529" stroke="var(--st-ink)" stroke-width="0.9"/>
+                            </g>
+                            <g fill="var(--st-key-accent)"><circle cx="1166" cy="582.5" r="1"/><circle cx="1171" cy="582.2" r="0.8" opacity="0.45"/><circle cx="1176" cy="582" r="0.8" opacity="0.3"/></g>
+                        </g>
+                    </g>
+
+                    <!-- 无线鼠标：掌托曲面、独立按键、滚轮与侧键。 -->
+                    <g id="mouse" class="hotspot no-lift" data-id="mouse" role="button" tabindex="0" aria-label="无线鼠标，点击进入电脑"
+                       data-tip-title="无线鼠标" data-tip="磨砂外壳、橡胶滚轮和两枚侧键，刚好贴合掌心。" data-tip-action="点击进入电脑 →">
+                        <g class="lift">
+                            <ellipse cx="1256" cy="581" rx="32" ry="10" fill="url(#g-contact)" class="fx"/>
+                            <g transform="rotate(-12 1255 552)">
+                                <path d="M1233 548 C1234 531 1242 521 1254 521 C1272 521 1282 540 1280 561 C1279 578 1270 588 1253 588 C1235 588 1228 574 1233 548 Z" fill="var(--st-metal-3)" stroke="var(--st-ink)" stroke-width="1.1"/>
+                                <path d="M1235 546 C1236 529 1244 519 1255 520 C1271 520 1280 538 1278 558 C1277 574 1268 582 1253 583 C1238 583 1230 571 1235 546 Z" fill="url(#g-mouse-shell)" stroke="var(--st-metal-2)" stroke-width="0.7"/>
+                                <path d="M1239 541 C1240 529 1246 524 1253 523" fill="none" stroke="var(--st-key-top)" stroke-width="1.3" stroke-linecap="round" opacity="0.85"/>
+                                <path d="M1255 522 V549 M1235 550 Q1255 555 1278 549" fill="none" stroke="var(--st-metal-2)" stroke-width="0.85"/>
+                                <rect x="1250" y="531" width="10" height="17" rx="4.5" fill="var(--st-metal-3)"/>
+                                <rect x="1252" y="533" width="6" height="12" rx="2.5" fill="url(#g-mouse-wheel)"/>
+                                <path d="M1253 535 H1257 M1253 538 H1257 M1253 541 H1257 M1253 544 H1257" stroke="var(--st-metal)" stroke-width="0.65" opacity="0.85"/>
+                                <path d="M1234 553 Q1230 566 1238 576" fill="none" stroke="var(--st-metal-2)" stroke-width="1.2"/>
+                                <rect x="1232" y="550" width="2.7" height="8" rx="1.3" fill="var(--st-metal-3)"/>
+                                <rect x="1232" y="560" width="2.7" height="7" rx="1.3" fill="var(--st-metal-3)"/>
+                                <path d="M1251 568 Q1256 565 1259 568 Q1256 574 1251 568 Z" fill="none" stroke="var(--st-metal-2)" stroke-width="0.7" opacity="0.65"/>
+                                <circle cx="1255" cy="551" r="0.9" fill="var(--st-key-accent)"/>
+                            </g>
                         </g>
                     </g>
 
@@ -757,7 +1235,23 @@
                         <polygon points="448,190 448,330 1250,900 950,900" fill="url(#g-moon)" filter="url(#f-blur6)"/>
                     </g>
                 </g>
+                <g id="scene-guides" aria-hidden="true" class="fx">
+                    <g transform="translate(970 208)"><rect width="110" height="32" rx="16"/><text x="55" y="21">进入电脑 ↗</text></g>
+                    <g transform="translate(203 592)"><rect width="120" height="32" rx="16"/><text x="60" y="21">试试 3D 打印</text></g>
+                    <g transform="translate(1306 393)"><rect width="104" height="32" rx="16"/><text x="52" y="21">和小黑打招呼</text></g>
+                    <g transform="translate(237 315)"><rect width="104" height="32" rx="16"/><text x="52" y="21">切换昼夜</text></g>
+                    <g transform="translate(317 448)"><rect width="104" height="32" rx="16"/><text x="52" y="21">点亮工作台</text></g>
+                </g>
             </svg>
+        </div>
+        <p class="studio-hint" id="studio-hint" aria-hidden="true">点击物件探索 · 点击显示器进入电脑</p>
+        <div class="studio-toolbar" id="studio-toolbar" role="group" aria-label="工作室操作">
+            <div class="studio-controls">
+                <button class="studio-control" type="button" id="studio-guides" aria-label="显示物件提示" title="显示物件提示" aria-pressed="false"><i class="far fa-compass" aria-hidden="true"></i></button>
+                <button class="studio-control" type="button" id="studio-daynight" aria-label="切换到夜间工作室" title="切换到夜间工作室"><i class="fas fa-moon" aria-hidden="true"></i></button>
+                <button class="studio-control" type="button" id="studio-fullscreen" aria-label="全屏查看工作室" title="全屏查看工作室" aria-pressed="false" hidden><i class="fas fa-expand" aria-hidden="true"></i></button>
+                <button class="studio-control" type="button" id="studio-enter" aria-label="进入电脑" title="进入电脑"><i class="fas fa-desktop" aria-hidden="true"></i></button>
+            </div>
         </div>
 
         <!-- 悬停说明卡 -->
@@ -767,23 +1261,17 @@
             <span class="tip-action"></span>
         </div>
 
-        <!-- 引导 -->
-        <div class="studio-hint" id="studio-hint" aria-hidden="true">
-            <i class="fas fa-hand-pointer"></i>悬停查看物品<span class="sep">·</span><i class="fas fa-desktop"></i>点击显示器进入系统
-        </div>
-
         <!-- 显示器聚焦：遮罩 + huanfly-os -->
         <div class="mf-dim" id="mf-dim"></div>
-        <div class="monitor-focus" id="monitor-focus">
-            <div class="mf-screen" id="mf-screen" role="dialog" aria-modal="true" aria-label="huanfly-os">
+        <div class="monitor-focus" id="monitor-focus" role="dialog" aria-modal="true" aria-label="huanfly-os" inert>
+            <div class="mf-screen" id="mf-screen" tabindex="-1">
                 <div class="os">
                     <div class="os-topbar">
                         <span class="os-brand"><img src="picture/icon.png" alt="">huanfly-os</span>
                         <span class="os-title" id="os-title">桌面</span>
                         <span class="os-status">
                             <button class="os-btn" id="os-home" title="回到桌面" aria-label="回到桌面"><i class="fas fa-house"></i></button>
-                            <i class="fas fa-wifi" aria-hidden="true"></i>
-                            <i class="fas fa-battery-three-quarters" aria-hidden="true"></i>
+                            <span class="os-session">工作室 / PERSONAL SPACE</span>
                             <span id="os-clock">--:--</span>
                         </span>
                     </div>
@@ -791,6 +1279,7 @@
                     <div class="os-body">
                         <!-- 桌面 -->
                         <section class="os-app os-desktop active" data-app="desktop" aria-label="桌面">
+                            <p class="os-desktop-label">MAKE YOURSELF AT HOME</p>
                             <div class="os-clock">
                                 <div class="time" id="os-time">--:--</div>
                                 <div class="date" id="os-date"></div>
@@ -798,13 +1287,13 @@
                             </div>
                             <nav class="os-dock" aria-label="应用">
                                 <button class="os-dock-item terminal" data-open="terminal">
-                                    <span class="icon"><i class="fas fa-terminal"></i></span>终端
+                                    <span class="icon"><i class="fas fa-terminal"></i></span><span>终端</span><small>敲几行，试试看</small>
                                 </button>
                                 <button class="os-dock-item album" data-open="album">
-                                    <span class="icon"><i class="fas fa-images"></i></span>相册
+                                    <span class="icon"><i class="fas fa-images"></i></span><span>相册</span><small>收集生活的切片</small>
                                 </button>
                                 <button class="os-dock-item robot" data-open="robot">
-                                    <span class="icon"><i class="fas fa-robot"></i></span>Robot
+                                    <span class="icon"><i class="fas fa-robot"></i></span><span>Robot</span><small>和小黑聊聊灵感</small>
                                 </button>
                             </nav>
                         </section>
@@ -826,16 +1315,14 @@
                                         <div class="lock-status" id="term-status"><i class="fas fa-spinner fa-spin"></i>正在探测终端桥接…</div>
                                         <form class="term-lock-form" id="term-form" autocomplete="off">
                                             <input type="password" id="term-password" placeholder="输入密码进入真实终端" autocomplete="current-password" aria-label="终端密码" disabled>
-                                            <button type="submit" class="os-btn primary" id="term-submit" disabled><i class="fas fa-arrow-right"></i></button>
+                                            <button type="submit" class="os-btn primary" id="term-submit" aria-label="解锁终端" disabled><i class="fas fa-arrow-right"></i></button>
                                         </form>
                                         <div class="lock-alt">
                                             或者
                                             <button type="button" class="os-btn" id="term-guest"><i class="fas fa-ghost"></i> 进入访客终端</button>
                                         </div>
-                                        <div class="lock-help">
-                                            真实终端需要在本机运行桥接服务：<code>STUDIO_TERM_PASSWORD=… ./run.sh term</code><br>
-                                            访客终端是浏览器内的模拟 shell，随便敲敲不伤机器。
-                                        </div>
+                                        <p class="lock-help">访客终端可以直接体验，输入 help 看看能做什么。</p>
+                                        <details class="lock-help"><summary>连接自己的终端</summary><p>在本机启动桥接服务后，输入设置的密码。</p><code>STUDIO_TERM_PASSWORD=… ./run.sh term</code></details>
                                     </div>
                                 </div>
                                 <div class="term-body" id="term-body"></div>
@@ -855,6 +1342,7 @@
                             <div class="app-body">
                                 <div class="album-grid" id="album-grid"></div>
                                 <div class="album-viewer" id="album-viewer" aria-hidden="true">
+                                    <button class="os-btn viewer-close" id="album-close" type="button" aria-label="返回相册"><i class="fas fa-arrow-left" aria-hidden="true"></i> 返回相册</button>
                                     <div class="viewer-stage">
                                         <button class="viewer-nav prev" id="album-prev" aria-label="上一张"><i class="fas fa-chevron-left"></i></button>
                                         <img id="album-viewer-img" alt="">
@@ -883,9 +1371,9 @@
                                 <div class="robot-body">
                                     <div class="robot-messages" id="robot-messages" aria-live="polite"></div>
                                     <form class="robot-composer" id="robot-form">
-                                        <textarea id="robot-input" rows="1" placeholder="和小黑聊聊…（Enter 发送，Shift+Enter 换行）" aria-label="消息"></textarea>
-                                        <button type="button" class="os-btn danger" id="robot-stop" hidden><i class="fas fa-stop"></i></button>
-                                        <button type="submit" class="os-btn primary" id="robot-send"><i class="fas fa-paper-plane"></i></button>
+                                        <textarea id="robot-input" rows="1" placeholder="写下你的想法…" aria-label="消息"></textarea>
+                                        <button type="button" class="os-btn danger" id="robot-stop" aria-label="停止生成" hidden><i class="fas fa-stop"></i></button>
+                                        <button type="submit" class="os-btn primary" id="robot-send" aria-label="发送消息"><i class="fas fa-paper-plane"></i></button>
                                     </form>
                                 </div>
                                 <div class="robot-settings" id="robot-settings">
@@ -922,8 +1410,8 @@
                     </div>
                 </div>
             </div>
+            <button class="mf-exit" id="mf-exit" type="button" inert><i class="fas fa-arrow-left"></i> 回到工作室 <kbd>Esc</kbd></button>
         </div>
-        <button class="mf-exit" id="mf-exit" type="button"><i class="fas fa-arrow-left"></i> 离开显示器 <kbd>Esc</kbd></button>
     </main>
 
     <script src="js/script.js"></script>

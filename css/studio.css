@@ -2,7 +2,7 @@
    Huanfly · 工作室（studio.html）专属样式
    -------------------------------------------------------------
    1. 场景调色板：所有 SVG 填充绑定 --st-* 变量，随 data-theme 昼夜切换
-   2. 舞台布局：全视口沉浸，窄屏可横向平移
+   2. 舞台布局：全景等比适配，墙面与地板延展到视口边缘
    3. 悬停说明卡 / 引导提示
    4. 显示器聚焦：场景推近 + huanfly-os 覆盖层（终端 / 相册 / Robot）
    ============================================================= */
@@ -12,23 +12,23 @@
     --st-day: 1;
     --st-night: 0;
 
-    --st-wall: #f4ead6;
-    --st-wall-2: #e9dcc0;
-    --st-side-wall: #e3d4b6;
-    --st-side-wall-2: #d3c19f;
+    --st-wall: #f5efdf;
+    --st-wall-2: #e5dac2;
+    --st-side-wall: #e8dec8;
+    --st-side-wall-2: #d8ccb2;
     --st-baseboard: #c8b088;
     --st-corner: rgba(90, 70, 40, 0.14);
 
-    --st-floor: #d2a46f;
-    --st-floor-2: #b98553;
+    --st-floor: #d5b58a;
+    --st-floor-2: #bd9b72;
     --st-floor-line: rgba(90, 55, 25, 0.28);
-    --st-rug: #8fc0ae;
-    --st-rug-2: #6ea391;
+    --st-rug: #a3b6a0;
+    --st-rug-2: #7f9d86;
 
-    --st-desk: #e0b27a;
-    --st-desk-2: #cb9a5f;
-    --st-desk-edge: #a97a45;
-    --st-desk-side: #bf8d58;
+    --st-desk: #d9b587;
+    --st-desk-2: #c49b6c;
+    --st-desk-edge: #ab8057;
+    --st-desk-side: #b58b60;
     --st-desk-grain: rgba(120, 75, 30, 0.18);
 
     --st-sky: #8fd0ef;
@@ -47,9 +47,8 @@
     --st-sun-floor: rgba(255, 232, 170, 0.34);
     --st-moon: rgba(150, 190, 255, 0);
     --st-glow: 0.16;
-    --st-lamp: 0;
 
-    --st-ink: #2f3630;
+    --st-ink: #42483b;
     --st-metal: #b9c2be;
     --st-metal-2: #8a9490;
     --st-metal-3: #4a5450;
@@ -59,6 +58,12 @@
     --st-cat: #23281f;
     --st-paper: #fffdf5;
     --st-pcb: #2f8a5b;
+    --st-key-top: #f7f5ea;
+    --st-key-face: #dfded3;
+    --st-key-side: #979d95;
+    --st-key-mod: #b8c4bc;
+    --st-key-accent: #84a28b;
+    --st-key-legend: #38443e;
 }
 
 /* ---------- 场景调色板：夜之工作室 ---------- */
@@ -66,21 +71,21 @@
     --st-day: 0;
     --st-night: 1;
 
-    --st-wall: #202b25;
-    --st-wall-2: #18211b;
-    --st-side-wall: #1b251f;
-    --st-side-wall-2: #141c17;
+    --st-wall: #36423a;
+    --st-wall-2: #29362e;
+    --st-side-wall: #2d3b34;
+    --st-side-wall-2: #233129;
     --st-baseboard: #2c3a30;
     --st-corner: rgba(0, 0, 0, 0.30);
 
-    --st-floor: #3e2f25;
-    --st-floor-2: #2a2019;
+    --st-floor: #514337;
+    --st-floor-2: #3b332a;
     --st-floor-line: rgba(0, 0, 0, 0.32);
     --st-rug: #2f4f48;
     --st-rug-2: #26403a;
 
-    --st-desk: #74533a;
-    --st-desk-2: #5b402c;
+    --st-desk: #91704f;
+    --st-desk-2: #735a40;
     --st-desk-edge: #3f2b1d;
     --st-desk-side: #4d3625;
     --st-desk-grain: rgba(0, 0, 0, 0.22);
@@ -100,10 +105,9 @@
     --st-sun: rgba(255, 226, 150, 0);
     --st-sun-floor: rgba(255, 232, 170, 0);
     --st-moon: rgba(150, 190, 255, 0.14);
-    --st-glow: 0.62;
-    --st-lamp: 0;
+    --st-glow: 0.35;
 
-    --st-ink: #0c110e;
+    --st-ink: #18241e;
     --st-metal: #6f7a76;
     --st-metal-2: #4d5753;
     --st-metal-3: #2a322f;
@@ -113,10 +117,12 @@
     --st-cat: #10140e;
     --st-paper: #d9d4c4;
     --st-pcb: #24603f;
-}
-
-.studio.lamp-on {
-    --st-lamp: 1;
+    --st-key-top: #b3bdb0;
+    --st-key-face: #839082;
+    --st-key-side: #46534b;
+    --st-key-mod: #657a6e;
+    --st-key-accent: #76a98a;
+    --st-key-legend: #1a2922;
 }
 
 /* =========================================
@@ -128,61 +134,135 @@ body.studio-page {
     overflow: hidden;
 }
 
-body.studio-page header {
-    position: fixed;
-    left: 0;
-    right: 0;
-    top: 0;
-    background-color: rgba(247, 243, 232, 0.55);
-    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.4s ease;
+body.studio-page.is-focused :is(.spirit-layer, .burst-layer, .reduced-motion-click) {
+    visibility: hidden;
 }
 
-[data-theme="dark"] body.studio-page header {
-    background-color: rgba(20, 28, 22, 0.5);
-}
-
-body.studio-page.is-focused header {
-    transform: translateY(-110%);
-}
-
+/* 房间直接铺满视口，操作浮在场景边缘。 */
 .studio {
     position: fixed;
     inset: 0;
+    background: var(--st-wall-2);
 }
 
-/* 舞台：全视口覆盖；窄屏保持 16:9 并允许横向平移 */
 .studio-stage {
     position: absolute;
     inset: 0;
     z-index: 1;
-    overflow: auto;
-    scrollbar-width: none;
-    touch-action: pan-x pan-y;
+    overflow: hidden;
+    touch-action: manipulation;
     background: var(--st-wall-2);
-}
-
-.studio-stage::-webkit-scrollbar {
-    display: none;
 }
 
 .studio-scene {
     display: block;
+    width: 100%;
     height: 100%;
-    width: max(100%, calc(100vh * 16 / 9));
-    width: max(100%, calc(100dvh * 16 / 9));
     transform-origin: 0 0;
-    transition: transform 1s cubic-bezier(0.65, 0, 0.2, 1);
-    will-change: transform;
+    transition: transform 0.8s cubic-bezier(0.65, 0, 0.2, 1);
     font-family: var(--font-hand);
     user-select: none;
     -webkit-user-select: none;
     -webkit-tap-highlight-color: transparent;
 }
 
-/* 入场：从略放大 + 透明推入 */
+.studio-leave, .studio-control {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    flex: 0 0 auto;
+    width: 42px;
+    height: 42px;
+    padding: 0;
+    border: 1px solid color-mix(in srgb, var(--st-ink) 16%, transparent);
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--st-paper) 70%, transparent);
+    color: #354a3d;
+    font: 14px var(--font-hand);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    cursor: pointer;
+    opacity: 0.55;
+    transition: background 0.2s ease, opacity 0.2s ease;
+}
+
+[data-theme="dark"] :is(.studio-leave, .studio-control) {
+    background: rgba(20, 30, 24, 0.65);
+    color: #d1decf;
+    border-color: rgba(209, 222, 207, 0.18);
+}
+
+.studio-leave:hover, .studio-leave:focus-visible,
+.studio-controls:hover .studio-control, .studio-controls:focus-within .studio-control {
+    opacity: 1;
+}
+
+.studio-control[aria-pressed="true"] {
+    opacity: 1;
+    color: var(--primary-hover);
+    border-color: var(--primary-color);
+}
+
+.studio-leave {
+    position: fixed;
+    z-index: 60;
+    top: max(20px, env(safe-area-inset-top));
+    left: max(20px, env(safe-area-inset-left));
+}
+
+.studio-toolbar {
+    position: fixed;
+    z-index: 60;
+    left: max(20px, env(safe-area-inset-left));
+    right: max(20px, env(safe-area-inset-right));
+    bottom: max(20px, env(safe-area-inset-bottom));
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    pointer-events: none;
+}
+
+.studio-controls {
+    display: flex;
+    gap: 8px;
+    pointer-events: auto;
+}
+
+.studio-controls { margin-left: auto; }
+.studio-control[hidden] { display: none; }
+
+.studio-hint {
+    position: fixed;
+    z-index: 60;
+    left: 50%;
+    bottom: max(28px, env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+    margin: 0;
+    color: #fffdf5;
+    font-size: 12px;
+    text-shadow: 0 1px 5px rgba(0, 0, 0, 0.75);
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+
+.studio.is-ready .studio-hint { opacity: 0.85; }
+.studio.is-ready .studio-hint.is-dismissed { opacity: 0; }
+.studio :is(button, a, summary, input, textarea):focus-visible { outline: 2px solid var(--primary-color); outline-offset: 4px; }
+.studio.is-focused :is(.studio-toolbar, .studio-leave, .studio-hint) { opacity: 0; pointer-events: none; }
+.studio.is-focused-ready .studio-stage { opacity: 0; transition: opacity 0.35s ease; }
+
+#scene-guides { opacity: 0; transition: opacity 0.25s ease; }
+.studio.show-guides #scene-guides { opacity: 1; }
+#scene-guides rect { fill: var(--st-paper); stroke: var(--st-leaf-2); stroke-width: 1.5; }
+#scene-guides text { fill: var(--st-ink); text-anchor: middle; font-size: 12px; }
+
+/* 入场只淡入，始终保留房间全貌。 */
 html.js .studio-scene {
     opacity: 0;
-    transform: scale(1.05);
+    transform: none;
 }
 
 html.js .studio.is-ready .studio-scene {
@@ -204,14 +284,14 @@ html.js .studio.is-ready .studio-scene {
    ========================================= */
 .studio-scene .ink {
     stroke: var(--st-ink);
-    stroke-width: 2.5;
+    stroke-width: 1.8;
     stroke-linejoin: round;
     stroke-linecap: round;
 }
 
 .studio-scene .ink-thin {
     stroke: var(--st-ink);
-    stroke-width: 1.5;
+    stroke-width: 1.2;
     stroke-linejoin: round;
     stroke-linecap: round;
 }
@@ -253,7 +333,7 @@ html.js .studio.is-ready .studio-scene {
     filter: drop-shadow(0 0 6px color-mix(in srgb, var(--accent-color) 70%, transparent));
 }
 
-.studio-scene .hotspot.no-lift:hover > .lift {
+.studio-scene .hotspot.no-lift:is(:hover, :focus-visible, .is-touched) > .lift {
     transform: none;
 }
 
@@ -429,11 +509,9 @@ html.js .studio.is-ready .studio-scene {
 #keyboard.wave .key-row {
     transform-box: fill-box;
     animation: st-key-wave 0.45s ease-in-out 2;
+    animation-delay: var(--key-delay, 0s);
 }
 
-#keyboard.wave .key-row:nth-child(2) { animation-delay: 0.08s; }
-#keyboard.wave .key-row:nth-child(3) { animation-delay: 0.16s; }
-#keyboard.wave .key-row:nth-child(4) { animation-delay: 0.24s; }
 
 /* 3D 打印机 */
 #printer-head {
@@ -523,21 +601,6 @@ html.js .studio.is-ready .studio-scene {
     transition: opacity 0.8s ease;
 }
 
-#lamp-glow,
-#lamp-pool {
-    opacity: var(--st-lamp);
-    transition: opacity 0.5s ease;
-}
-
-#lamp-bulb {
-    fill: var(--st-plastic);
-    transition: fill 0.4s ease;
-}
-
-.studio.lamp-on #lamp-bulb {
-    fill: #ffd98a;
-}
-
 /* 屏幕待机 UI */
 #screen-hint {
     animation: st-pulse 2.4s ease-in-out infinite;
@@ -571,8 +634,9 @@ html.js .studio.is-ready .studio-scene {
 
 /* 灵感墙便签轮换 */
 #board .note {
-    transform-box: fill-box;
-    transform-origin: top center;
+    transform-box: view-box;
+    transform-origin: var(--note-x) var(--note-y);
+    transform: rotate(var(--note-angle));
     transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -589,13 +653,13 @@ html.js .studio.is-ready .studio-scene {
     top: 0;
     z-index: 60;
     width: max-content;
-    max-width: 280px;
+    max-width: min(280px, calc(100vw - 24px));
     padding: 10px 14px 11px;
     background: var(--card-bg);
     color: var(--dark-text);
-    border: 2px solid var(--line);
-    border-radius: var(--wobble-card-alt);
-    box-shadow: var(--shadow-ink);
+    border: 1px solid var(--line-soft);
+    border-radius: 12px;
+    box-shadow: 0 8px 28px rgba(20, 30, 20, 0.18);
     pointer-events: none;
     opacity: 0;
     transform: translate(-50%, 6px) scale(0.92) rotate(-1.2deg);
@@ -651,48 +715,6 @@ html.js .studio.is-ready .studio-scene {
     color: var(--accent-color);
 }
 
-/* 引导提示 */
-.studio-hint {
-    position: fixed;
-    left: 50%;
-    bottom: 22px;
-    bottom: calc(env(safe-area-inset-bottom) + 22px);
-    z-index: 60;
-    transform: translateX(-50%);
-    padding: 8px 20px;
-    font-size: 0.9rem;
-    font-weight: 700;
-    color: var(--dark-text);
-    background: var(--card-bg);
-    border: 2px solid var(--line);
-    border-radius: var(--wobble-btn);
-    box-shadow: var(--shadow-ink);
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.5s ease 1.2s, transform 0.5s ease 1.2s;
-}
-
-.studio.is-ready .studio-hint {
-    opacity: 1;
-}
-
-.studio.is-ready .studio-hint.hide,
-.studio.is-focused .studio-hint {
-    opacity: 0;
-    transform: translate(-50%, 10px);
-    transition-delay: 0s;
-}
-
-.studio-hint i {
-    color: var(--primary-color);
-    margin-right: 4px;
-}
-
-.studio-hint .sep {
-    margin: 0 8px;
-    color: var(--line-soft);
-}
-
 /* =========================================
    显示器聚焦：遮罩 + huanfly-os 覆盖层
    ========================================= */
@@ -722,9 +744,8 @@ html.js .studio.is-ready .studio-scene {
 
 .mf-screen {
     position: relative;
-    width: min(94vw, calc(90vh * 16 / 9));
-    width: min(94vw, calc(90dvh * 16 / 9));
-    aspect-ratio: 16 / 9;
+    width: min(1180px, 92vw, calc((100dvh - 120px) * 16 / 10));
+    aspect-ratio: 16 / 10;
     background: var(--st-screen, #0f1a17);
     color: #e6f0e8;
     border-radius: 18px;
@@ -757,8 +778,8 @@ html.js .studio.is-ready .studio-scene {
     font-weight: 700;
     color: #fffdf5;
     background: rgba(20, 28, 22, 0.72);
-    border: 2px solid rgba(255, 253, 245, 0.55);
-    border-radius: var(--wobble-btn);
+    border: 1px solid rgba(255, 253, 245, 0.25);
+    border-radius: 12px;
     cursor: pointer;
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
@@ -800,7 +821,7 @@ html.js .studio.is-ready .studio-scene {
 
 .os-topbar {
     flex: 0 0 auto;
-    height: 36px;
+    height: 48px;
     display: flex;
     align-items: center;
     gap: 14px;
@@ -849,8 +870,8 @@ html.js .studio.is-ready .studio-scene {
     align-items: center;
     justify-content: center;
     gap: 6px;
-    min-width: 28px;
-    height: 26px;
+    min-width: 36px;
+    height: 34px;
     padding: 0 10px;
     font-family: inherit;
     font-size: 0.8rem;
@@ -920,9 +941,10 @@ html.js .studio.is-ready .studio-scene {
 .os-desktop {
     align-items: center;
     justify-content: center;
-    gap: 6vmin;
+    gap: clamp(20px, 4vmin, 42px);
     text-align: center;
-    padding: 2vmin;
+    padding: 24px;
+    overflow: auto;
 }
 
 .os-desktop::before {
@@ -943,8 +965,9 @@ html.js .studio.is-ready .studio-scene {
 
 .os-clock .time {
     font-size: clamp(2.4rem, 8vmin, 5.2rem);
-    font-weight: 800;
-    letter-spacing: 0.04em;
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.04em;
     color: #f2f8f1;
     text-shadow: 0 6px 30px rgba(111, 216, 226, 0.25);
 }
@@ -956,10 +979,10 @@ html.js .studio.is-ready .studio-scene {
 }
 
 .os-clock .greet {
-    margin-top: 1vmin;
+    margin-top: 18px;
     font-size: clamp(0.8rem, 2.1vmin, 1.1rem);
     color: rgba(230, 240, 232, 0.8);
-    font-style: italic;
+    font-style: normal;
 }
 
 .os-dock {
@@ -978,7 +1001,7 @@ html.js .studio.is-ready .studio-scene {
     flex-direction: column;
     align-items: center;
     gap: 6px;
-    width: clamp(58px, 11vmin, 104px);
+    width: clamp(84px, 14vmin, 140px);
     padding: 0;
     background: none;
     border: none;
@@ -996,16 +1019,16 @@ html.js .studio.is-ready .studio-scene {
     place-items: center;
     font-size: clamp(1.3rem, 3.8vmin, 2.2rem);
     color: #10140e;
-    border: 2px solid rgba(0, 0, 0, 0.55);
-    border-radius: 26% 30% 28% 26% / 30% 26% 30% 28%;
-    box-shadow: 3px 4px 0 rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 22px;
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3), 0 6px 18px rgba(0, 0, 0, 0.22);
     transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
 }
 
 .os-dock-item:hover .icon,
 .os-dock-item:focus-visible .icon {
-    transform: translateY(-8px) rotate(-4deg) scale(1.06);
-    box-shadow: 5px 8px 0 rgba(0, 0, 0, 0.35);
+    transform: translateY(-5px) scale(1.03);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.25);
 }
 
 .os-dock-item.terminal .icon { background: linear-gradient(145deg, #8fd873, #5da844); }
@@ -1022,7 +1045,8 @@ html.js .studio.is-ready .studio-scene {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 8px 14px;
+    padding: 12px 18px;
+    flex-wrap: wrap;
     font-size: 0.86rem;
     color: rgba(230, 240, 232, 0.8);
     border-bottom: 1px solid rgba(255, 255, 255, 0.07);
@@ -1070,6 +1094,8 @@ html.js .studio.is-ready .studio-scene {
         radial-gradient(ellipse at 50% 30%, rgba(124, 201, 95, 0.12), transparent 60%),
         rgba(8, 14, 12, 0.7);
     z-index: 2;
+    overflow: auto;
+    align-items: safe center;
 }
 
 .term-lock.hidden {
@@ -1081,8 +1107,8 @@ html.js .studio.is-ready .studio-scene {
     padding: clamp(16px, 3vmin, 28px) clamp(16px, 3.4vmin, 30px);
     background: rgba(20, 30, 26, 0.92);
     border: 2px solid rgba(255, 253, 245, 0.18);
-    border-radius: var(--wobble-card);
-    box-shadow: 6px 8px 0 rgba(0, 0, 0, 0.35);
+    border-radius: 20px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22);
     text-align: center;
 }
 
@@ -1509,8 +1535,8 @@ html.js .studio.is-ready .studio-scene {
     inset: 0;
     z-index: 3;
     display: none;
-    place-items: center;
-    padding: 2vmin;
+    place-items: safe center;
+    padding: 20px;
     background: rgba(6, 10, 9, 0.85);
     overflow: auto;
 }
@@ -1525,8 +1551,8 @@ html.js .studio.is-ready .studio-scene {
     padding: clamp(14px, 3vmin, 26px);
     background: rgba(20, 30, 26, 0.96);
     border: 2px solid rgba(255, 253, 245, 0.18);
-    border-radius: var(--wobble-card);
-    box-shadow: 6px 8px 0 rgba(0, 0, 0, 0.35);
+    border-radius: 20px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22);
 }
 
 .robot-settings-card h3 {
@@ -1629,91 +1655,75 @@ html.js .studio.is-ready .studio-scene {
 .robot-settings-card .status.ok { color: #8fd873; }
 .robot-settings-card .status.err { color: #ee9a88; }
 
-/* =========================================
-   降级 / 响应式
-   ========================================= */
+/* ---------- 应用细节 ---------- */
+.os-desktop-label { margin: 0; color: #a8c1ad; font: 10px ui-monospace, monospace; letter-spacing: 0.24em; }
+.os-dock-item small { color: #b2c5b8; font-size: 11px; font-weight: 400; margin-top: 2px; }
+.os-session { font-size: 10px; letter-spacing: 0.06em; opacity: 0.65; }
+.os-topbar .os-status .os-btn { border: none; background: transparent; }
+.term-lock-card details { text-align: left; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 14px; }
+.term-lock-card summary { cursor: pointer; color: #b5cabd; }
+.term-lock-card details p { margin: 10px 0; }
+.term-lock-card details code { display: block; overflow-wrap: anywhere; }
+.viewer-close { position: absolute; top: 14px; left: 14px; z-index: 2; background: #24382d; }
+.album-viewer .viewer-stage { padding-top: 62px; }
+.robot-welcome { margin: auto; padding: 24px 12px; text-align: center; max-width: 460px; color: #dce8de; }
+.robot-welcome .welcome-avatar { width: 76px; height: 76px; margin: 0 auto 20px; display: grid; place-items: center; border-radius: 26px; background: rgba(179,154,236,0.12); color: #c2ace8; font-size: 36px; }
+.robot-welcome h3 { font-weight: 400; font-size: 24px; margin-bottom: 12px; }
+.robot-welcome p { font-size: 14px; line-height: 1.8; color: #afc3b5; margin-bottom: 18px; }
+.robot-suggestions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.robot-suggestions button { height: auto; min-height: 38px; padding: 8px 12px; font-weight: 400; }
+
+@media (max-width: 600px) {
+    .studio-leave { top: max(12px, env(safe-area-inset-top)); left: max(12px, env(safe-area-inset-left)); }
+    .studio-toolbar { left: max(12px, env(safe-area-inset-left)); right: max(12px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom)); }
+    .studio-control { width: 40px; height: 40px; opacity: 0.75; }
+    .studio-controls { gap: 6px; }
+    .studio-hint { bottom: calc(max(12px, env(safe-area-inset-bottom)) + 58px); font-size: 11px; }
+    .studio-tip { max-width: min(250px, calc(100vw - 24px)); }
+    .mf-screen { width: calc(100vw - 20px); height: calc(100dvh - 82px - env(safe-area-inset-bottom)); aspect-ratio: auto; margin-top: 48px; }
+    .mf-exit { top: max(12px, env(safe-area-inset-top)); right: 12px; padding: 8px 12px; font-size: 12px; }
+    .mf-exit kbd { display: none; }
+    .os-topbar { height: 46px; padding: 0 12px; gap: 8px; font-size: 12px; }
+    .os-topbar .os-session { display: none; }
+    .os-topbar .os-status { gap: 6px; }
+    .os-desktop { padding: 20px 10px; gap: 36px; }
+    .os-clock .time { font-size: 64px; }
+    .os-clock .date { margin-top: 12px; font-size: 12px; }
+    .os-clock .greet { font-size: 13px; }
+    .os-dock { gap: 6px; padding: 16px 8px; border-radius: 18px; }
+    .os-dock-item { width: clamp(72px, 22vw, 86px); font-size: 13px; }
+    .os-dock-item .icon { width: 54px; height: 54px; border-radius: 16px; font-size: 22px; margin-bottom: 4px; }
+    .os-dock-item small { font-size: 9px; }
+    .os-btn { min-height: 40px; }
+    .app-head { padding: 10px 12px; gap: 8px; font-size: 12px; }
+    .app-head .app-name { gap: 6px; }
+    #robot-model-label { max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .album-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 12px; gap: 10px; }
+    .album-viewer .viewer-stage { padding: 62px 44px 12px; }
+    .msg { max-width: 96%; }
+    .robot-messages { padding: 16px 12px; }
+    .robot-composer { padding: 10px; }
+    .robot-composer textarea, .robot-settings-card input, .robot-settings-card textarea, .term-lock-form input { font-size: 16px; }
+    .robot-settings { padding: 12px; }
+    .robot-settings-card { width: 100%; padding: 18px; }
+    .term-lock-card { width: 100%; padding: 20px 16px; }
+}
+
+@media (max-height: 600px) and (min-width: 601px) {
+    .mf-screen { width: min(1000px, calc(100vw - 130px)); height: calc(100dvh - 24px); aspect-ratio: auto; }
+    .mf-exit { right: 8px; top: 8px; font-size: 0; padding: 12px; }
+    .mf-exit i { font-size: 14px; }
+    .mf-exit kbd { display: none; }
+    .os-desktop { gap: 14px; }
+    .os-desktop-label { display: none; }
+    .os-clock .time { font-size: 42px; }
+    .os-clock .greet { margin-top: 8px; }
+    .os-dock { padding: 8px 16px; }
+    .os-dock-item .icon { width: 42px; height: 42px; border-radius: 12px; font-size: 20px; }
+    .os-dock-item small { display: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
-    html.js .studio-scene {
-        opacity: 1;
-        transform: none;
-    }
-
-    .studio-scene,
-    .mf-dim,
-    .studio-hint,
-    .studio-tip {
-        transition: none;
-    }
-
-    #window-clouds g,
-    #window-night .star,
-    #window-tree,
-    #sill-plant .leaves,
-    #shelf-succulent .leaves,
-    #keyboard-glow,
-    #scope-wave,
-    #screen-hint {
-        animation: none;
-    }
-}
-
-@media (max-width: 768px) {
-    .studio-tip {
-        max-width: 230px;
-        font-size: 0.9rem;
-    }
-
-    .studio-hint {
-        font-size: 0.8rem;
-        padding: 6px 14px;
-        white-space: nowrap;
-    }
-
-    .mf-screen {
-        width: 96vw;
-        border-radius: 10px;
-    }
-
-    .mf-exit {
-        top: 10px;
-        right: 10px;
-        padding: 6px 12px;
-        font-size: 0.82rem;
-    }
-
-    .mf-exit kbd {
-        display: none;
-    }
-
-    .os-topbar {
-        height: 30px;
-        font-size: 0.72rem;
-        padding: 0 10px;
-    }
-
-    .os-topbar .os-status span {
-        display: none;
-    }
-
-    .album-viewer .viewer-stage {
-        padding: 10px 52px;
-    }
-
-    .msg {
-        max-width: 94%;
-    }
-
-    .robot-messages {
-        padding: 10px 12px 6px;
-    }
-}
-
-@media (max-height: 520px) and (orientation: landscape) {
-    .os-clock .time {
-        font-size: 2rem;
-    }
-
-    .os-desktop {
-        gap: 3vmin;
-    }
+    html.js .studio-scene { opacity: 1; transform: none; }
+    .studio *, .studio *::before, .studio *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
