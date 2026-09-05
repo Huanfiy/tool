@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Studio outdoor contracts</title>
+<style>body{font:15px/1.6 monospace;background:#eee5d2;color:#344840;margin:24px}pre{white-space:pre-wrap}#stage{width:800px;height:500px;position:relative;overflow:hidden}#stage>canvas{position:absolute;inset:0}.lab-screen-layer,.lab-orbit-surface{position:absolute;inset:0}.lab-screen-layer{pointer-events:none}#monitor-focus{pointer-events:auto}</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
+<h1>工作室户外契约测试</h1>
+<p>从项目根目录启动 <code>./run.sh test</code> 后打开本页。仅使用现有 Three.js CDN；无测试依赖、请求注入或构建步骤。软件渲染通过不代表真机帧率验收。</p>
+<pre id="results" data-status="running">RUNNING</pre>
+<div id="home"><div id="monitor-focus">test desktop</div></div><div id="stage"></div>
+<script type="module">
+import * as THREE from 'three';
+import { createStudioWindow } from '../js/studio-window.js';
+import { createStudioLandscape } from '../js/studio-landscape.js';
+import { createStudioRoom } from '../js/studio-room.js';
+const output = document.getElementById('results'), log = [];
+const assert = (condition, message) => { if (!condition) throw Error(message); };
+const pass = message => { log.push('PASS ' + message); output.textContent = log.join('\n'); };
+const disposals = new Map(), originals = new Map();
+for (const Type of [THREE.BufferGeometry, THREE.Material, THREE.Texture, THREE.InstancedMesh]) {
+    const original = Type.prototype.dispose; originals.set(Type, original);
+    Type.prototype.dispose = function(...args) { disposals.set(this, (disposals.get(this) || 0) + 1); return original.apply(this, args); };
+}
+const shared = new Set(), released = new WeakSet();
+const own = value => { shared.add(value); return value; };
+const disposeOnce = value => { if (value && !released.has(value)) { released.add(value); value.dispose(); } };
+const helpers = {
+    box(parent,w,h,d,x,y,z,material) { const mesh = new THREE.Mesh(own(new THREE.BoxGeometry(w,h,d)), material); mesh.position.set(x,y,z); parent.add(mesh); return mesh; },
+    bar(parent,a,b,r,material) { const start=new THREE.Vector3(...a),end=new THREE.Vector3(...b),delta=end.clone().sub(start); const mesh=new THREE.Mesh(own(new THREE.CylinderGeometry(r,r,delta.length(),6)),material); mesh.position.copy(start.add(end).multiplyScalar(.5));mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),delta.normalize());parent.add(mesh);return mesh; },
+    group(parent,x=0,y=0,z=0) { const group=new THREE.Group();group.position.set(x,y,z);parent.add(group);return group; },
+    material(name,options) { return own(new THREE.MeshStandardMaterial(options)); }
+};
+// A module fixture, not a copy of the room camera presets. Full camera/interaction
+// acceptance is recorded separately in docs/testing/studio-continuous-outdoor.md.
+const layout = {
+    wall:{outerX:-5.33}, ground:{top:-.15,fadeCenter:[-9.5,0],fadeRadii:[16,14]},
+    background:{center:[-5.33,0,0],radius:80,horizonUV:.5}, sunDirection:[-4.4,7.8,2.7],
+    casement:{hingeX:-5.145,width:2.58,maxAngle:Math.PI/3,bottom:1.655,top:4.315,zMin:-2.66,zMax:2.52}
+};
+const palette = night => ({night,paper:night?'#344840':'#eee5d2',sky:night?'#405960':'#b7d8d4',haze:night?'#567163':'#dde5cc',hills:['#becbb1','#a7bd9b','#93ad86'],ground:'#93a574',crown:'#78a274',grass:'#8d9c66',bark:'#8f7256',stone:'#d0c5ab',flower:'#fff6e3',cloud:'#fcf5df',bird:'#6c8077'});
+let landscape, renderer, room;
+try {
+    for (const reducedMotion of [false,true]) {
+        const window = createStudioWindow({...helpers,layout,reducedMotion,disposeOnce});
+        assert(window.update(0,true)===false,'resting window dirtied shadows');
+        if (!reducedMotion) assert(window.update(0,false)===false,'zero dt changed pose');
+        for (let round=0;round<20;round++) for (const open of [false,true]) {
+            let changes=0; for(let i=0;i<180;i++) changes+=Number(window.update(1/60,open));
+            assert(reducedMotion?changes===1:changes>1,'window change contract');
+            assert(window.getOpenAmount()===(open?1:0),'window did not settle');
+            for(let i=0;i<180;i++) assert(!window.update(1/60,open),'stable pose dirtied shadows');
+        }
+        window.dispose();window.dispose();assert(!window.update(1,false),'disposed window updated');
+    }
+    pass('窗扇：零 dt、即时切换、平滑开合、稳定帧与幂等销毁');
+    landscape=createStudioLandscape({layout,palette:palette(false),compact:false,disposeOnce});
+    const scene=new THREE.Scene();scene.background=new THREE.Color('#000000');scene.add(landscape.root,new THREE.HemisphereLight('#ffffff','#888888',2));
+    const sky=scene.getObjectByName('closed-pastoral-sky'),ground=scene.getObjectByName('continuous-garden-and-far-ground');
+    assert(!sky.material.transparent&&!sky.material.fog&&!sky.material.toneMapped&&sky.material.depthTest,'sky material contract');
+    assert(sky.material.map.colorSpace===THREE.SRGBColorSpace,'sky texture colour space');
+    landscape.root.traverse(o=>assert(!o.userData.window&&!o.userData.device&&!o.castShadow,'exterior action or shadow caster'));
+    const matrixSnapshot=()=>JSON.stringify(landscape.root.children.filter(o=>o.isInstancedMesh).map(o=>Array.from(o.instanceMatrix.array)));
+    const before=matrixSnapshot(),version=sky.material.map.version;
+    for(let i=0;i<300;i++)landscape.update(1/30,{wind:.18,reducedMotion:true});
+    assert(before===matrixSnapshot()&&version===sky.material.map.version,'reduced exterior changed');
+    const matrix=new THREE.Matrix4();
+    for(let i=0;i<600;i++) {
+        landscape.update(1/3,{wind:i<300?1:.18,reducedMotion:false});
+        if(i%20===0)for(const object of landscape.root.children.filter(o=>o.isInstancedMesh)) {
+            object.geometry.computeBoundingSphere();
+            for(let j=0;j<object.count;j++) {
+                object.getMatrixAt(j,matrix);
+                const instance=object.geometry.boundingSphere.clone().applyMatrix4(matrix);
+                assert(instance.center.distanceTo(object.boundingSphere.center)+instance.radius<=object.boundingSphere.radius+.00001,'animated instance escaped its conservative bounds');
+            }
+        }
+    }
+    assert(before!==matrixSnapshot()&&version===sky.material.map.version,'motion needs a static texture');
+    assert(Math.abs(landscape.heightAt(-5.33,0)+.15)<1e-8,'wall foot not level');
+    pass('景观：世界基准、实体拾取分类、非投影动效、静态纹理与减少动态');
+    renderer=new THREE.WebGLRenderer({alpha:true});renderer.setSize(128,128);renderer.outputColorSpace=THREE.SRGBColorSpace;
+    renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;
+    const camera=new THREE.PerspectiveCamera(36,1,.1,160);camera.position.set(35,15,30);camera.up.set(0,0,1);camera.lookAt(35,-.15,30);camera.updateMatrixWorld();scene.updateMatrixWorld(true);
+    const ray=new THREE.Raycaster();ray.setFromCamera(new THREE.Vector2(),camera);assert(ray.intersectObject(ground).length>0,'colour test did not hit real ground');
+    for(const night of [false,true]) {
+        landscape.setTheme(palette(night));renderer.render(scene,camera);
+        const gl=renderer.getContext(),pixel=new Uint8Array(4);gl.readPixels(64,64,1,1,gl.RGBA,gl.UNSIGNED_BYTE,pixel);
+        assert(JSON.stringify([...pixel])===JSON.stringify(night?[52,72,64,255]:[238,229,210,255]),'default framebuffer ground/paper mismatch');
+    }
+    const texture=sky.material.map;
+    for(let i=0;i<20;i++){landscape.setTheme(palette(false));landscape.setTheme(palette(true));}
+    assert(sky.material.map===texture,'theme reallocated texture');
+    const stableVersion=texture.version;for(let i=0;i<20;i++)landscape.setTheme(palette(true));
+    assert(texture.version===stableVersion,'redundant theme repainted');
+    for(let i=0;i<20;i++) {
+        const previous=sky.material.map;landscape.configure(i%2===0);const current=sky.material.map;
+        assert(current.image.width===(i%2===0?1024:2048),'quality dimensions');
+        assert(disposals.get(previous)===1,'old quality texture not released once');
+        landscape.configure(i%2===0);assert(sky.material.map===current,'same quality reallocated');
+    }
+    pass('日夜默认帧缓冲像素、20 次主题往返与 700px 质量档位替换契约');
+    const expected=new Set();
+    landscape.root.traverse(o=>{if(o.geometry)expected.add(o.geometry);if(o.material){expected.add(o.material);if(o.material.map)expected.add(o.material.map);}if(o.isInstancedMesh)expected.add(o);});
+    landscape.dispose();landscape.dispose();for(const value of expected)assert(disposals.get(value)===1,'landscape resource release count');
+    renderer.dispose();renderer=null;shared.forEach(disposeOnce);
+    pass('景观自有资源（含实例缓冲）只释放一次');
+    const stage=document.getElementById('stage');
+    const makeRoom=()=>createStudioRoom({container:stage,reducedMotion:true,state:{breeze:true,scope:'sine',frequency:2,scopeRunning:false,printer:'idle',printProgress:0,firmware:'idle',flashProgress:0,soilMoisture:42,rpm:2400},onSelect(){},onFrame(){},onEvent(){},onError(message){throw Error(message);},onWindowToggle(){}});
+    const frame=()=>new Promise(resolve=>requestAnimationFrame(resolve));
+    for(let i=0;i<5;i++) {
+        room=makeRoom();
+        while(room.getStats().renderedFrames<2)await frame();
+        for(const view of ['overview','panorama','bench','fabrication','robotics','monitor']){room.setView(view,true);await frame();await frame();}
+        for(let j=0;j<20;j++){room.setNight(true);room.setNight(false);}
+        const stats=room.getStats();assert(stats.drawCalls<=350&&stats.triangles<=260000&&stats.geometries<=320&&stats.textures<=35,'main-pass resource budget');
+        room.dispose();room.dispose();room.setPaused(false);await frame();
+        assert(stage.children.length===0&&document.getElementById('monitor-focus').parentElement.id==='home','room DOM cleanup');
+    }
+    const getContext=HTMLCanvasElement.prototype.getContext;
+    try {
+        HTMLCanvasElement.prototype.getContext=function(type,...args){if(type==='2d')throw Error('intentional canvas failure');return getContext.call(this,type,...args);};
+        let failed=false;try{makeRoom();}catch(error){failed=error.message==='intentional canvas failure';}
+        assert(failed&&stage.children.length===0,'partial initialization cleanup');
+    }finally{HTMLCanvasElement.prototype.getContext=getContext;}
+    assert([...disposals.values()].every(count=>count===1),'duplicate dispose across room lifetimes');
+    pass('完整 room：5 次初始化/销毁、镜头预热、主通道预算与初始化失败恢复');
+    output.dataset.status='passed';pass('全部契约测试通过；真机时间成本仍需单独验收');
+} catch(error) {
+    output.dataset.status='failed';output.textContent=log.join('\n')+'\nFAIL '+error.stack;console.error(error);
+} finally {
+    room?.dispose();landscape?.dispose();renderer?.dispose();shared.forEach(disposeOnce);
+    for(const [Type,original] of originals)Type.prototype.dispose=original;
+}
+</script>
+</html>
