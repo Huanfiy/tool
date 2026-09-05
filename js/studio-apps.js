@@ -744,8 +744,11 @@
         let items = [];
         let viewerIdx = -1;
         let loaded = false;
+        let loadVersion = 0;
 
         async function load(key) {
+            const version = ++loadVersion;
+            closeViewer();
             current = key;
             tabs.querySelectorAll('[data-album]').forEach((b) => {
                 const on = b.dataset.album === key;
@@ -760,9 +763,11 @@
                     const data = await r.json();
                     cache[key] = (Array.isArray(data) ? data : []).filter((it) => it && it.src && it.type !== 'video');
                 }
+                if (version !== loadVersion) return;
                 items = cache[key];
                 render();
             } catch (e) {
+                if (version !== loadVersion) return;
                 items = [];
                 grid.innerHTML = '<div class="album-empty"><i class="fas fa-image"></i><p>相册加载失败</p></div>';
             }
@@ -1205,7 +1210,7 @@
 
         hooks.robot = {
             onOpen() {
-                if (!rendered) { rendered = true; renderAll(); ensureMarked().then(() => { if (window.marked) renderAll(); }); }
+                if (!rendered) { rendered = true; renderAll(); ensureMarked().then(() => { if (window.marked && !controller) renderAll(); }); }
                 setTimeout(() => els.input.focus(), 60);
             },
             onClose() { /* 流式请求继续在后台完成 */ },
