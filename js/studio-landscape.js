@@ -218,6 +218,13 @@ export function createStudioLandscape({ layout, palette, compact, disposeOnce })
     });
     const birdMesh = instances('gliding-garden-birds', birdGeometry, birdMat, birds); birdMesh.raycast = () => {};
     birdMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    // Fixed conservative envelopes cover every phase, including closed-window
+    // wind. Avoid an O(instance count) sphere union on every quiet-room frame.
+    // Near meshes only rotate; clouds translate <=1.1/.045, birds <=1.8/.22
+    // plus wing rotation. Keep these margins in sync with update() amplitudes.
+    const animatedMeshes = [crownMesh, grassMesh, flowerMesh, cloudMesh, birdMesh];
+    const motionMargins = [.08, .12, .10, 1.2, 2.0];
+    animatedMeshes.forEach((object, i) => { object.boundingSphere.radius += motionMargins[i]; });
 
     function paintSky() {
         art.draw(theme, layout);
@@ -268,10 +275,7 @@ export function createStudioLandscape({ layout, palette, compact, disposeOnce })
             item.rx = item.side * (.20 + Math.sin(windTime * 4.4 + item.phase) * .34);
             pose(birdMesh, i, item);
         });
-        for (const object of [crownMesh, grassMesh, flowerMesh, cloudMesh, birdMesh]) {
-            object.instanceMatrix.needsUpdate = true;
-            object.computeBoundingSphere();
-        }
+        for (const object of animatedMeshes) object.instanceMatrix.needsUpdate = true;
     }
     setTheme(palette); configure(compact);
     return { root, update, setTheme, configure, dispose, heightAt };
