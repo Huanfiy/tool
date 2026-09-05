@@ -11,10 +11,43 @@ import { createStudioWindow } from './studio-window.js';
 export function createStudioRoom({ container, state, reducedMotion, onSelect, onFrame, onEvent, onError, onWindowToggle }) {
     const mobile = () => window.innerWidth <= 700;
     const scene = new THREE.Scene();
+    const resources = new Set(), released = new WeakSet(), cleanups = [];
+    let disposed = false, frameId = null, renderer = null;
+    const own = value => { resources.add(value); return value; };
+    function disposeOnce(value) {
+        if (!value || typeof value.dispose !== 'function' || released.has(value)) return;
+        released.add(value);
+        if (value.isMaterial) for (const property of Object.values(value)) if (property?.isTexture) disposeOnce(property);
+        value.dispose();
+    }
+    function disposeTree(root) {
+        root.traverse(object => {
+            disposeOnce(object.geometry);
+            for (const mat of Array.isArray(object.material) ? object.material : [object.material]) disposeOnce(mat);
+            disposeOnce(object.shadow);
+        });
+    }
+    function listen(target, type, handler, options) {
+        target.addEventListener(type, handler, options);
+        cleanups.push(() => target.removeEventListener(type, handler, options));
+    }
+    function dispose() {
+        if (disposed) return;
+        disposed = true;
+        cancelAnimationFrame(frameId); frameId = null;
+        // Stop observers/listeners first, then detach child modules, then release
+        // the scene AND cached geometry detached by batching, with one disposer.
+        for (const cleanup of cleanups.reverse()) cleanup();
+        disposeTree(scene);
+        resources.forEach(disposeOnce); resources.clear(); scene.clear();
+        renderer?.dispose(); renderer?.domElement.remove();
+        container.style.cursor = '';
+    }
+    try {
     scene.background = new THREE.Color('#eee5d2');
     scene.fog = new THREE.Fog('#eee5d2', 30, 65);
     const camera = new THREE.PerspectiveCamera(36, 1, .1, 100);
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, mobile() ? 1.35 : 1.5));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -26,7 +59,9 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     container.appendChild(renderer.domElement);
     // Keep touch gestures on a sibling of the HTML screen so native app scrolling works.
     const orbitSurface=document.createElement('div');orbitSurface.className='lab-orbit-surface';container.prepend(orbitSurface);
+    cleanups.push(() => orbitSurface.remove());
     const controls = new OrbitControls(camera, orbitSurface);
+    cleanups.push(() => controls.dispose());
     controls.enableDamping = true;
     controls.dampingFactor = .065;
     controls.enablePan = false;
@@ -41,14 +76,14 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     controls.touches.ONE = THREE.TOUCH.ROTATE;
     controls.touches.TWO = THREE.TOUCH.DOLLY_ROTATE;
 
-    const mats = {}, geometries = new Map(), devices = new Map(), resources = new Set();
+    const mats = {}, geometries = new Map(), devices = new Map();
     const color = {
         wall: '#f2e7cf', wallSide: '#ece4ca', floor: '#d8bb90', rim: '#a79978', metal: '#737e69', black: '#36473e',
         silver: '#b3b9a6', cream: '#ece4cc', mint: '#b0c79c', teal: '#8dac91', orange: '#c48f6e', darkOrange: '#71543c',
         oak: '#d4af7b', pcb: '#54856a', gold: '#ba9b64', white: '#f5edda', blue: '#91adb5'
     };
     function material(name, options = {}) {
-        if (!mats[name]) mats[name] = new THREE.MeshStandardMaterial({ color: color[name] || name, roughness: .95, metalness: 0, ...options });
+        if (!mats[name]) mats[name] = own(new THREE.MeshStandardMaterial({ color: color[name] || name, roughness: .95, metalness: 0, ...options }));
         return mats[name];
     }
     const m = Object.fromEntries(Object.keys(color).map(k => [k, material(k)]));
@@ -64,7 +99,7 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     function box(parent, w,h,d, x,y,z, mat = m.metal, radius = .025) {
         radius = Math.min(radius, w/3, h/3, d/3);
         const key = `b${w},${h},${d},${radius}`;
-        if (!geometries.has(key)) geometries.set(key, radius ? new RoundedBoxGeometry(w,h,d,1,radius) : new THREE.BoxGeometry(w,h,d));
+        if (!geometries.has(key)) geometries.set(key, own(radius ? new RoundedBoxGeometry(w,h,d,1,radius) : new THREE.BoxGeometry(w,h,d)));
         const obj = new THREE.Mesh(geometries.get(key), mat); obj.position.set(x,y,z); obj.castShadow = true; obj.receiveShadow = true; parent.add(obj);
         if (w >= .45 && w < 10 && d >= .25 && h >= .08 && h < 1.6) {
             const outlineGeometry = new THREE.BoxGeometry(w-.012,h-.006,d-.012);
@@ -75,10 +110,10 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     }
     function cylinder(parent, r1,r2,h,x,y,z,mat = m.metal, segments = 24) {
         const key = `c${r1},${r2},${h},${segments}`;
-        if (!geometries.has(key)) geometries.set(key, new THREE.CylinderGeometry(r1,r2,h,segments));
+        if (!geometries.has(key)) geometries.set(key, own(new THREE.CylinderGeometry(r1,r2,h,segments)));
         const obj = new THREE.Mesh(geometries.get(key), mat); obj.position.set(x,y,z); obj.castShadow=true; obj.receiveShadow=true; parent.add(obj); return obj;
     }
-    function sphere(parent,r,x,y,z,mat) { const obj = new THREE.Mesh(new THREE.SphereGeometry(r,16,12),mat); obj.position.set(x,y,z); obj.castShadow=true; parent.add(obj); return obj; }
+    function sphere(parent,r,x,y,z,mat) { const obj = new THREE.Mesh(own(new THREE.SphereGeometry(r,16,12)),mat); obj.position.set(x,y,z); obj.castShadow=true; parent.add(obj); return obj; }
     function paintedLeaf(parent,w,h,x,y,z,mat){
         const shape=new THREE.Shape();shape.moveTo(0,-h/2);
         shape.bezierCurveTo(w*.62,-h*.23,w*.50,h*.24,0,h/2);
@@ -131,11 +166,13 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     // Batch fixed parts by material; animated assemblies remain separate.
     function batch(root) {
         root.updateMatrixWorld(true); const inv = root.matrixWorld.clone().invert(), buckets=new Map();
+        // Originals may no longer be reachable from scene after merging.
+        root.traverse(obj => { if (obj.geometry) own(obj.geometry); if (obj.material) own(obj.material); });
         const lines=[];root.traverse(obj=>{if(obj.userData.ink)lines.push(obj);});
         if(lines.length){
             const copies=lines.map(obj=>obj.geometry.clone().applyMatrix4(inv.clone().multiply(obj.matrixWorld)));
             const ink=new THREE.LineSegments(mergeGeometries(copies,false),inkMaterial);root.add(ink);
-            copies.forEach(g=>g.dispose());lines.forEach(obj=>{obj.geometry.dispose();obj.removeFromParent();});
+            copies.forEach(disposeOnce);lines.forEach(obj=>{disposeOnce(obj.geometry);obj.removeFromParent();});
         }
         root.traverse(obj=>{if(!obj.isMesh || obj.material.transparent || Array.isArray(obj.material))return;
             const key=obj.material.uuid; if(!buckets.has(key))buckets.set(key,{mat:obj.material,items:[]}); buckets.get(key).items.push(obj);
@@ -168,7 +205,8 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
         const item={id,root,fixed,anchor:new THREE.Vector3(...anchor)}; devices.set(id,item); return item;
     }
     const glowTexture=canvasTexture(128,128,(ctx,w,h)=>{const g=ctx.createRadialGradient(w/2,h/2,0,w/2,h/2,w/2);g.addColorStop(0,'rgba(172,255,217,.5)');g.addColorStop(.22,'rgba(107,230,189,.14)');g.addColorStop(1,'rgba(90,220,190,0)');ctx.fillStyle=g;ctx.fillRect(0,0,w,h);}).texture;
-    function glow(parent,x,y,z,scale=.5,tint='#96ffd7') { const mat=new THREE.SpriteMaterial({map:glowTexture,color:tint,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false});const obj=new THREE.Sprite(mat);obj.position.set(x,y,z);obj.scale.setScalar(scale);parent.add(obj);return obj; }
+    let spriteGeometry;
+    function glow(parent,x,y,z,scale=.5,tint='#96ffd7') { const mat=new THREE.SpriteMaterial({map:glowTexture,color:tint,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false});const obj=new THREE.Sprite(mat);obj.geometry=spriteGeometry||(spriteGeometry=own(obj.geometry.clone()));obj.position.set(x,y,z);obj.scale.setScalar(scale);parent.add(obj);return obj; }
     const shadowTexture=canvasTexture(128,128,(ctx,w,h)=>{const g=ctx.createRadialGradient(w/2,h/2,2,w/2,h/2,w/2);g.addColorStop(0,'rgba(83,77,48,.24)');g.addColorStop(.45,'rgba(83,77,48,.10)');g.addColorStop(1,'rgba(83,77,48,0)');ctx.fillStyle=g;ctx.fillRect(0,0,w,h);}).texture;
     function contact(parent,w,d,x,y,z) {const o=surface(parent,w,d,x,y,z,shadowTexture,-Math.PI/2);o.material.depthWrite=false;return o;}
 
@@ -192,7 +230,8 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     box(architecture,10.6,.18,.09,0,.1,-3.65,m.oak);
     box(architecture,.09,.18,7.6,-5.1,.1,0,m.oak);
     box(architecture,.40,.11,5.45,-5.02,1.58,-.05,m.oak);
-    const studioWindow=createStudioWindow({scene,box,bar,sphere,group,material,resources,reducedMotion});
+    const studioWindow=createStudioWindow({scene,box,bar,sphere,group,material,resources,reducedMotion,disposeOnce});
+    cleanups.push(() => { disposeTree(studioWindow.root); studioWindow.dispose(); });
     for(const leaf of studioWindow.root.children)if(leaf.name.endsWith('-casement'))batch(leaf);
     bar(architecture,[-4.91,4.50,-2.97],[-4.91,4.50,2.87],.026,m.oak);
     sphere(architecture,.07,-4.91,4.50,-2.98,m.oak);sphere(architecture,.07,-4.91,4.50,2.88,m.oak);
@@ -271,7 +310,7 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
         box(book,.026,h-.08,.025,-w/2+.026,0,.217,bookColors[(i+2)%bookColors.length],.003);
         const titlePlane=textLabel(book,title,h-.12,w-.075,0,0,.222,{size:145,color:bookInk[i],align:'center',bold:true,font:'Microsoft YaHei, sans-serif'});
         titlePlane.rotation.z=-Math.PI/2;
-        for(const y of [-h*.39,h*.39])bar(book,[-w/2+.032,y,.222],[w/2-.032,y,.222],.005,bookInk[i]);
+        for(const y of [-h*.39,h*.39])bar(book,[-w/2+.032,y,.222],[w/2-.032,y,.222],.005,material(`bookInk:${bookInk[i]}`,{color:bookInk[i]}));
     });
     const shelfFigures=createStudioFigures({parent:architecture,box,cylinder,sphere,bar,group,material});
     shelfFigures.position.set(3.36,4.26,-3.43);
@@ -310,6 +349,7 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     box(monitor.fixed,.095,.66,.08,0,.35,-.12,deskSteel);
     box(monitor.fixed,3.62,2.06,.065,0,1.22,0,m.black,.018);
     const liveMonitor=createStudioMonitor({container,camera,monitor:monitor.root,width:3.60,height:2.025,y:1.22,z:.035});
+    cleanups.push(() => liveMonitor.dispose());
     const keyboard=group(architecture,.28,1.84,-1.99);
     box(keyboard,1.69,.08,.52,0,0,0,m.black,.04);
     box(keyboard,1.61,.01,.44,0,.05,0,m.silver,.025);
@@ -607,7 +647,7 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     const dustGeo=new THREE.BufferGeometry();dustGeo.setAttribute('position',new THREE.BufferAttribute(dustPositions,3));
     const dust=new THREE.Points(dustGeo,new THREE.PointsMaterial({color:'#fff4c9',size:.017,map:glowTexture,transparent:true,opacity:.28,depthWrite:false}));scene.add(dust);
 
-    let selected=null, hovered=null, view='overview', tween=null, paused=false, night=false, frameId=null, lost=false;
+    let selected=null, hovered=null, view='overview', tween=null, paused=false, night=false, lost=false;
     let lastTime=performance.now(), elapsed=0, scopeTime=0, textureElapsed=0, reportElapsed=0, currentRPM=0, armTime=0, breezeTime=0, interactiveUntil=0;
     let renderedFrames=0,shadowUpdates=0,shadowUntil=3,lastMotionState='';
     const presets={
@@ -655,6 +695,7 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
         return {pos,target};
     }
     function moveTo(preset,forDevice=false,instant=false){
+        if(disposed)return;
         controls.minAzimuthAngle=forDevice?-.85:-.28;
         controls.maxDistance=mobile()?60:27;
         const dest=destination(preset,forDevice);
@@ -666,6 +707,7 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     function select(id){if(!devices.has(id))return;selected=id;renderer.shadowMap.needsUpdate=true;moveTo(deviceViews[id],true);}
     function focusMonitor(){selected=null;view='monitor';moveTo(presets.monitor);}
     function setNight(value){
+        if(disposed)return;
         night=value;hemi.color.set(night?'#b5c4d1':'#fffaf0');hemi.groundColor.set(night?'#697862':'#a7b093');hemi.intensity=night?.7:2.1;
         key.color.set(night?'#c0cfdd':'#fff0d6');key.intensity=night?.55:1.85;rimLight.intensity=night?.25:.4;
         deskLight.intensity=night?1.2:.3;warmLight.intensity=night?16:1.2;frontFill.intensity=night?.20:.5;
@@ -683,25 +725,26 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
         const hits=raycaster.intersectObjects(candidates,false);
         for(const hit of hits){if(hit.object.isSprite||hit.object.isPoints||hit.object.isLine||(hit.object.material?.transparent&&!hit.object.userData.windowHit))continue;let node=hit.object;while(node){if(node.userData.device)return node.userData.device;if(node.userData.window)return 'window';node=node.parent;}return null;}return null;
     }
-    orbitSurface.addEventListener('pointerdown',e=>{pointers.add(e.pointerId);multiTouch=multiTouch||pointers.size>1;pointerStart=multiTouch?null:{x:e.clientX,y:e.clientY,id:e.pointerId};});
-    orbitSurface.addEventListener('pointerup',e=>{if(!multiTouch&&pointerStart&&pointerStart.id===e.pointerId&&Math.hypot(e.clientX-pointerStart.x,e.clientY-pointerStart.y)<7&&!paused){const hit=hitAt(e);if(hit==='window')onWindowToggle();else if(hit)onSelect(hit);}pointerStart=null;pointers.delete(e.pointerId);if(!pointers.size)multiTouch=false;});
-    orbitSurface.addEventListener('pointercancel',e=>{pointerStart=null;pointers.delete(e.pointerId);if(!pointers.size)multiTouch=false;});
-    orbitSurface.addEventListener('pointermove',e=>{if(e.pointerType==='touch'||performance.now()-lastHover<80)return;lastHover=performance.now();hovered=hitAt(e);container.style.cursor=hovered?'pointer':'grab';});
-    orbitSurface.addEventListener('pointerleave',()=>{hovered=null;});
+    listen(orbitSurface,'pointerdown',e=>{pointers.add(e.pointerId);multiTouch=multiTouch||pointers.size>1;pointerStart=multiTouch?null:{x:e.clientX,y:e.clientY,id:e.pointerId};});
+    listen(orbitSurface,'pointerup',e=>{if(!multiTouch&&pointerStart&&pointerStart.id===e.pointerId&&Math.hypot(e.clientX-pointerStart.x,e.clientY-pointerStart.y)<7&&!paused){const hit=hitAt(e);if(hit==='window')onWindowToggle();else if(hit)onSelect(hit);}pointerStart=null;pointers.delete(e.pointerId);if(!pointers.size)multiTouch=false;});
+    listen(orbitSurface,'pointercancel',e=>{pointerStart=null;pointers.delete(e.pointerId);if(!pointers.size)multiTouch=false;});
+    listen(orbitSurface,'pointermove',e=>{if(e.pointerType==='touch'||performance.now()-lastHover<80)return;lastHover=performance.now();hovered=hitAt(e);container.style.cursor=hovered?'pointer':'grab';});
+    listen(orbitSurface,'pointerleave',()=>{hovered=null;});
     const guardScreenPointer=e=>{
         if(!liveMonitor.element.contains(e.target))return;
         const hit=hitAt(e);
         if(hit!=='monitor'){e.preventDefault();e.stopImmediatePropagation();if(hit==='window')onWindowToggle();else if(hit)onSelect(hit);}
     };
-    container.addEventListener('pointerdown',guardScreenPointer,true);
-    controls.addEventListener('start',()=>{tween=null;interactiveUntil=performance.now()+2000;});
-    controls.addEventListener('end',()=>{interactiveUntil=performance.now()+1600;});
+    listen(container,'pointerdown',guardScreenPointer,true);
+    listen(controls,'start',()=>{tween=null;interactiveUntil=performance.now()+2000;});
+    listen(controls,'end',()=>{interactiveUntil=performance.now()+1600;});
     function projectedMarkers(){const result=[];camera.updateMatrixWorld();devices.forEach(item=>{const p=item.anchor.clone().project(camera);result.push({id:item.id,x:(p.x*.5+.5)*container.clientWidth,y:(-.5*p.y+.5)*container.clientHeight,hovered:item.id===hovered,visible:p.z>-1&&p.z<1&&Math.abs(p.x)<.94&&Math.abs(p.y)<.88});});return result;}
-    function resize(){const w=container.clientWidth,h=container.clientHeight;renderer.setPixelRatio(Math.min(window.devicePixelRatio,mobile()?1.35:1.5));renderer.setSize(w,h);liveMonitor.resize(w,h);camera.aspect=w/h;camera.fov=w/h<1?48:36;camera.updateProjectionMatrix();if(selected)moveTo(deviceViews[selected],true,true);else if(!paused)setView(view,true);}
+    function resize(){if(disposed)return;const w=container.clientWidth,h=container.clientHeight;renderer.setPixelRatio(Math.min(window.devicePixelRatio,mobile()?1.35:1.5));renderer.setSize(w,h);liveMonitor.resize(w,h);camera.aspect=w/h;camera.fov=w/h<1?48:36;camera.updateProjectionMatrix();if(selected)moveTo(deviceViews[selected],true,true);else if(!paused)setView(view,true);}
     const resizeObserver=new ResizeObserver(resize);resizeObserver.observe(container);
-    function setPaused(value){paused=value;controls.enabled=!paused;if(!paused){lastTime=performance.now();if(!frameId&&!lost)frameId=requestAnimationFrame(render);}}
-    renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();lost=true;cancelAnimationFrame(frameId);frameId=null;onError('显卡连接已中断，可以重新加载场景。');});
-    document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelAnimationFrame(frameId);frameId=null;}else if(!paused&&!lost){lastTime=performance.now();frameId=requestAnimationFrame(render);}});
+    cleanups.push(() => resizeObserver.disconnect());
+    function setPaused(value){if(disposed)return;paused=value;controls.enabled=!paused;if(!paused){lastTime=performance.now();if(!frameId&&!lost&&!document.hidden)frameId=requestAnimationFrame(render);}}
+    listen(renderer.domElement,'webglcontextlost',e=>{e.preventDefault();lost=true;cancelAnimationFrame(frameId);frameId=null;onError('显卡连接已中断，可以重新加载场景。');});
+    listen(document,'visibilitychange',()=>{if(document.hidden){cancelAnimationFrame(frameId);frameId=null;}else if(!disposed&&!paused&&!lost&&!frameId){lastTime=performance.now();frameId=requestAnimationFrame(render);}});
 
     function drawScope(ctx,w,h,t){
         ctx.fillStyle='#0b2325';ctx.fillRect(0,0,w,h);ctx.strokeStyle='#294446';ctx.lineWidth=1;for(let x=24;x<w;x+=46){ctx.beginPath();ctx.moveTo(x,30);ctx.lineTo(x,h-35);ctx.stroke();}for(let y=38;y<h-28;y+=36){ctx.beginPath();ctx.moveTo(20,y);ctx.lineTo(w-20,y);ctx.stroke();}
@@ -715,6 +758,7 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
         const {ctx,canvas,texture}=display;ctx.fillStyle='#102b2b';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#698e83';ctx.font='16px monospace';ctx.fillText(top,13,25);ctx.fillStyle=tint;ctx.font='30px monospace';ctx.fillText(bottom,13,canvas.height-17);texture.needsUpdate=true;
     }
     function tickSimulation(dt){
+        if(disposed)return;
         if(studioWindow.update(dt,state.breeze))renderer.shadowMap.needsUpdate=true;
         if(state.scopeRunning)scopeTime+=dt;
         if(state.watering){
@@ -773,7 +817,7 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
         dust.visible=state.breeze&&!reducedMotion;dust.rotation.y=Math.sin(breezeTime*.11)*.06;
     }
     function render(now){
-        frameId=null;if(lost||document.hidden)return;
+        frameId=null;if(disposed||lost||document.hidden)return;
         const active=tween||now<interactiveUntil||state.printer==='printing'||state.motor||currentRPM>1||state.arm||state.firmware==='flashing'||state.watering;
         // Quiet room: 30 fps with cached shadows; camera and device actions: up to 60 fps.
         if(!paused&&now-lastTime<1000/(active?60:30)-1){frameId=requestAnimationFrame(render);return;}
@@ -794,10 +838,13 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
         if(active||reportElapsed>.1){onFrame({markers:projectedMarkers(),selected,rpm:Math.round(currentRPM),armPhase:Math.round((armTime%10)/10*100),update:reportElapsed>.1});if(reportElapsed>.1)reportElapsed=0;}
         if(!paused||tween)frameId=requestAnimationFrame(render);
     }
-    function dispose(){container.removeEventListener('pointerdown',guardScreenPointer,true);orbitSurface.remove();liveMonitor.dispose();cancelAnimationFrame(frameId);resizeObserver.disconnect();controls.dispose();const seen=new Set();scene.traverse(obj=>{if(obj.geometry&&!seen.has(obj.geometry)){seen.add(obj.geometry);obj.geometry.dispose();}if(obj.material){const list=Array.isArray(obj.material)?obj.material:[obj.material];list.forEach(mat=>{if(!seen.has(mat)){seen.add(mat);mat.dispose();}});}});studioWindow.dispose();resources.forEach(r=>r.dispose());renderer.dispose();renderer.domElement.remove();}
     resize();setView('overview',true);setNight(false);
     // Render the first instrument display before exposing the workspace.
     drawScope(scopeTex.ctx,512,320,0);scopeTex.texture.needsUpdate=true;
     frameId=requestAnimationFrame(render);
     return {setView,select,focusMonitor,setNight,setPaused,dispose,projectedMarkers,setHovered:id=>{hovered=id;},getStats:()=>({drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,geometries:renderer.info.memory.geometries,textures:renderer.info.memory.textures,renderedFrames,shadowUpdates}),getView:()=>view};
+    } catch (error) {
+        dispose();
+        throw error;
+    }
 }

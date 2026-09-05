@@ -1,7 +1,7 @@
 /* Outward-opening casements with a local, animated fantasy countryside view. */
 import * as THREE from 'three';
 
-export function createStudioWindow({ scene, box, bar, sphere, group, material, resources, reducedMotion }) {
+export function createStudioWindow({ scene, box, bar, sphere, group, material, resources, reducedMotion, disposeOnce }) {
     const root = group(scene);
     root.name = 'opening-studio-window';
     root.userData.window = true;
@@ -264,6 +264,7 @@ export function createStudioWindow({ scene, box, bar, sphere, group, material, r
 
     let angle = openingAngle, windTime = 0, landscapeRefresh = 0;
     function update(dt, open = true) {
+        if (disposed) return false;
         if (!reducedMotion) {
             windTime += Math.max(0, dt);
             landscapeRefresh += Math.max(0, dt);
@@ -287,6 +288,7 @@ export function createStudioWindow({ scene, box, bar, sphere, group, material, r
         return moving;
     }
     function setNight(value) {
+        if (disposed || night === !!value) return;
         night = !!value;
         drawPastoral(windTime);pastoralTexture.needsUpdate=true;
         photoMaterial.color.set('#ffffff');
@@ -294,8 +296,10 @@ export function createStudioWindow({ scene, box, bar, sphere, group, material, r
         glint.opacity = night ? .09 : .20;
     }
     function dispose() {
+        if (disposed) return;
         disposed = true;
-        owned.forEach(value => { value.dispose(); resources.delete(value); });
+        owned.forEach(value => { disposeOnce(value); resources.delete(value); });
+        owned.clear();
         root.removeFromParent();
     }
     return { root, update, setNight, dispose };

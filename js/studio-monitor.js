@@ -4,7 +4,9 @@ import { CSS3DRenderer, CSS3DObject } from 'three/addons/renderers/CSS3DRenderer
 
 export function createStudioMonitor({ container, camera, monitor, width, height, y, z }) {
     const element = document.getElementById('monitor-focus');
+    if (!element) throw new Error('Studio monitor element is missing');
     const home = element.parentElement;
+    let disposed = false;
     const cssScene = new THREE.Scene();
     const cssRenderer = new CSS3DRenderer();
     cssRenderer.domElement.className = 'lab-screen-layer';
@@ -29,6 +31,7 @@ export function createStudioMonitor({ container, camera, monitor, width, height,
     const direction = new THREE.Vector3();
 
     function resize(w, h) {
+        if (disposed) return;
         cssRenderer.setSize(w, h);
         layoutWidth = w <= 700 ? 400 : 960;
         element.style.width = `${layoutWidth}px`;
@@ -36,6 +39,7 @@ export function createStudioMonitor({ container, camera, monitor, width, height,
         local.makeTranslation(0, y, z).scale(new THREE.Vector3().setScalar(width / layoutWidth));
     }
     function render() {
+        if (disposed) return;
         monitor.updateWorldMatrix(true, false);
         screen.matrix.copy(monitor.matrixWorld).multiply(local);
         center.set(0, y, z).applyMatrix4(monitor.matrixWorld);
@@ -55,6 +59,8 @@ export function createStudioMonitor({ container, camera, monitor, width, height,
     return {
         element, resize, render,
         dispose() {
+            if (disposed) return;
+            disposed = true;
             events.forEach(type => element.removeEventListener(type, stop));
             element.classList.remove('is-spatial');
             element.style.cssText = '';
