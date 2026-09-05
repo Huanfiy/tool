@@ -783,6 +783,11 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
         if(hit!=='monitor'){
             e.preventDefault();e.stopImmediatePropagation();
             if(e.type==='pointerdown'){if(hit==='window')onWindowToggle();else if(hit)onSelect(hit);}
+        }else if(e.type==='click'&&!paused&&(view!=='monitor'||selected)){
+            // The live HTML screen bypasses orbitSurface picking. Approach on a
+            // completed click, in capture phase even if an app stops bubbling;
+            // keep the same native click available to its control.
+            onSelect('monitor');
         }
     };
     for(const type of ['pointerdown','click','dblclick','contextmenu','wheel'])listen(container,type,guardScreenPointer,{capture:true,passive:false});

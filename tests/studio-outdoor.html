@@ -106,12 +106,48 @@ try {
     renderer.dispose();renderer=null;shared.forEach(disposeOnce);
     pass('景观自有资源（含实例缓冲）只释放一次');
     const stage=document.getElementById('stage');
-    const makeRoom=()=>createStudioRoom({container:stage,reducedMotion:true,state:{breeze:true,scope:'sine',frequency:2,scopeRunning:false,printer:'idle',printProgress:0,firmware:'idle',flashProgress:0,soilMoisture:42,rpm:2400},onSelect(){},onFrame(){},onEvent(){},onError(message){throw Error(message);},onWindowToggle(){}});
+    const selections=[];
+    const makeRoom=()=>createStudioRoom({container:stage,reducedMotion:true,state:{breeze:true,scope:'sine',frequency:2,scopeRunning:false,printer:'idle',printProgress:0,firmware:'idle',flashProgress:0,soilMoisture:42,rpm:2400},onSelect(id){selections.push(id);},onFrame(){},onEvent(){},onError(message){throw Error(message);},onWindowToggle(){}});
     const frame=()=>new Promise(resolve=>requestAnimationFrame(resolve));
     for(let i=0;i<5;i++) {
         room=makeRoom();
         while(room.getStats().renderedFrames<2)await frame();
         for(const view of ['overview','panorama','bench','fabrication','robotics','monitor']){room.setView(view,true);await frame();await frame();}
+        if(i===0) {
+            const desktop=document.getElementById('monitor-focus');
+            const control=document.createElement('button');control.textContent='app control';
+            control.style.cssText='position:absolute;width:8px;height:8px;padding:0;border:0;transform:translate(-50%,-50%)';
+            desktop.append(control);
+            let appClicks=0;
+            control.addEventListener('click',e=>{appClicks++;e.stopPropagation();});
+            room.setView('bench',true);await frame();await frame();
+            const dispatch=(type,point)=>control.dispatchEvent(new MouseEvent(type,{bubbles:true,cancelable:true,detail:1,...point}));
+            for(const y of [10,50,90])for(const x of [10,50,90]) {
+                control.style.left=`${x}%`;control.style.top=`${y}%`;
+                const rect=control.getBoundingClientRect(),point={clientX:rect.left+rect.width/2,clientY:rect.top+rect.height/2};
+                selections.length=0;
+                for(const type of ['pointerdown','pointermove','pointerup','wheel'])dispatch(type,point);
+                assert(selections.length===0,'screen pointer/scroll approached before click');
+                const clicksBefore=appClicks;
+                assert(dispatch('click',point),'visible screen click prevented native action');
+                assert(selections.length===1&&selections[0]==='monitor','screen grid click did not approach');
+                assert(appClicks===clicksBefore+1,'approach swallowed app click');
+            }
+            // A DOM target alone must not bypass the physical screen hit test.
+            selections.length=0;const clicksBefore=appClicks;
+            assert(!dispatch('click',{clientX:0,clientY:0})&&appClicks===clicksBefore&&selections.length===0,'off-screen click bypassed guard');
+            room.setView('monitor',true);await frame();await frame();
+            const rect=control.getBoundingClientRect();
+            assert(dispatch('click',{clientX:rect.left+rect.width/2,clientY:rect.top+rect.height/2}),'focused app click prevented');
+            assert(selections.length===0&&appClicks===clicksBefore+1,'focused screen reselected or lost app click');
+            // Device selection can retain the last preset name ('monitor').
+            control.style.left='50%';control.style.top='50%';
+            room.select('pcb');await frame();await frame();
+            assert(control.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true,detail:0})),'keyboard app activation prevented');
+            assert(selections.length===1&&selections[0]==='monitor','screen did not approach after selecting another device');
+            control.remove();
+            pass('屏幕九宫格点击靠近、应用停止冒泡、原生点击保留、滚动不靠近与遮挡检查');
+        }
         for(let j=0;j<20;j++){room.setNight(true);room.setNight(false);}
         const stats=room.getStats();assert(stats.drawCalls<=350&&stats.triangles<=260000&&stats.geometries<=320&&stats.textures<=35,'main-pass resource budget');
         room.dispose();room.dispose();room.setPaused(false);await frame();
