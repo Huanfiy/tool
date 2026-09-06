@@ -152,18 +152,22 @@
                             </div>
                             <div class="app-body">
                                 <div class="album-grid" id="album-grid"></div>
-                                <div class="album-viewer" id="album-viewer" aria-hidden="true">
+                            </div>
+                            <!-- Cover the album header too: compact physical screens need the
+                                 full app height, not a scrollable image below two toolbars. -->
+                            <div class="album-viewer" id="album-viewer" aria-hidden="true">
+                                <div class="viewer-toolbar">
                                     <button class="os-btn viewer-close" id="album-close" type="button" aria-label="返回相册"><i class="fas fa-arrow-left" aria-hidden="true"></i> 返回相册</button>
-                                    <div class="viewer-stage">
-                                        <button class="viewer-nav prev" id="album-prev" aria-label="上一张"><i class="fas fa-chevron-left"></i></button>
-                                        <img id="album-viewer-img" alt="">
-                                        <button class="viewer-nav next" id="album-next" aria-label="下一张"><i class="fas fa-chevron-right"></i></button>
-                                    </div>
-                                    <div class="viewer-caption">
-                                        <span id="album-viewer-caption"></span>
-                                        <small id="album-viewer-index"></small>
-                                        <small>Esc 返回相册 · ← → 切换</small>
-                                    </div>
+                                    <span class="viewer-index" id="album-viewer-index" aria-live="polite"></span>
+                                </div>
+                                <div class="viewer-stage">
+                                    <button class="viewer-nav prev" id="album-prev" aria-label="上一张"><i class="fas fa-chevron-left"></i></button>
+                                    <img id="album-viewer-img" alt="">
+                                    <button class="viewer-nav next" id="album-next" aria-label="下一张"><i class="fas fa-chevron-right"></i></button>
+                                </div>
+                                <div class="viewer-caption">
+                                    <span id="album-viewer-caption"></span>
+                                    <small>Esc 返回相册 · ← → 切换</small>
                                 </div>
                             </div>
                         </section>

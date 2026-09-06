@@ -406,30 +406,54 @@
     z-index: 3;
     display: none;
     flex-direction: column;
-    background: rgba(6, 10, 9, 0.94);
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    background: #080f0d;
 }
 
 .album-viewer.open {
     display: flex;
-    animation: os-app-in 0.3s ease both;
 }
 
+.album-viewer .viewer-toolbar {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 14px;
+}
+
+.album-viewer .viewer-index {
+    min-width: 0;
+    color: #b2c8be;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+}
+
+.viewer-close { flex-shrink: 0; background: #24382d; }
+
 .album-viewer .viewer-stage {
-    flex: 1;
+    flex: 1 1 0;
+    min-width: 0;
     min-height: 0;
     display: grid;
+    grid-template: minmax(0, 1fr) / minmax(0, 1fr);
     place-items: center;
-    padding: 16px 64px;
+    padding: 4px 64px;
     position: relative;
 }
 
+/* Both dimensions belong to the bounded grid cell, never to the image's
+   intrinsic size. Contain preserves every edge, including tall panoramas. */
 .album-viewer img {
-    max-width: 100%;
-    max-height: 100%;
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
     object-fit: contain;
-    border-radius: var(--wobble-sm);
-    border: 3px solid rgba(255, 253, 245, 0.85);
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
 
 .album-viewer .viewer-nav {
@@ -458,11 +482,22 @@
 
 .album-viewer .viewer-caption {
     flex: 0 0 auto;
-    padding: 10px 16px 14px;
+    min-width: 0;
+    padding: 6px 16px 10px;
     text-align: center;
     font-size: 0.92rem;
+    line-height: 1.4;
     color: rgba(230, 240, 232, 0.85);
 }
+
+.album-viewer .viewer-caption span {
+    display: block;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.album-viewer .viewer-caption span:empty { display: none; }
 
 .album-viewer .viewer-caption small {
     display: block;
@@ -494,8 +529,7 @@
 .os-dock-item small { color: #b2c5b8; font-size: 11px; font-weight: 400; margin-top: 2px; }
 .os-session { font-size: 10px; letter-spacing: 0.06em; opacity: 0.65; }
 .os-topbar .os-status .os-btn { border: none; background: transparent; }
-.viewer-close { position: absolute; top: 14px; left: 14px; z-index: 2; background: #24382d; }
-.album-viewer .viewer-stage { padding-top: 62px; }
+.os-app[data-app="album"] .app-body { overflow: hidden; }
 
 @media (max-width: 600px) {
     .mf-exit { top: max(12px, env(safe-area-inset-top)); right: 12px; padding: 8px 12px; font-size: 12px; }
@@ -515,7 +549,12 @@
     .app-head { padding: 10px 12px; gap: 8px; font-size: 12px; }
     .app-head .app-name { gap: 6px; }
     .album-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 12px; gap: 10px; }
-    .album-viewer .viewer-stage { padding: 62px 44px 12px; }
+    .album-viewer .viewer-stage { padding: 2px 52px; }
+    .album-viewer .viewer-toolbar { padding: 4px 10px; }
+    .album-viewer .viewer-nav.prev { left: 5px; }
+    .album-viewer .viewer-nav.next { right: 5px; }
+    .album-viewer .viewer-caption { padding: 4px 10px 6px; font-size: 12px; }
+    .album-viewer .viewer-caption small { display: none; }
 }
 
 @media (max-height: 600px) and (min-width: 601px) {
@@ -529,6 +568,9 @@
     .os-dock { padding: 8px 16px; }
     .os-dock-item .icon { width: 42px; height: 42px; border-radius: 12px; font-size: 20px; }
     .os-dock-item small { display: none; }
+    .album-viewer .viewer-toolbar { padding: 4px 10px; }
+    .album-viewer .viewer-caption { padding: 4px 10px 6px; font-size: 12px; }
+    .album-viewer .viewer-caption small { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -545,6 +587,7 @@
 .is-spatial .os-dock-item { width: 110px; font-size: 14px !important; }
 .is-spatial .os-dock-item .icon { width: 56px; height: 56px; font-size: 25px; }
 .is-spatial .app-body { min-height: 0; overflow: auto; overscroll-behavior: contain; }
+.is-spatial .os-app[data-app="album"] .app-body { overflow: hidden; }
 .is-spatial .os-app.active { animation: none; }
 @media (max-width: 700px) {
     .studio.is-at-monitor .lab-header-tools { margin-right: 100px; }
@@ -561,6 +604,12 @@
     .is-spatial .os-dock-item { width: 62px; }
     .is-spatial .os-dock-item .icon { width: 48px; height: 48px; font-size: 23px; }
     .is-spatial .app-head { padding: 4px 10px; min-height: 36px; }
+    .is-spatial .album-viewer .viewer-toolbar { padding: 4px 10px; }
+    .is-spatial .album-viewer .viewer-stage { padding: 2px 52px; }
+    .is-spatial .album-viewer .viewer-nav.prev { left: 5px; }
+    .is-spatial .album-viewer .viewer-nav.next { right: 5px; }
+    .is-spatial .album-viewer .viewer-caption { padding: 4px 10px 6px; font-size: 12px; }
+    .is-spatial .album-viewer .viewer-caption small { display: none; }
     .is-spatial .robot-placeholder { padding: 8px 12px; }
     .is-spatial .robot-placeholder-content > i { width: 36px; height: 36px; margin-bottom: 8px; font-size: 22px; border-radius: 12px; }
     .is-spatial .robot-placeholder h2 { margin-bottom: 6px; font-size: 18px; }

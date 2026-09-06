@@ -192,13 +192,14 @@
             $('album-viewer-img').src = items[index].src;
             $('album-viewer-img').alt = items[index].caption || '';
             $('album-viewer-caption').textContent = items[index].caption || '';
+            $('album-viewer-caption').title = items[index].caption || '';
             $('album-viewer-index').textContent = `${index + 1} / ${items.length} · ${sources[current].label}`;
-            viewer.classList.add('open'); viewer.setAttribute('aria-hidden', 'false'); grid.inert = true;
+            viewer.classList.add('open'); viewer.setAttribute('aria-hidden', 'false'); grid.inert = tabs.inert = true;
             if (!viewer.contains(document.activeElement)) $('album-close').focus({ preventScroll: true });
         }
         function closeViewer() {
             const previous = viewerIndex;
-            viewer.classList.remove('open'); viewer.setAttribute('aria-hidden', 'true'); grid.inert = false;
+            viewer.classList.remove('open'); viewer.setAttribute('aria-hidden', 'true'); grid.inert = tabs.inert = false;
             viewerIndex = -1;
             if (previous >= 0) grid.querySelector(`[data-idx="${previous}"]`)?.focus({ preventScroll: true });
         }
