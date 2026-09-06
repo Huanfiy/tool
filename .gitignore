@@ -6,3 +6,7 @@ tmp
 /deploy/nginx/
 .agents/
 __pycache__/
+.venv/
+.env
+.env.*
+*.sqlite3*

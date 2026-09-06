@@ -3,10 +3,17 @@
 /.cursor export-ignore
 /.claude export-ignore
 /CLAUDE.md export-ignore
+/agents export-ignore
 /run.sh export-ignore
 /deploy export-ignore
 /server export-ignore
 /tests export-ignore
+/tmp export-ignore
+/build export-ignore
+/.venv export-ignore
+.env* export-ignore
+*.sqlite3* export-ignore
+testkey.txt export-ignore
 README.md export-ignore
 *.log export-ignore
 .DS_Store export-ignore

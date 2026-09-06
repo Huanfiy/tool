@@ -23,12 +23,6 @@
     <script type="importmap">
     {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}
     </script>
-    <script>
-        window.STUDIO_CONFIG = {
-            terminal: { wsUrl: 'ws://127.0.0.1:7681/' },
-            robot: { baseUrl: 'https://api.openai.com/v1', model: 'gpt-4o-mini' }
-        };
-    </script>
 </head>
 <body class="studio-page">
     <main class="studio" id="studio" aria-label="Huanfly 嵌入式极客工作室">
@@ -121,8 +115,8 @@
                                 <button class="os-dock-item album" data-open="album">
                                     <span class="icon"><i class="fas fa-images"></i></span><span>相册</span><small>收集生活的切片</small>
                                 </button>
-                                <button class="os-dock-item robot" data-open="robot">
-                                    <span class="icon"><i class="fas fa-robot"></i></span><span>Robot</span><small>一起推敲新灵感</small>
+                                <button class="os-dock-item robot" data-open="robot" aria-label="Robot，研究中" title="Robot · 研究中">
+                                    <span class="icon"><i class="fas fa-robot" aria-hidden="true"></i></span><span>Robot</span><small>研究中</small>
                                 </button>
                             </nav>
                         </section>
@@ -131,28 +125,16 @@
                         <section class="os-app" data-app="terminal" aria-label="终端">
                             <div class="app-head">
                                 <span class="app-name"><i class="fas fa-terminal"></i> 终端</span>
-                                <span class="dot" id="term-dot"></span>
-                                <span id="term-mode-label">未连接</span>
+                                <span class="dot guest" id="term-dot"></span>
+                                <span id="term-mode-label">访客模式（纯模拟）</span>
                                 <span class="grow"></span>
-                                <button class="os-btn" id="term-relock" title="锁定终端"><i class="fas fa-lock"></i> 锁定</button>
+                                <button class="os-btn" id="term-reset" title="重置模拟终端"><i class="fas fa-rotate-right"></i> 重置</button>
                             </div>
                             <div class="app-body">
-                                <div class="term-lock" id="term-lock">
-                                    <div class="term-lock-card">
-                                        <div class="lock-icon"><i class="fas fa-lock"></i></div>
-                                        <h3>huanfly@studio</h3>
-                                        <div class="lock-status" id="term-status"><i class="fas fa-spinner fa-spin"></i>正在探测终端桥接…</div>
-                                        <form class="term-lock-form" id="term-form" autocomplete="off">
-                                            <input type="password" id="term-password" placeholder="输入密码进入真实终端" autocomplete="current-password" aria-label="终端密码" disabled>
-                                            <button type="submit" class="os-btn primary" id="term-submit" aria-label="解锁终端" disabled><i class="fas fa-arrow-right"></i></button>
-                                        </form>
-                                        <div class="lock-alt">
-                                            或者
-                                            <button type="button" class="os-btn" id="term-guest"><i class="fas fa-ghost"></i> 进入访客终端</button>
-                                        </div>
-                                        <p class="lock-help">访客终端可以直接体验，输入 help 看看能做什么。</p>
-                                        <details class="lock-help"><summary>连接自己的终端</summary><p>在本机启动桥接服务后，输入设置的密码。</p><code>STUDIO_TERM_PASSWORD=… ./run.sh term</code></details>
-                                    </div>
+                                <div class="term-loading" id="term-loading" role="status">
+                                    <p id="term-status">正在加载模拟终端…</p>
+                                    <button type="button" class="os-btn" id="term-retry" hidden>重试加载</button>
+                                    <small>仅在浏览器中模拟，不连接电脑或服务器终端。</small>
                                 </div>
                                 <div class="term-body" id="term-body"></div>
                             </div>
@@ -186,53 +168,17 @@
                             </div>
                         </section>
 
-                        <!-- Robot -->
-                        <section class="os-app" data-app="robot" aria-label="Robot">
+                        <!-- Robot：仅保留静态入口，功能研究中。 -->
+                        <section class="os-app" data-app="robot" aria-label="Robot（研究中）">
                             <div class="app-head">
-                                <span class="app-name"><i class="fas fa-robot"></i> Robot</span>
-                                <span class="dot" id="robot-dot"></span>
-                                <span id="robot-model-label">未配置</span>
-                                <span class="grow"></span>
-                                <button class="os-btn" id="robot-clear" title="清空对话"><i class="fas fa-broom"></i> 清空</button>
-                                <button class="os-btn" id="robot-settings-btn" title="设置"><i class="fas fa-gear"></i> 设置</button>
+                                <span class="app-name"><i class="fas fa-robot" aria-hidden="true"></i> Robot</span>
+                                <span class="robot-status">研究中</span>
                             </div>
-                            <div class="app-body">
-                                <div class="robot-body">
-                                    <div class="robot-messages" id="robot-messages" aria-live="polite"></div>
-                                    <form class="robot-composer" id="robot-form">
-                                        <textarea id="robot-input" rows="1" placeholder="写下你的想法…" aria-label="消息"></textarea>
-                                        <button type="button" class="os-btn danger" id="robot-stop" aria-label="停止生成" hidden><i class="fas fa-stop"></i></button>
-                                        <button type="submit" class="os-btn primary" id="robot-send" aria-label="发送消息"><i class="fas fa-paper-plane"></i></button>
-                                    </form>
-                                </div>
-                                <div class="robot-settings" id="robot-settings">
-                                    <div class="robot-settings-card">
-                                        <h3><i class="fas fa-gear"></i> Robot 设置</h3>
-                                        <p class="hint">接入任意 OpenAI 兼容接口。配置只保存在当前浏览器的 localStorage，不会上传到站点。</p>
-                                        <form id="robot-settings-form">
-                                            <label for="robot-base">API Base URL</label>
-                                            <input id="robot-base" type="url" placeholder="https://api.openai.com/v1" spellcheck="false">
-                                            <label for="robot-key">API Key</label>
-                                            <input id="robot-key" type="password" placeholder="sk-…" autocomplete="off" spellcheck="false">
-                                            <label for="robot-model">Model</label>
-                                            <div class="row">
-                                                <input id="robot-model" type="text" list="robot-model-list" placeholder="gpt-4o-mini" spellcheck="false">
-                                                <datalist id="robot-model-list"></datalist>
-                                                <button type="button" class="os-btn" id="robot-fetch-models"><i class="fas fa-list"></i> 拉取</button>
-                                            </div>
-                                            <label for="robot-system">System Prompt</label>
-                                            <textarea id="robot-system" rows="3"></textarea>
-                                            <label class="check" for="robot-relay">
-                                                <input type="checkbox" id="robot-relay">
-                                                <span>通过本地桥接中转请求 <small>— 接口不支持浏览器跨域（CORS）时勾选；需在本机运行 <code>./run.sh term</code>，密钥仍只经你的浏览器与上游传递</small></span>
-                                            </label>
-                                            <div class="status" id="robot-settings-status"></div>
-                                            <div class="actions">
-                                                <button type="button" class="os-btn" id="robot-settings-cancel">取消</button>
-                                                <button type="submit" class="os-btn primary">保存</button>
-                                            </div>
-                                        </form>
-                                    </div>
+                            <div class="app-body robot-placeholder">
+                                <div class="robot-placeholder-content">
+                                    <i class="fas fa-robot" aria-hidden="true"></i>
+                                    <h2>研究中</h2>
+                                    <p>聊天功能暂未开放，先留一个位置。</p>
                                 </div>
                             </div>
                         </section>
@@ -242,6 +188,7 @@
         </div>
         <button class="mf-exit" id="mf-exit" type="button" hidden><i class="fas fa-arrow-left"></i> 退后看看 <kbd>Esc</kbd></button>
     </main>
+    <script src="js/studio-guest.js"></script>
     <script src="js/studio-apps.js"></script>
     <script type="module" src="js/studio.js"></script>
 </body>

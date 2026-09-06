@@ -1,12 +1,12 @@
 # Personal Web
 
-开源的纯静态个人网站，包含博客、在线工具箱和个人展示页面。无需前端构建即可部署到静态托管平台；线上实例为 [huanfly.com](https://huanfly.com)。
+开源的静态个人网站，包含博客、在线工具箱和个人展示页面。无需前端构建或应用后端，可直接部署到静态托管平台。线上实例为 [huanfly.com](https://huanfly.com)。
 
 ## 功能
 
 - **博客系统** — Markdown 驱动，客户端渲染，文章存放于 `posts/` 目录
 - **工具箱** — 图片转 ICO、键位练习、链接转换器
-- **工作室** — Three.js 手绘质感的嵌入式工作室（`studio.html`）：可拖动环视、缩放和切换分区镜头；包含 STM32 固件烧录与电路板展开、示波器波形 / 频率调节、焊台与排烟联动、FDM 逐层打印、无刷电机调速和机械臂取放演示。新增绿植浇水与模拟土壤湿度联动。支持昼夜灯光、双扇开窗、设备导览和手机触控；无边框显示器直接承载可操作的 HTML huanfly-os，内含终端（本机桥接或访客 shell）、相册与 Robot，靠近或退后不会切换桌面或中断应用。
+- **工作室** — Three.js 手绘质感的嵌入式工作室（`studio.html`）：可拖动环视、缩放和切换分区镜头；包含 STM32 固件烧录与电路板展开、示波器波形 / 频率调节、焊台与排烟联动、FDM 逐层打印、无刷电机调速和机械臂取放演示。新增绿植浇水与模拟土壤湿度联动。支持昼夜灯光、双扇开窗、设备导览和手机触控；无边框显示器直接承载可操作的 HTML huanfly-os，内含终端（始终是浏览器内的访客模拟）、相册与 Robot（仅保留「研究中」占位界面），靠近或退后不会切换桌面或中断应用。
 - **个人展示** — 首页、关于页面，响应式布局
 
 ## 设计风格
@@ -42,10 +42,11 @@
 ├── js/studio-landscape.js # 同级庭院、连续地表、闭合背景与实例化户外动效
 ├── js/studio-landscape-art.js # 确定性的静态日夜田园画布
 ├── js/studio-figures.js  # 置物架上的三个程序化手办
-├── js/studio-apps.js     # huanfly-os：终端 / 相册 / Robot
-├── server/studio-bridge.py  # 本机终端桥接（开发用，不随部署发布）
+├── js/studio-apps.js     # huanfly-os：桌面 / 模拟终端 UI / 相册
+├── js/studio-guest.js    # 纯浏览器模拟命令；不存在真实终端
+├── agents/plans/         # 已搁置的研究计划，不随网站发布
 ├── posts/                # Markdown 博客文章
-├── tools/                # 独立工具页面
+├── tools/                # 独立网页工具
 │   ├── keyboard.html
 │   └── buy.html
 ├── picture/              # 图片资源
@@ -71,13 +72,21 @@
 ./run.sh gen
 ```
 
-**工作室真实终端（可选）：**
+**访客终端与 Robot 状态：**
+
+终端始终是浏览器内的模拟命令，不连接访客电脑或服务器，也没有管理员解锁模式。无需启动任何终端服务。
+
+Robot 目前只保留显示器内的入口和「研究中」静态界面，没有聊天、配置、网络请求或应用后端。通用 Server 计划保留在 `agents/plans/2026-09-06-general-server.md`，已搁置，暂不实现。
+
+应用回归测试：
 
 ```bash
-STUDIO_TERM_PASSWORD='your-secret' ./run.sh term     # 默认只监听 127.0.0.1:7681
+node --test tests/studio-guest.test.js
+# 可选：已有 Puppeteer/Chromium 测试环境时运行，不安装前端依赖。
+PUPPETEER_MODULE=/absolute/path/to/puppeteer-core node tests/studio-apps-browser.cjs
 ```
 
-桥接是纯 Python 标准库实现的 WebSocket ⇄ PTY 服务，只允许 localhost 与 `STUDIO_TERM_ORIGINS` 里的来源连接，认证失败会延时并限流。它同时提供 `/relay/` 中转，供 Robot 在上游接口不支持 CORS 时使用（在 Robot 设置里勾选）。不运行桥接时，终端自动降级为浏览器内的访客模拟 shell。
+浏览器测试自行启动临时纯静态服务器，检查模拟终端、相册、Robot 占位及工作室契约，不需要 API Key。
 
 **可选 rsync 部署：**
 

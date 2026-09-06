@@ -34,8 +34,6 @@ print_help() {
                  --gen 仅在临时产物中重新生成 posts/posts.json
   gen           扫描 posts/*.md 生成文章清单 posts/posts.json
   test [port]   启动本地测试服务器 (默认端口: 8080)
-  term [port]   启动工作室终端桥接 server/studio-bridge.py (默认端口: 7681，仅监听本机)
-                需要环境变量 STUDIO_TERM_PASSWORD；可选 STUDIO_TERM_SHELL / STUDIO_TERM_ORIGINS
   help          显示帮助信息
 
 deploy 环境变量:
@@ -219,15 +217,18 @@ validate_artifact() {
     local artifact_dir="$1"
     local required_file=""
     local json_file=""
+    local private_path=""
 
     for required_file in \
         index.html \
         studio.html \
         css/style.css \
         css/studio.css \
+        css/studio-apps.css \
         js/script.js \
         js/studio.js \
         js/studio-apps.js \
+        js/studio-guest.js \
         posts/posts.json \
         manifest.webmanifest \
         deploy-version.json; do
@@ -249,14 +250,17 @@ validate_artifact() {
         node --check "${artifact_dir}/js/script.js"
         node --check "${artifact_dir}/js/studio.js"
         node --check "${artifact_dir}/js/studio-apps.js"
+        node --check "${artifact_dir}/js/studio-guest.js"
     fi
 
-    if [ -e "${artifact_dir}/.git" ] || [ -e "${artifact_dir}/run.sh" ] || [ -e "${artifact_dir}/deploy" ] || [ -e "${artifact_dir}/server" ]; then
-        echo "❌ 发布产物包含仅供开发或运维使用的文件"
-        return 1
-    fi
+    for private_path in .git run.sh deploy server agents tests tmp build .venv; do
+        if [ -e "${artifact_dir}/${private_path}" ]; then
+            echo "❌ 发布产物包含仅供开发或运维使用的文件: ${private_path}"
+            return 1
+        fi
+    done
 
-    if find "${artifact_dir}" \( -name '.cursor' -o -name 'README.md' -o -name '*.test.js' \) -print -quit | grep -q .; then
+    if find "${artifact_dir}" \( -name '.cursor' -o -name 'README.md' -o -name '*.test.js' -o -name '.env*' -o -name '*.sqlite3*' -o -name 'testkey.txt' \) -print -quit | grep -q .; then
         echo "❌ 发布产物包含嵌套开发文件"
         return 1
     fi
@@ -295,9 +299,11 @@ smoke_test() {
         /studio.html \
         /css/style.css \
         /css/studio.css \
+        /css/studio-apps.css \
         /js/script.js \
         /js/studio.js \
         /js/studio-apps.js \
+        /js/studio-guest.js \
         /activity.json \
         /manifest.webmanifest; do
         curl "${curl_args[@]}" --output /dev/null "${PUBLIC_BASE_URL}${route}?verify=${expected_sha}"
@@ -436,33 +442,6 @@ do_test() {
     python3 -m http.server "${port}" --bind 127.0.0.1
 }
 
-do_term() {
-    local port="${1:-7681}"
-
-    if ! command -v python3 >/dev/null 2>&1; then
-        echo "❌ 未找到 python3，请先安装 Python3。"
-        exit 1
-    fi
-
-    if ! [[ "${port}" =~ ^[0-9]+$ ]] || (( port < 1 || port > 65535 )); then
-        echo "❌ 端口范围应为 1-65535: ${port}"
-        exit 1
-    fi
-
-    if [ -z "${STUDIO_TERM_PASSWORD:-}" ]; then
-        echo "❌ 需要设置终端密码，例如: STUDIO_TERM_PASSWORD='your-secret' ./run.sh term"
-        exit 1
-    fi
-
-    echo "========================================"
-    echo "启动工作室终端桥接（仅本机 127.0.0.1:${port}）..."
-    echo "打开 studio.html → 点击显示器 → 终端 → 输入密码"
-    echo "停止: Ctrl+C"
-    echo "========================================"
-
-    exec python3 "${SCRIPT_DIR}/server/studio-bridge.py" --port "${port}"
-}
-
 command="${1:-}"
 if [ $# -gt 0 ]; then
     shift
@@ -477,9 +456,6 @@ case "${command}" in
         ;;
     test)
         do_test "$@"
-        ;;
-    term)
-        do_term "$@"
         ;;
     help|-h|--help|"")
         print_help

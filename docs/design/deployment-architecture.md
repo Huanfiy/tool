@@ -8,9 +8,9 @@
 
 ## 1. 架构原则
 
-本仓库是公开的静态博客项目。仓库只管理可复现的站点源文件、文章索引、发布产物规则和通用部署入口，不管理任何生产服务器配置。
+本仓库是公开的纯静态博客项目，管理站点源文件、文章索引、发布产物规则和通用预览/部署入口，不提供应用后端，也不保存生产服务器的实际配置或秘密。Robot 仅保留「研究中」占位；通用 Server 计划位于 `agents/plans/2026-09-06-general-server.md`，已搁置，不属于当前部署流程。
 
-服务器与托管平台配置必须位于仓库之外，包括但不限于：
+实际服务器与托管平台的实例配置必须位于仓库之外，包括但不限于：
 
 - Nginx、Apache、Caddy 或其他 Web Server 配置；
 - 域名解析、TLS 证书路径与续期策略；
@@ -37,11 +37,11 @@
 
 - Web Server、容器、虚拟机或托管平台配置；
 - 生产环境的缓存、压缩、MIME、TLS、认证与代理策略；
-- SSH 密钥、服务器账号和目录权限初始化；
+- 实际 SSH 密钥、服务器身份、主站目录规划与人工运维数据；
 - 自动扩缩容、流量切换、原子发布和自动回滚；
 - GitHub Actions、GitHub Pages、Cloudflare Pages、Netlify、Vercel 等平台专属工作流。
 
-平台专属部署可以绕过 `./run.sh deploy`，直接使用仓库内容或自行调用 `git archive`。站点运行不依赖 rsync 或特定 Web Server。
+平台专属部署可以绕过 `./run.sh deploy`，使用平台自身的静态发布流程。静态站点运行不依赖 rsync 或特定 Web Server，不需要启动 Robot 或其他应用服务。实际 Web Server、TLS、密码和主机配置仍由运行环境管理。
 
 ## 3. 数据流
 
@@ -85,9 +85,10 @@ Artifact 只包含目标提交中的跟踪文件。工作区修改、未跟踪�
 - `.gitattributes`、`.gitignore`；
 - `.cursor/`、`.claude/`、`CLAUDE.md`；
 - `README.md`、`*.log`、`.DS_Store`、`*.test.js`；
-- `run.sh` 与 `deploy/`。
+- `run.sh`、`deploy/`、`server/`、`agents/`、`tests/`、`tmp/`、`build/` 和 `.venv/`；
+- `.env*`、`*.sqlite3*`、`testkey.txt` 等运行时敏感文件。
 
-发布产物不包含项目协作说明、测试文件或运维目录。
+发布产物不包含项目协作说明、研究计划、测试文件或运维目录。对 `server/` 等路径的防误发规则不表示当前存在后端实现。
 
 ### 4.3 版本标记
 
