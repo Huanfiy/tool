@@ -127,6 +127,9 @@ body.studio-page {
 .studio.has-selection .lab-log { opacity: 0; }
 .studio.is-at-monitor .lab-intro, .studio.is-at-monitor .lab-log { opacity: 0; pointer-events: none; }
 .studio.is-at-monitor .lab-intro button { pointer-events: none; }
+.studio.is-at-monitor .lab-gesture { visibility: hidden; }
+/* Paper grain belongs to the room, not to the illuminated close-up display. */
+.studio.is-at-monitor .lab-vignette { opacity: 0; }
 .studio.is-computer-fallback .lab-ui { visibility: hidden; }
 .lab-loader { position: absolute; z-index: 8; inset: 79px 0 140px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--lab-paper); transition: opacity .5s, visibility .5s; }
 .lab-loader.ready { opacity: 0; visibility: hidden; pointer-events: none; }
@@ -147,7 +150,6 @@ body.studio-page {
 @keyframes panel-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 /* Keep application text legible independently of the room lighting. */
 .studio-page .mf-screen { border-radius: 0; font-family: var(--font-ui); }
-.studio-page .os { background: radial-gradient(ellipse at 10% 0%, #c1d58d18, transparent 55%), linear-gradient(145deg, #293d2d, #14251f); }
 .studio-page .os-dock { border-radius: var(--wobble-card); }
 .studio-page .os-dock-item .icon { border-radius: 17px 14px 18px 13px; }
 [data-theme="dark"] .lab-intro { text-shadow: none; }

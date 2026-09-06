@@ -4,7 +4,10 @@
    and its hit area stay unchanged; coincident CSS/WebGL antialiasing cannot
    reveal the paper background through a hairline at the aperture edge. */
 .monitor-focus.is-spatial { position: absolute; inset: auto; display: block; backface-visibility: hidden; background: var(--st-screen); box-shadow: 0 0 0 3px var(--st-screen); }
-.mf-screen { position: absolute; inset: 0; width: 100%; height: 100%; overflow: hidden; background: #14241d; color: #e6f0e8; font-family: var(--font-ui); -webkit-font-smoothing: antialiased; touch-action: auto; }
+.mf-screen { position: absolute; inset: 0; width: 100%; height: 100%; overflow: hidden; background: #0b1916; color: #edf9f3; font-family: var(--font-ui); -webkit-font-smoothing: antialiased; touch-action: auto; }
+/* A restrained luminous edge, not a milky reflection/filter over photos or text.
+   It stays inside the same depth-occluded plane and never intercepts input. */
+.mf-screen::after { content: ''; position: absolute; inset: 0; z-index: 4; pointer-events: none; box-shadow: inset 0 0 0 1px #b6fff23d, inset 0 0 14px #79e9d112; }
 .mf-exit { position: fixed; z-index: 7; right: 30px; top: 20px; display: flex; align-items: center; gap: 8px; min-height: 37px; padding: 0 14px; background: var(--lab-paper); color: var(--lab-ink); border: 1px solid var(--lab-line); border-radius: 15px; font-size: 12px !important; }
 .mf-exit kbd { font: 10px var(--font-ui); opacity: .6; }
 .studio.is-at-monitor .lab-header-tools { margin-right: 130px; }
@@ -18,9 +21,9 @@
     display: flex;
     flex-direction: column;
     background:
-        radial-gradient(ellipse at 20% 0%, rgba(111, 216, 226, 0.16), transparent 55%),
-        radial-gradient(ellipse at 90% 100%, rgba(124, 201, 95, 0.16), transparent 50%),
-        linear-gradient(160deg, #13221d 0%, #0f1a17 55%, #0c1512 100%);
+        radial-gradient(ellipse at 18% 8%, #4fc4cf38, transparent 58%),
+        radial-gradient(ellipse at 82% 92%, #7cc95f24, transparent 55%),
+        linear-gradient(145deg, #102c27, #081612 70%);
 }
 
 .os-topbar {

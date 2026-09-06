@@ -70,6 +70,27 @@ function assertMonitorAlignment() {
         assert(error < .1, `HTML/WebGL screen corner drift: ${error}px`);
     }
 }
+function assertMonitorFrontOn() {
+    const {scene, camera} = roomFrame;
+    const aperture = scene.getObjectByName('monitor-aperture');
+    const center = aperture.getWorldPosition(new THREE.Vector3());
+    const normal = new THREE.Vector3(0,0,1).transformDirection(aperture.matrixWorld);
+    const direction = camera.position.clone().sub(center).normalize();
+    assert(direction.dot(normal) > 1 - 1e-10, 'close-up camera is not on the screen normal');
+    assert(camera.getWorldDirection(new THREE.Vector3()).dot(normal) < -1 + 1e-10, 'close-up camera is tilted');
+    const projectedCenter = center.clone().project(camera);
+    assert(Math.hypot(projectedCenter.x, projectedCenter.y) < 1e-10, 'close-up is not centred on the physical aperture');
+    const {width,height} = aperture.geometry.parameters;
+    for (const x of [-width/2,width/2]) for (const y of [-height/2,height/2]) {
+        const corner = new THREE.Vector3(x,y,0).applyMatrix4(aperture.matrixWorld).project(camera);
+        assert(Math.abs(corner.x) <= .901 && Math.abs(corner.y) <= .651, 'close-up screen escaped viewport padding');
+    }
+    const sky = scene.getObjectByName('closed-pastoral-sky');
+    const radius = sky.scale.x, reach = camera.position.distanceTo(sky.getWorldPosition(new THREE.Vector3()));
+    assert(reach < radius && camera.far > reach + radius, 'level camera escaped outdoor/clip coverage');
+    const light = scene.getObjectByName('monitor-spill');
+    assert(light?.isPointLight && !light.castShadow && light.parent === aperture.parent && light.intensity > 0, 'screen spill must be steady, local and shadow-free');
+}
 try {
     for (const reducedMotion of [false,true]) {
         const window = createStudioWindow({...helpers,layout,reducedMotion,disposeOnce});
@@ -221,14 +242,15 @@ try {
         while(room.getStats().renderedFrames<2)await frame();
         assert(readyCount===i+1,'first-frame readiness must fire exactly once');
         assert(stage.contains(desktop)&&desktop.style.transform.includes('matrix3d(')&&!desktop.inert&&getComputedStyle(desktop).visibility==='visible','ready desktop not projected onto the monitor');
-        for(const view of ['overview','panorama','bench','fabrication','robotics','monitor']){room.setView(view,true);await frame();await frame();if(i===0)assertMonitorAlignment();}
+        for(const view of ['overview','panorama','bench','fabrication','robotics','monitor']){room.setView(view,true);await frame();await frame();if(i===0)assertMonitorAlignment();if(view==='monitor')assertMonitorFrontOn();}
         if(i===0) {
             for(const [width,height] of [[390,844],[700,900],[701,900],[844,390]]) {
                 stage.style.width=`${width}px`;stage.style.height=`${height}px`;
-                await frame();await frame();await frame();assertMonitorAlignment();
+                await frame();await frame();await frame();assertMonitorAlignment();assertMonitorFrontOn();
             }
             stage.style.width='';stage.style.height='';await frame();await frame();await frame();
             pass(`显示器：均匀实体窄边、无重复描边、深度孔洞及多视角/尺寸四角对齐（最大 ${maxScreenCornerError.toFixed(4)}px）`);
+            pass('显示器靠近：镜头与屏幕法线重合、中心对齐、多尺寸完整取景、户外覆盖及无阴影屏幕补光');
             const desktop=document.getElementById('monitor-focus');
             const control=document.createElement('button');control.textContent='app control';
             control.style.cssText='position:absolute;width:8px;height:8px;padding:0;border:0;transform:translate(-50%,-50%)';
@@ -261,7 +283,8 @@ try {
             assert(control.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true,detail:0})),'keyboard app activation prevented');
             assert(selections.length===1&&selections[0]==='monitor','screen did not approach after selecting another device');
             control.remove();
-            pass('屏幕九宫格点击靠近、应用停止冒泡、原生点击保留、滚动不靠近与遮挡检查');
+            room.focusMonitor();await frame();await frame();assertMonitorFrontOn();
+            pass('屏幕九宫格点击靠近、应用停止冒泡、原生点击保留、滚动不靠近、遮挡检查与减少动态正对靠近');
         }
         for(let j=0;j<20;j++){room.setNight(true);room.setNight(false);}
         const stats=room.getStats();assert(stats.drawCalls<=350&&stats.triangles<=260000&&stats.geometries<=320&&stats.textures<=35,'main-pass resource budget');

@@ -377,7 +377,8 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     box(monitor.fixed,.095,.66,.08,0,.35,-.12,deskSteel);
     // Deliberately outside fixed: batch()'s expanded ink shell creates a second
     // silhouette around this thin panel, making the live screen look misaligned.
-    const monitorPanel=box(monitor.root,monitorScreen.width+2*monitorBezel,monitorScreen.height+2*monitorBezel,.065,0,monitorScreen.y,0,m.black,.012);
+    const monitorFrame=material('monitorFrame',{color:'#1b2927',roughness:.28,metalness:.3,emissive:'#a7e9dd',emissiveIntensity:.025});
+    const monitorPanel=box(monitor.root,monitorScreen.width+2*monitorBezel,monitorScreen.height+2*monitorBezel,.065,0,monitorScreen.y,0,monitorFrame,.012);
     monitorPanel.name='monitor-panel';
     const liveMonitor=createStudioMonitor({container,camera,monitor:monitor.root,...monitorScreen});
     cleanups.push(() => liveMonitor.dispose());
@@ -669,7 +670,10 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     key.shadow.mapSize.set(mobile()?1024:2048,mobile()?1024:2048);
     Object.assign(key.shadow.camera,{left:-8,right:8,top:8,bottom:-8,near:.5,far:30});key.shadow.bias=-.0003;key.shadow.normalBias=.035;key.shadow.radius=4;scene.add(key);
     const rimLight=new THREE.DirectionalLight('#cfdebd',.4);rimLight.position.set(-6,4,-1);scene.add(rimLight);
-    const deskLight=new THREE.PointLight('#b1cfaf',.3,5,2);deskLight.position.set(-.3,2.7,-2.2);scene.add(deskLight);
+    // A steady, shadow-free screen spill lights the stand and nearby desktop.
+    // Reuse the existing desk light slot rather than adding a bloom/render pass.
+    const monitorLight=new THREE.PointLight('#a6eadb',1.6,4.5,2);
+    monitorLight.name='monitor-spill';monitorLight.position.set(0,monitorScreen.y-.18,monitorScreen.z+.65);monitor.root.add(monitorLight);
     const warmLight=new THREE.PointLight('#ffd398',1.2,9,2);warmLight.position.set(1.6,4.10,-3.10);scene.add(warmLight);
     const frontFill=new THREE.DirectionalLight('#e9ecd7',.5);frontFill.position.set(4,2,8);scene.add(frontFill);
     // Floating dust is subtle and pauses with reduced motion.
@@ -687,7 +691,7 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
         bench:{pos:[1.0,4.4,4.4],target:[-.30,2.35,-2.5]},
         fabrication:{pos:[.2,4.3,8.6],target:[-4.15,1.28,3.0]},
         robotics:{pos:[.7,4.7,6.1],target:[-4.02,2.1,.10]},
-        monitor:{pos:[.3,3.06,1.25],target:[.3,3.01,-2.86]}
+        monitor:{pos:[.3,3.01,1.25],target:[.3,3.01,-2.825]}
     };
     const deviceViews={
         monitor:{pos:[3.4,4.65,3.2],target:[.25,2.85,-2.6]},
@@ -703,7 +707,10 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
         if(view==='monitor'&&!forDevice){
             const aspect=container.clientWidth/container.clientHeight;
             const distance=Math.max(monitorScreen.height/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2))*.65),monitorScreen.width/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2))*aspect*.90));
-            pos.set(.3,3.025,-2.86+distance);target.set(.3,3.01,-2.86);
+            // Derive both ends from the same physical plane as the CSS3D aperture.
+            target.set(0,monitorScreen.y,monitorScreen.z);monitor.root.localToWorld(target);
+            const normal=new THREE.Vector3(0,0,1).transformDirection(monitor.root.matrixWorld);
+            pos.copy(target).addScaledVector(normal,distance);
             return {pos,target};
         }
         if(mobile()){
@@ -734,7 +741,8 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
         for (const preset of Object.values(deviceViews)) targetBound = Math.max(targetBound, destination(preset, true).target.distanceTo(center));
         view = previousView;
         // Triangle inequality covers every orbit and the convex hull of tweened
-        // targets, not only preset screenshots. Keep near unchanged for depth.
+        // targets (including the screen centre), not only preset screenshots.
+        // This spherical bound also covers the monitor's level orbit. Keep near unchanged.
         const cameraBound = (mobile() ? 60 : 27) + targetBound;
         const radius = Math.max(layout.background.radius, Math.ceil(cameraBound + 6));
         camera.far = Math.max(160, Math.ceil(radius + cameraBound + 8));
@@ -742,7 +750,14 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     }
     function moveTo(preset,forDevice=false,instant=false){
         if(disposed)return;
+        // Drain gesture inertia before a scripted move, without jumping the camera.
+        const startPos=camera.position.clone(),startTarget=controls.target.clone();
+        controls.enableDamping=false;controls.update();controls.enableDamping=true;
+        camera.position.copy(startPos);controls.target.copy(startTarget);
         controls.minAzimuthAngle=forDevice?-.85:-.28;
+        // The ordinary room limit is slightly top-down; it must not clamp the
+        // front-on screen destination back to that angle on every update().
+        controls.maxPolarAngle=view==='monitor'&&!forDevice?Math.PI/2:1.48;
         controls.maxDistance=mobile()?60:27;
         const dest=destination(preset,forDevice);
         tween={fromPos:camera.position.clone(),fromTarget:controls.target.clone(),toPos:dest.pos,toTarget:dest.target,start:performance.now(),duration:reducedMotion||instant?0:1250};
@@ -756,7 +771,8 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
         if(disposed)return;
         night=value;hemi.color.set(night?'#b5c4d1':'#fffaf0');hemi.groundColor.set(night?'#697862':'#a7b093');hemi.intensity=night?.7:2.1;
         key.color.set(night?'#c0cfdd':'#fff0d6');key.intensity=night?.55:1.85;rimLight.intensity=night?.25:.4;
-        deskLight.intensity=night?1.2:.3;warmLight.intensity=night?16:1.2;frontFill.intensity=night?.20:.5;
+        monitorLight.intensity=night?3.2:1.6;monitorFrame.emissiveIntensity=night?.07:.025;
+        warmLight.intensity=night?16:1.2;frontFill.intensity=night?.20:.5;
         const palette=outdoorPalette(night);
         scene.background.set(palette.paper);scene.fog.color.copy(scene.background);ground.material.color.set(night?'#101c18':'#7b7357');ground.material.opacity=night?.24:.18;
         sunPatch.material.opacity=night?.07:.60;inkMaterial.color.set(night?'#374a40':'#586048');
