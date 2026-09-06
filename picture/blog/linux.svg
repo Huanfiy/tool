@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="320" viewBox="0 0 480 320" role="img" aria-labelledby="title desc">
+  <title id="title">Linux 主题封面</title>
+  <desc id="desc">一只黑白企鹅与简洁的命令行窗口，代表 Linux 系统、开源文化与终端环境。</desc>
+  <style>
+    :root { --ink: #36554a; --muted: #91a69a; --paper: #fffdf5; --soft: #deeeea; --green: #7fa572; --teal: #83b5ae; --warm: #d4a15f; --penguin: #304139; --white: #fffdf5; }
+    @media (prefers-color-scheme: dark) {
+      :root { --ink: #d7e4d5; --muted: #7e9a87; --paper: #203027; --soft: #28403c; --green: #98be88; --teal: #92c6bc; --warm: #e0b576; --penguin: #14231b; --white: #d7e4d5; }
+    }
+  </style>
+  <ellipse cx="240" cy="163" rx="141" ry="109" fill="var(--soft)"/>
+  <g stroke="var(--ink)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="104" y="127" width="119" height="99" rx="11" fill="var(--paper)"/>
+    <path d="M115 127h97q11 0 11 11v12H104v-12q0-11 11-11Z" fill="var(--green)"/>
+    <path d="m122 168 12 10-12 10m25 0h16" fill="none"/>
+    <path d="M121 207h50" stroke="var(--teal)"/>
+  </g>
+  <g fill="var(--ink)"><circle cx="116" cy="139" r="2"/><circle cx="126" cy="139" r="2"/><circle cx="136" cy="139" r="2"/></g>
+  <g stroke="var(--ink)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M237 140q-27 20-40 64-4 18 11 11l28-19m83-56q29 20 40 64 4 18-11 11l-28-19" fill="var(--penguin)"/>
+    <path d="M229 128q0-60 49-60t49 60q0 23 12 48 19 43-5 62-19 15-56 15t-56-15q-24-19-5-62 12-25 12-48Z" fill="var(--penguin)"/>
+    <path d="M241 162q9-26 37-26t37 26q15 27 12 54-3 27-49 27t-49-27q-3-27 12-54Z" fill="var(--white)" stroke="none"/>
+    <path d="M242 235q-14-9-25 2l-19 19q-5 6 5 9l44 2q16 0 13-13Z" fill="var(--warm)"/>
+    <path d="M314 235q14-9 25 2l19 19q5 6-5 9l-44 2q-16 0-13-13Z" fill="var(--warm)"/>
+  </g>
+  <g fill="var(--white)"><ellipse cx="264" cy="119" rx="12" ry="17"/><ellipse cx="292" cy="119" rx="12" ry="17"/></g>
+  <g fill="var(--penguin)"><ellipse cx="267" cy="122" rx="4" ry="7"/><ellipse cx="289" cy="122" rx="4" ry="7"/></g>
+  <path d="M260 139q18-13 36 0-5 16-18 16t-18-16Z" fill="var(--warm)" stroke="var(--penguin)" stroke-width="3" stroke-linejoin="round"/>
+</svg>

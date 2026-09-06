@@ -5,7 +5,7 @@
     "date": "2026-02-15",
     "tag": "嵌入式",
     "summary": "用一套可复用的流程，快速定位 Cortex-M 上的总线错误和异常现场。",
-    "cover": "picture/icon-embedded-cover.webp"
+    "cover": ""
   },
   {
     "file": "posts/embedded_debug_methodology.md",
@@ -13,7 +13,7 @@
     "date": "2026-02-14",
     "tag": "调试",
     "summary": "调试效率不只靠经验，更靠可复用的参考系与验证链路设计。",
-    "cover": "picture/icon-debug-cover.webp"
+    "cover": ""
   },
   {
     "file": "posts/embedded_code_quality_baseline.md",
@@ -21,7 +21,7 @@
     "date": "2026-02-13",
     "tag": "工程实践",
     "summary": "从编码风格到错误处理，建立一条工程可落地的嵌入式代码质量基线。",
-    "cover": "picture/icon-practice-cover.webp"
+    "cover": ""
   },
   {
     "file": "posts/weekly_reflection_from_anxiety_to_action.md",
@@ -29,7 +29,7 @@
     "date": "2026-02-12",
     "tag": "成长",
     "summary": "当焦虑来自生存与进步压力时，用可执行的复盘机制把注意力拉回行动。",
-    "cover": "picture/icon-growth-cover.webp"
+    "cover": ""
   },
   {
     "file": "posts/focus_and_consumption_rules.md",
@@ -37,7 +37,7 @@
     "date": "2026-02-11",
     "tag": "感悟",
     "summary": "与其和促销活动即兴对线，不如提前写好规则，保护时间和注意力。",
-    "cover": "picture/icon-insight-cover.webp"
+    "cover": ""
   },
   {
     "file": "posts/tmux_guide.md",
@@ -45,7 +45,6 @@
     "date": "2024-05-15",
     "tag": "Linux",
     "summary": "让你的终端既高效又美观，打造舒适的开发环境。",
-    "cover": "picture/tmux-logo-medium.png",
-    "coverFit": "contain"
+    "cover": ""
   }
 ]

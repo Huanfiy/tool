@@ -2,9 +2,9 @@
 
 > 迁移日期：2026-07-10
 >
-> 现状核验日期：2026-07-10
+> 封面流程更新：2026-09-06（其余流程核验于 2026-07-10）
 >
-> 对应实现：`run.sh`、`blog.html`、`posts/*.md`、`posts/posts.json`
+> 对应实现：`run.sh`、`blog.html`、`js/blog-covers.js`、`posts/*.md`、`posts/posts.json`
 
 ## 1. 目标与边界
 
@@ -60,8 +60,6 @@ title: Cortex-M Fault 排查实战
 date: 2026-02-15
 tag: 嵌入式
 summary: 从故障寄存器到异常现场，建立可复用的定位闭环。
-cover: picture/icon-embedded-cover.webp
-coverFit: contain
 publish: true
 ai_summary: 提取文章的关键判断、排查步骤与适用边界。
 ---
@@ -79,12 +77,14 @@ ai_summary: 提取文章的关键判断、排查步骤与适用边界。
 |---|---|---|---|
 | `title` | 写入 JSON | 不直接使用 | 列表标题。脚本不校验非空 |
 | `date` | 写入 JSON 并倒序排序 | 显示于文章信息 | 建议固定为 `YYYY-MM-DD`；脚本按字符串排序，不校验日期合法性 |
-| `tag` | 写入 JSON | 显示于文章信息 | 用于标签筛选和默认封面配色 |
+| `tag` | 写入 JSON | 显示于文章信息 | 用于标签筛选和默认主题封面选择 |
 | `summary` | 写入 JSON | 不直接使用 | 列表摘要；为空时从正文首个有效文本行截取前 100 个字符 |
-| `cover` | 写入 JSON | 不直接使用 | 相对站点根目录的封面路径；为空时由前端生成标签渐变 SVG |
-| `coverFit` | 非空时写入 JSON | 不直接使用 | 值为 `contain` 时完整显示封面；其他值或缺省值使用裁切填充 |
+| `cover` | 写入 JSON | 不直接使用 | 相对站点根目录的封面路径；为空时按标签选择本地 SVG，未知标签使用通用笔记封面 |
+| `coverFit` | 非空时写入 JSON | 不直接使用 | `picture/blog/` 下的主题插画始终完整显示；其他自定义图片在值为 `contain` 时完整显示，缺省时裁切填充 |
 | `publish` | 控制是否进入 JSON | 不使用 | 默认 `true`；`false`、`0`、`no`（不区分大小写）会排除该文章 |
 | `ai_summary` | 忽略 | 存在时显示 | 由详情页直接解析并渲染 AI 摘要卡片 |
+
+新文章通常只需填写 `tag`，省略 `cover` 即可自动复用主题封面；“实践”和“工程实践”共用同一张，Linux 标签匹配忽略大小写。如需覆盖默认图，可显式填写 `cover: picture/blog/embedded.svg` 或其他图片路径。主题注册表统一维护在 `js/blog-covers.js`，不按文章逐一绑定。
 
 正文应保留一个一级标题。详情页不会使用 Front Matter 的 `title` 自动补标题。
 
@@ -140,13 +140,15 @@ git diff -- posts/posts.json
 1. 请求 `posts/posts.json`，生成文章卡片；
 2. 按索引中的 `tag` 去重生成筛选按钮；
 3. 在标题、标签和摘要中执行客户端搜索；
-4. 优先使用 `cover`，缺省时按 `TAG_GRADIENTS` 生成内联 SVG 封面；
+4. 通过 `js/blog-covers.js` 的 `BlogCovers.getCoverUrl()` 优先使用显式 `cover`，缺省时按 `tag` 复用六类主题 SVG，未知标签使用 `picture/blog/field-notes.svg`；图片加载失败时向通用封面回退一次；
 5. 点击卡片后写入 `#post=<Markdown 路径>`；
 6. 请求 Markdown 文件，解析 Front Matter，并通过 Marked.js 4.0.12 渲染正文；
 7. 统计中文字符与英文、数字词元，按每分钟 400 个单位估算阅读时长，最低显示 1 分钟；
 8. 存在 `ai_summary` 时显示 AI 摘要。
 
 Marked.js 按 jsDelivr、unpkg、cdnjs 的顺序回退。三处均不可用时，文章详情显示加载错误，文章列表仍可使用。
+
+主题封面的设计、明暗适配、审核入口和旧素材清理记录见 [blog-covers.md](blog-covers.md)。
 
 ### 5.1 评论状态
 

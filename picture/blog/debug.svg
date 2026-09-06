@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="320" viewBox="0 0 480 320" role="img" aria-labelledby="title desc">
+  <title id="title">调试主题封面</title>
+  <desc id="desc">放大镜观察一只象征程序错误的小虫，代表发现问题、追踪线索与排查原因。</desc>
+  <style>
+    :root { --ink: #36554a; --muted: #91a69a; --paper: #fffdf5; --soft: #deeeea; --green: #7fa572; --teal: #83b5ae; --warm: #d4a15f; }
+    @media (prefers-color-scheme: dark) {
+      :root { --ink: #d7e4d5; --muted: #7e9a87; --paper: #203027; --soft: #28403c; --green: #98be88; --teal: #92c6bc; --warm: #e0b576; }
+    }
+  </style>
+  <ellipse cx="239" cy="160" rx="139" ry="109" fill="var(--soft)"/>
+  <g stroke="var(--ink)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="m285 208 23 23" fill="none" stroke-width="9"/>
+    <path d="m303 235 11-11q5-5 10 0l46 46q5 5 0 10l-11 11q-5 5-10 0l-46-46q-5-5 0-10Z" fill="var(--teal)"/>
+    <circle cx="230" cy="151" r="82" fill="var(--paper)"/>
+    <circle cx="230" cy="151" r="68" fill="var(--soft)" stroke="var(--muted)" stroke-width="3"/>
+    <path d="m216 121-9-13m37 13 9-13m-55 35h-14l-8-10m24 28h-23m23 18h-14l-8 10m82-46h14l8-10m-24 28h23m-23 18h14l8 10" fill="none" stroke-width="4"/>
+    <path d="M215 132v-7q0-15 15-15t15 15v7" fill="var(--warm)" stroke-width="4"/>
+    <rect x="200" y="130" width="60" height="67" rx="29" fill="var(--green)"/>
+    <path d="M230 133v60m-28-39h56" fill="none" stroke-width="4"/>
+  </g>
+  <path d="M109 127v-16h16m204-8h16v16m-220 103h-16v-16" fill="none" stroke="var(--muted)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

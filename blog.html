@@ -125,35 +125,17 @@
     </footer>
 
     <script src="js/script.js"></script>
+    <script src="js/blog-covers.js"></script>
     <script>
-        // === 默认配图：基于 tag 生成 SVG 渐变图 ===
-        const TAG_GRADIENTS = {
-            'Git':   ['#8fa8e8', '#a58cd4'],
-            'Linux': ['#5cbfa2', '#8fe0a8'],
-            '随笔':  ['#eeb0b8', '#ffe3e8'],
-            '前端':  ['#f2bb66', '#ffe08a'],
-            '后端':  ['#7ec3f2', '#8ae6f2'],
-            '嵌入式': ['#6ba8d9', '#7d94d9'],
-            '调试':  ['#5cc98a', '#63cfc4'],
-            '工程实践': ['#f2ad66', '#e8837a'],
-            '成长':  ['#a58cd4', '#c39aec'],
-            '感悟':  ['#f28a8f', '#f7b980'],
-        };
-        const DEFAULT_GRADIENT = ['#5da844', '#4fc4cf'];
+        // === 分类封面：同一主题的不同文章复用同一个 SVG ===
+        const { defaultCover: DEFAULT_COVER, getCoverUrl, getCoverAlt } = BlogCovers;
 
-        function getCoverUrl(post) {
-            if (post.cover) return post.cover;
-            const [c1, c2] = TAG_GRADIENTS[post.tag] || DEFAULT_GRADIENT;
-            const label = post.tag || 'Blog';
-            const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="250">
-                <defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stop-color="${c1}"/><stop offset="100%" stop-color="${c2}"/>
-                </linearGradient></defs>
-                <rect width="400" height="250" fill="url(#g)"/>
-                <text x="200" y="135" text-anchor="middle" fill="white" font-size="28"
-                      font-family="sans-serif" opacity="0.7">${label}</text>
-            </svg>`;
-            return 'data:image/svg+xml,' + encodeURIComponent(svg);
+        function handleCoverError(image) {
+            // 回退图本身失败时不重试，避免形成请求循环。
+            image.onerror = null;
+            image.className = 'illustrated';
+            image.alt = '通用笔记封面';
+            image.src = DEFAULT_COVER;
         }
 
         // === 动态渲染文章卡片 ===
@@ -167,9 +149,10 @@
                 <article class="card blog-card" data-reveal style="--rise-delay: ${Math.min(i, 4) * 80}ms"
                          onclick="openPost('${post.file}')">
                     <div class="blog-thumb">
-                        <img src="${getCoverUrl(post)}" alt="${post.title || post.tag || '文章'}"
-                             class="${post.coverFit === 'contain' ? 'contain' : ''}"
-                             width="320" height="180" loading="${i < 3 ? 'eager' : 'lazy'}" decoding="async">
+                        <img src="${getCoverUrl(post)}" alt="${getCoverAlt(post)}"
+                             class="${getCoverUrl(post).startsWith('picture/blog/') ? 'illustrated' : post.coverFit === 'contain' ? 'contain' : ''}"
+                             width="480" height="320" loading="${i < 3 ? 'eager' : 'lazy'}" decoding="async"
+                             onerror="handleCoverError(this)">
                     </div>
                     <div class="blog-card-body">
                         <div class="blog-meta">

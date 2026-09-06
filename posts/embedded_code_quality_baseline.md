@@ -3,7 +3,6 @@ title: 嵌入式代码质量基线：可维护、可移植、可验证
 date: 2026-02-13
 tag: 工程实践
 summary: 从编码风格到错误处理，建立一条工程可落地的嵌入式代码质量基线。
-cover: picture/icon-practice-cover.webp
 ai_summary: 六个维度建立嵌入式代码质量基线：风格统一、显式错误处理、静态分配优先、ISR 最小化与并发约束、HAL 隔离平台差异、clang-format/clang-tidy 纳入日常流程，把质量成本前置。
 ---
 

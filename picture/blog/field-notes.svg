@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="320" viewBox="0 0 480 320" role="img" aria-labelledby="title desc">
+  <title id="title">纸上的思考</title>
+  <desc id="desc">一本摊开的笔记与一片叶子，作为尚未指定主题的文章封面。</desc>
+  <style>
+    :root { --ink: #36554a; --muted: #91a69a; --paper: #fffdf5; --soft: #e0eada; --green: #7fa572; --teal: #83b5ae; --warm: #d4a15f; }
+    @media (prefers-color-scheme: dark) {
+      :root { --ink: #d7e4d5; --muted: #7e9a87; --paper: #203027; --soft: #2b4131; --green: #98be88; --teal: #92c6bc; --warm: #e0b576; }
+    }
+  </style>
+  <ellipse cx="240" cy="162" rx="138" ry="109" fill="var(--soft)"/>
+  <g stroke="var(--ink)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M122 104q59-23 118 0 59-23 118 0v141q-59-23-118 0-59-23-118 0Z" fill="var(--green)"/>
+    <path d="M128 93q56-23 112 0 56-23 112 0v139q-56-23-112 0-56-23-112 0Z" fill="var(--paper)"/>
+    <path d="M240 93v139" fill="none" stroke-width="4"/>
+  </g>
+  <g fill="none" stroke="var(--muted)" stroke-width="5" stroke-linecap="round">
+    <path d="M151 121q31-8 62 0m-62 25q31-8 62 0m-62 25q22-6 44-2m-44 27q31-8 62 0m54-5q31-8 62 0m-62 19q20-6 40-3"/>
+  </g>
+  <path d="M289 164q-27-39 23-65 21 45-23 65Z" fill="var(--teal)" stroke="var(--ink)" stroke-width="4" stroke-linejoin="round"/>
+  <path d="m282 177 22-58" stroke="var(--ink)" stroke-width="4" stroke-linecap="round"/>
+  <path d="M204 88v32l-9-7-9 7V86" fill="var(--warm)" stroke="var(--ink)" stroke-width="3" stroke-linejoin="round"/>
+</svg>

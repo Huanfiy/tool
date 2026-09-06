@@ -3,8 +3,6 @@ title: Tmux 终端复用美化指南
 date: 2024-05-15
 tag: Linux
 summary: 让你的终端既高效又美观，打造舒适的开发环境。
-cover: picture/tmux-logo-medium.png
-coverFit: contain
 ai_summary: 基于 gpakosz/.tmux 配置的速查手册：分屏与窗格操作、会话管理、搜索与 Vim 风格复制模式、resurrect 环境保存恢复，以及 tmux 内部剪切板与系统剪切板的打通方法。
 ---
 

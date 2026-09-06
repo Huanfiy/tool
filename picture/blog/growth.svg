@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="320" viewBox="0 0 480 320" role="img" aria-labelledby="title desc">
+  <title id="title">成长主题封面</title>
+  <desc id="desc">从破土的幼芽到舒展叶片的植株，三个生长阶段表现积累、进步与持续成长。</desc>
+  <style>
+    :root { --ink: #36554a; --muted: #91a69a; --paper: #fffdf5; --soft: #e0eada; --green: #7fa572; --teal: #83b5ae; --warm: #d4a15f; }
+    @media (prefers-color-scheme: dark) {
+      :root { --ink: #d7e4d5; --muted: #7e9a87; --paper: #203027; --soft: #2b4131; --green: #98be88; --teal: #92c6bc; --warm: #e0b576; }
+    }
+  </style>
+  <ellipse cx="241" cy="163" rx="143" ry="108" fill="var(--soft)"/>
+  <circle cx="170" cy="91" r="22" fill="var(--warm)"/>
+  <g stroke="var(--ink)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M104 242h274" fill="none"/>
+    <path d="M141 240v-27" fill="none"/>
+    <path d="M141 221q-29 0-29-25 28-2 29 25Z" fill="var(--green)" stroke-width="4"/>
+    <path d="M141 213q-1-25 24-28 3 24-24 28Z" fill="var(--teal)" stroke-width="4"/>
+    <path d="M232 240v-71" fill="none"/>
+    <path d="M232 211q-42-1-44-35 39-1 44 35Z" fill="var(--green)" stroke-width="4"/>
+    <path d="M232 181q-1-37 34-43 4 35-34 43Z" fill="var(--teal)" stroke-width="4"/>
+    <path d="M327 240V119" fill="none"/>
+    <path d="M327 214q-45 1-50-34 41-5 50 34Z" fill="var(--green)" stroke-width="4"/>
+    <path d="M327 191q-1-40 38-49 6 37-38 49Z" fill="var(--teal)" stroke-width="4"/>
+    <path d="M327 156q-44-4-45-39 40 0 45 39Z" fill="var(--green)" stroke-width="4"/>
+    <path d="M327 128q-5-40 29-52 11 36-29 52Z" fill="var(--green)" stroke-width="4"/>
+  </g>
+  <path d="M133 258h16m75 0h16m79 0h16" stroke="var(--muted)" stroke-width="4" stroke-linecap="round"/>
+</svg>
