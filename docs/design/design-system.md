@@ -1,11 +1,5 @@
 # 设计架构文档：手绘绘本 × 罗小黑森林
 
-> 落档日期：2026-07-03
->
-> 主站共享设计核验日期：2026-07-10
->
-> 工作室风格补充日期：2026-09-05
->
 > 配套可视化：[design-system.html](design-system.html)（记录 2026-07-02 视觉基线；单文件，双击即开，断网可用）
 
 ## 1. 概述
@@ -29,7 +23,7 @@
 
 ### 1.3 风格延展：嵌入式极客工作室
 
-2026-09-05 的 Three.js 工作室初版，是 Huanfly 个人设计风格在三维空间中的一次延展。
+Three.js 工作室是 Huanfly 个人设计风格在三维空间中的延展。
 
 核心是**温暖自然的手绘插画风，融合克制的极客科技感**。以午后阳光、木质家具和绿意营造轻松惬意的氛围，通过可操作的电子设备与 3D 交互带来探索乐趣。
 
@@ -192,7 +186,7 @@ Marked.js 与 giscus 仅由 `blog.html` 使用；giscus 当前因 `categoryId` �
 
 - `tools/keyboard.html` 依赖 `--border-color`、`--radius-lg`、`--radius-md`，并复用 Header、Footer、`.container`、`.btn`、`.btn-outline`、主题切换和移动端菜单；
 - `tools/buy.html` 依赖主题色、文本色、背景色、`--border-color`、`--radius-lg`、`--radius-md`，并复用 `.container` 与 Footer 基础样式；
-- `.tool-icon` 作为 `.card-icon` 的遗留类别名继续保留，但截至 2026-07-10，仓库内 HTML 未引用该类别名。
+- `.tool-icon` 作为 `.card-icon` 的遗留类别名继续保留；仓库内 HTML 当前未引用，删除前须全仓检索确认。
 
 `tools/visualizations/foc.html` 不加载 `css/style.css`，其独立样式不应反向写入共享样式表。
 

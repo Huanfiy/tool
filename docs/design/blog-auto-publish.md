@@ -1,9 +1,5 @@
 # 博客文章索引与发布流程
 
-> 迁移日期：2026-07-10
->
-> 封面流程更新：2026-09-06（其余流程核验于 2026-07-10）
->
 > 对应实现：`run.sh`、`blog.html`、`js/blog-covers.js`、`posts/*.md`、`posts/posts.json`
 
 ## 1. 目标与边界
@@ -148,22 +144,11 @@ git diff -- posts/posts.json
 
 Marked.js 按 jsDelivr、unpkg、cdnjs 的顺序回退。三处均不可用时，文章详情显示加载错误，文章列表仍可使用。
 
-主题封面的设计、明暗适配、审核入口和旧素材清理记录见 [blog-covers.md](blog-covers.md)。
+主题封面的设计、明暗适配与审核入口见 [blog-covers.md](blog-covers.md)。
 
 ### 5.1 评论状态
 
-评论使用 giscus，配置位于 `blog.html` 的 `GISCUS_CONFIG`：
-
-```javascript
-const GISCUS_CONFIG = {
-    repo: 'Huanfiy/huanfiy.github.io',
-    repoId: 'R_kgDOM3iQ0Q',
-    category: 'Announcements',
-    categoryId: ''
-};
-```
-
-截至 2026-07-10，`categoryId` 为空，评论功能未启用。填写有效分类 ID 后，评论主题会跟随站点明暗主题切换；脚本加载失败不影响正文。
+评论使用 giscus，配置位于 `blog.html` 的 `GISCUS_CONFIG`；`categoryId` 为空时评论区不渲染，启用步骤见 [启用 giscus 文章评论](../todo/enable-giscus-comments.md)。填写有效分类 ID 后，评论主题会跟随站点明暗主题切换；脚本加载失败不影响正文。
 
 ## 6. 新文章发布流程
 
