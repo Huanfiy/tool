@@ -42,7 +42,7 @@ huanfly.com 的开源纯静态个人网站：原生 HTML5 + CSS3 + JavaScript，
   - 性能：静置 30 fps、活动最高 60 fps，缓存静态阴影，尊重减少动态偏好，标签页隐藏时停止渲染。
   - 房间与子模块使用幂等、区分归属的清理，覆盖被合批拆离的缓存几何与初始化半途失败；Three.js 或 WebGL 失败时保留可访问的独立 HTML 桌面；`window.Studio` 向访客终端与诊断暴露动作与渲染计数。
 - 设计主题是罗小黑风格的手绘绘本：暖纸底加颗粒叠层，暗色模式即「夜森林」；主色森林绿 `#5da844`、强调色灵气青 `#4fc4cf`；标志元素为 wobble 圆角（`--wobble-*`）、带偏移阴影的墨线描边、squiggle SVG 下划线、首页山丘与黑猫 SVG。`tools/` 独立页仍消费 `style.css` 的旧别名 `--border-color`、`--radius-lg/md`，必须保留；`.tool-icon` 为未被引用的遗留类，处置前按设计系统 §8.1 全仓检索。细节见 [设计系统](docs/design/design-system.md)。
-- CDN 依赖固定版本：Three.js 0.170.0 + addons（仅工作室，ES module import map）、Marked.js 4.0.12、Font Awesome 6.4.0、LXGW WenKai Screen 字体（jsDelivr，`media="print"` 非阻塞切换）、不蒜子、giscus（可选）、xterm.js 5.3.0 + xterm-addon-fit 0.8.0（终端应用打开时才懒加载）。入场动画自托管：`.rise-in` 在首帧播放，`[data-reveal]` 由 IntersectionObserver 添加 `.revealed`，仅在头部内联脚本设置的 `html.js` 下隐藏。
+- CDN 依赖固定版本：Three.js 0.170.0 + addons（仅工作室，ES module import map）、Marked.js 4.0.12（仅 blog.html，打开文章时才异步加载，三源回退）、Font Awesome 6.4.0、LXGW WenKai Screen 字体（jsDelivr，`media="print"` 非阻塞切换）、不蒜子、giscus（可选）、xterm.js 5.3.0 + xterm-addon-fit 0.8.0（终端应用打开时才懒加载）。入场动画自托管：`.rise-in` 在首帧播放，`[data-reveal]` 由 IntersectionObserver 添加 `.revealed`，仅在头部内联脚本设置的 `html.js` 下隐藏。
 - 页面采用同页视图切换（博客列表 ↔ 正文、工具网格 ↔ 工具界面），不新增路由或多页跳转。
 - 页脚不蒜子 UV/PV 在数值加载前隐藏（`#site-stats` + `.visible`）；localhost 上的计数是共享测试数字，真实计数从生产域名开始。
 - 文档的记录与清理遵循 [docs-rules.md](docs-rules.md)：新增文档前过其记录门槛，改动代码后按其清理准则核查失实文档。

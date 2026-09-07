@@ -33,6 +33,7 @@
     <link rel="icon" type="image/png" href="picture/icon.png">
     <link rel="apple-touch-icon" href="picture/icon-192.png">
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-screen-webfont@1.7.0/lxgwwenkaigbscreen.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-screen-webfont@1.7.0/lxgwwenkaiscreen.css" media="print" onload="this.media='all'">
     <noscript>
@@ -41,20 +42,7 @@
     </noscript>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Marked.js 用于解析 Markdown (主CDN + 备用CDN) -->
-    <script src="https://cdn.jsdelivr.net/npm/marked@4.0.12/marked.min.js"></script>
-    <script>
-        // 如果主 CDN 加载失败，尝试备用 CDN
-        if (typeof marked === 'undefined') {
-            document.write('<script src="https://unpkg.com/marked@4.0.12/marked.min.js"><\/script>');
-        }
-    </script>
-    <script>
-        // 二次检查，如果仍然失败，尝试 cdnjs
-        if (typeof marked === 'undefined') {
-            document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.0.12/marked.min.js"><\/script>');
-        }
-    </script>
+    <!-- Marked.js 由下方脚本在打开文章时按需加载（jsDelivr → unpkg → cdnjs），列表页不阻塞渲染 -->
 </head>
 <body>
 
@@ -300,43 +288,83 @@
             return html;
         }
 
+        // === Marked.js 按需加载：只在打开文章时拉取，三个 CDN 依次回退，成功后复用 ===
+        const MARKED_SOURCES = [
+            'https://cdn.jsdelivr.net/npm/marked@4.0.12/marked.min.js',
+            'https://unpkg.com/marked@4.0.12/marked.min.js',
+            'https://cdnjs.cloudflare.com/ajax/libs/marked/4.0.12/marked.min.js'
+        ];
+        let markedPromise = null;
+
+        function loadScript(src) {
+            return new Promise((resolve, reject) => {
+                const s = document.createElement('script');
+                s.src = src;
+                s.async = true;
+                s.onload = () => resolve();
+                s.onerror = () => { s.remove(); reject(new Error(src)); };
+                document.head.appendChild(s);
+            });
+        }
+
+        function loadMarked() {
+            if (window.marked) return Promise.resolve(window.marked);
+            if (!markedPromise) {
+                markedPromise = MARKED_SOURCES.reduce(
+                    (chain, src) => chain.catch(() => loadScript(src)),
+                    Promise.reject()
+                ).then(() => {
+                    if (!window.marked) throw new Error('marked unavailable');
+                    return window.marked;
+                }).catch(error => {
+                    markedPromise = null;   // 允许下次打开文章时重试
+                    throw error;
+                });
+            }
+            return markedPromise;
+        }
+
         // === 加载并渲染 Markdown 文章 ===
+        let activeArticle = '';
+
         function loadMarkdown(file) {
             const contentDiv = document.getElementById('markdown-content');
             contentDiv.innerHTML = '<div class="loading-block"><i class="fas fa-spinner fa-spin fa-2x"></i><p>加载中...</p></div>';
+            document.getElementById('article-comments').innerHTML = '';
+            activeArticle = file;
 
-            document.getElementById('blog-list-view').style.display = 'none';
-            document.getElementById('blog-detail-view').style.display = 'block';
-            window.scrollTo(0, 0);
+            listView.style.display = 'none';
+            detailView.style.display = 'block';
+            window.scrollTo({ top: 0, behavior: 'instant' });
 
-            if (typeof marked === 'undefined') {
-                contentDiv.innerHTML = `<div class="error-block">
-                    <i class="fas fa-exclamation-triangle fa-2x"></i>
-                    <p>Markdown 解析库加载失败</p>
-                    <p style="font-size:0.9rem;">请检查网络连接后刷新页面</p>
-                </div>`;
-                return;
-            }
+            const fetchArticle = fetch(file).then(response => {
+                if (!response.ok) throw new Error('文章加载失败');
+                return response.text();
+            });
 
-            fetch(file)
-                .then(response => {
-                    if (!response.ok) throw new Error('文章加载失败');
-                    return response.text();
-                })
-                .then(text => {
+            Promise.all([
+                loadMarked().catch(() => { throw new Error('Markdown 解析库加载失败，请检查网络后刷新'); }),
+                fetchArticle
+            ])
+                .then(([md, text]) => {
+                    if (activeArticle !== file) return;   // 期间已切换到别的文章 / 返回列表
                     const { meta, body } = parseFrontMatter(text);
-                    contentDiv.innerHTML = marked.parse(body);
+                    contentDiv.innerHTML = md.parse(body);
                     // 元信息头插在正文 H1 之后（无 H1 则置顶）
                     const head = document.createElement('div');
                     head.className = 'article-head';
                     head.innerHTML = buildArticleHead(meta, body);
                     const h1 = contentDiv.querySelector('h1');
                     if (h1) h1.after(head); else contentDiv.prepend(head);
+                    const title = meta.title || (h1 && h1.textContent.trim());
+                    if (title) document.title = `${title} - ${BASE_TITLE}`;
                     loadComments(file);
                 })
                 .catch(error => {
+                    if (activeArticle !== file) return;
                     contentDiv.innerHTML = `<div class="error-block">
-                        <i class="fas fa-exclamation-triangle"></i> 文章加载出错: ${error.message}
+                        <i class="fas fa-exclamation-triangle fa-2x"></i>
+                        <p>${error.message}</p>
                     </div>`;
                 });
         }

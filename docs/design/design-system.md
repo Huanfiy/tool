@@ -170,11 +170,12 @@ Three.js 工作室是 Huanfly 个人设计风格在三维空间中的延展。
 |---|---|---|---|
 | LXGW WenKai Screen | 1.7.0 | jsDelivr（非阻塞加载，两个直链 CSS） | 落到 PingFang SC / 微软雅黑，布局不变 |
 | Font Awesome | 6.4.0 | cdnjs | 图标缺失，文字信息完整 |
-| Marked.js | 4.0.12 | jsDelivr → unpkg → cdnjs 三级回退 | 三源均失败时文章页给出显式错误提示 |
+| Marked.js | 4.0.12 | 打开文章时按需异步加载，jsDelivr → unpkg → cdnjs 三级回退；列表页不加载 | 三源均失败时文章页给出显式错误提示，下次打开文章会重试 |
 | busuanzi | 2.3 | `busuanzi.ibruce.info` | 页脚访问统计保持隐藏，不影响导航与正文 |
 | giscus | 未固定版本 | `giscus.app/client.js` | `categoryId` 为空或脚本失败时不显示评论区，不影响文章阅读 |
 
 Marked.js 与 giscus 仅由 `blog.html` 使用；giscus 当前因 `categoryId` 为空而处于停用状态。busuanzi 由 `js/script.js` 延迟加载。
+各页 `<head>` 对 `cdn.jsdelivr.net` 与 `cdnjs.cloudflare.com` 做 `preconnect`；全站不再引用 Google Fonts（国内网络会阻塞渲染）。
 
 ## 8. 兼容性边界
 
