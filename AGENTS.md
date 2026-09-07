@@ -26,14 +26,13 @@ huanfly.com 的开源纯静态个人网站：原生 HTML5 + CSS3 + JavaScript，
 | [docs/design/](docs/design/) | 拍板设计：设计系统、博客发布流程、主题封面、发布产物与部署边界 |
 | [docs/testing/](docs/testing/) | 工作室户外空间与显示器的验证记录、实测数据与待验收项 |
 | [docs/todo/](docs/todo/) | 已评审但暂缓的待办，一项一文件 |
-| [agents/plans/](agents/plans/) | 已搁置的通用 Server 研究计划；随仓库版本化，但不进入静态产物 |
 | [manifest.webmanifest](manifest.webmanifest)、[robots.txt](robots.txt)、[sitemap.xml](sitemap.xml) | PWA 与 SEO；四个主页面带 OG meta 与 canonical URL |
 
 ## 必须遵守
 
 - 不引入前端框架、构建步骤、包管理器或应用后端；站点按原样托管，不新增资源编译环节。
 - 终端永远是浏览器内的访客模拟：不得添加 shell、PTY、终端 socket 或命令执行端点。Robot 只保留 `studio.html` 内的「研究中」静态占位，没有专用脚本、API 请求、聊天或配置存储。
-- `agents/plans/2026-09-06-general-server.md` 是已搁置的研究计划，不是实现指令：没有新请求不得恢复；恢复前先重新盘点代码，其原 Robot 后端基线已移除。
+- 通用 Server / Robot 后端研究计划已移出工作区，git 历史 `2d9c4e7` 可查；没有新请求不得重建后端，恢复研究前先重新盘点代码。
 - 部署只走 `run.sh deploy`：要求干净工作区，用 `git archive` 打包目标提交、写入 `deploy-version.json`、校验产物、延迟 rsync 更新并做通用在线冒烟；`DEPLOY_TARGET`、`PUBLIC_BASE_URL` 必填，`DEPLOY_REQUIRED_REF` 可选限定可部署提交。Web 服务器、TLS、DNS、缓存、凭据与主机专有配置一律留在仓库外，边界见 [发布产物与外部部署边界](docs/design/deployment-architecture.md)。
 - 修改工作室前先读 [design/workbench.md](design/workbench.md)，并遵守以下未收入该文件的实现约束：
   - 小精灵不合批，拾取方式同设备但永不打开设备面板；语料仅离线内置，未来任何模型 provider 都必须在浏览器中免密钥。

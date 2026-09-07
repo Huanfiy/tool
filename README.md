@@ -47,7 +47,6 @@
 ├── js/studio-spirit-bubble.js # 跟随 3D 锚点的气泡便签
 ├── js/studio-apps.js     # huanfly-os：桌面 / 模拟终端 UI / 相册
 ├── js/studio-guest.js    # 纯浏览器模拟命令；不存在真实终端
-├── agents/plans/         # 已搁置的研究计划，不随网站发布
 ├── posts/                # Markdown 博客文章
 ├── tools/                # 独立网页工具
 │   ├── keyboard.html
@@ -79,7 +78,7 @@
 
 终端始终是浏览器内的模拟命令，不连接访客电脑或服务器，也没有管理员解锁模式。无需启动任何终端服务。
 
-Robot 目前只保留显示器内的入口和「研究中」静态界面，没有聊天、配置、网络请求或应用后端。通用 Server 计划保留在 `agents/plans/2026-09-06-general-server.md`，已搁置，暂不实现。
+Robot 目前只保留显示器内的入口和「研究中」静态界面，没有聊天、配置、网络请求或应用后端。通用 Server 计划已移出工作区（git 历史 `2d9c4e7` 可查），暂不实现。
 
 应用回归测试：
 
