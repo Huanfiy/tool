@@ -42,6 +42,9 @@
 ├── js/studio-landscape.js # 同级庭院、连续地表、闭合背景与实例化户外动效
 ├── js/studio-landscape-art.js # 确定性的静态日夜田园画布
 ├── js/studio-figures.js  # 置物架上的三个程序化手办
+├── js/studio-spirit.js   # 桌上的小精灵：程序化造型与待机 / 戳一戳动画
+├── js/studio-spirit-speech.js # 小精灵语料与可替换的 speech provider 接口
+├── js/studio-spirit-bubble.js # 跟随 3D 锚点的气泡便签
 ├── js/studio-apps.js     # huanfly-os：桌面 / 模拟终端 UI / 相册
 ├── js/studio-guest.js    # 纯浏览器模拟命令；不存在真实终端
 ├── agents/plans/         # 已搁置的研究计划，不随网站发布
