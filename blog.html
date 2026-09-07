@@ -213,22 +213,50 @@
             });
 
         // === Hash 路由：文章可直链分享，浏览器后退可返回列表 ===
-        function openPost(file) {
-            location.hash = 'post=' + encodeURIComponent(file);
+        // 卡片是真实的 <a href="#post=…">，点击、中键、键盘回车都走浏览器原生导航，这里只响应 hash 变化。
+        const BASE_TITLE = document.title;
+        const listView = document.getElementById('blog-list-view');
+        const detailView = document.getElementById('blog-detail-view');
+        let enteredFromList = false;   // 本次文章视图是否由本页列表进入（决定「返回」是否可用 history.back）
+        let listScrollY = 0;
+
+        const postFileFromHash = url => {
+            const match = (url || '').match(/#post=(.+)$/);
+            return match ? decodeURIComponent(match[1]) : '';
+        };
+
+        function showList() {
+            detailView.style.display = 'none';
+            listView.style.display = 'block';
+            document.title = BASE_TITLE;
+            window.scrollTo({ top: listScrollY, behavior: 'instant' });
         }
 
-        function handleHashRoute() {
-            const match = location.hash.match(/^#post=(.+)$/);
-            if (match) {
-                loadMarkdown(decodeURIComponent(match[1]));
+        function handleHashRoute(event) {
+            const file = postFileFromHash(location.hash);
+            if (file) {
+                if (event && !postFileFromHash(event.oldURL)) {
+                    enteredFromList = true;
+                    listScrollY = window.scrollY;
+                }
+                loadMarkdown(file);
             } else {
-                document.getElementById('blog-detail-view').style.display = 'none';
-                document.getElementById('blog-list-view').style.display = 'block';
+                enteredFromList = false;
+                showList();
+            }
+        }
+
+        function closeMarkdown() {
+            if (enteredFromList) {
+                history.back();   // 触发 hashchange → showList，不额外堆历史记录
+            } else {
+                history.replaceState(null, '', location.pathname + location.search);
+                showList();
             }
         }
 
         window.addEventListener('hashchange', handleHashRoute);
-        if (location.hash.startsWith('#post=')) handleHashRoute();
+        // 首次路由分发放在脚本末尾：loadMarkdown 依赖下方以 let/const 声明的状态
 
         // 搜索功能
         document.getElementById('blog-search-input').addEventListener('input', applyFilters);
@@ -359,12 +387,8 @@
             iframe.contentWindow.postMessage({ giscus: { setConfig: { theme } } }, 'https://giscus.app');
         }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
-        function closeMarkdown() {
-            // pushState 清空 hash 不触发 hashchange，视图在下方手动切回
-            history.pushState('', document.title, location.pathname + location.search);
-            document.getElementById('blog-detail-view').style.display = 'none';
-            document.getElementById('blog-list-view').style.display = 'block';
-        }
+        // === 首次路由：直链 #post=… 时直接进入文章 ===
+        if (postFileFromHash(location.hash)) handleHashRoute();
     </script>
 </body>
 </html>
