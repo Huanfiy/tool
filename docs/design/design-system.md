@@ -130,7 +130,7 @@ Three.js 工作室是 Huanfly 个人设计风格在三维空间中的延展。
 - **Markdown 阅读**（`.markdown-body`）：纸面卡片，`h1/h2` 虚线分隔，无序列表项前缀 `✦`，
   代码块深墨绿底（`#253029`，深色模式 `#101711`），引用块绿色系提示条；
 - **文章信息**：`.article-meta` 展示日期、标签、字数与预计阅读时长；存在 `ai_summary` 时渲染 `.ai-summary`；
-- **文章评论**：`.giscus-wrap` 预留 giscus 容器。`blog.html` 中 `GISCUS_CONFIG.categoryId` 为空时不加载评论脚本；
+- **文章评论**：`.article-comments` 预留 giscus 容器。`blog.html` 中 `GISCUS_CONFIG.categoryId` 为空时不加载评论脚本；
 - **时间线**：`.timeline` 虚线枝干 + wobble 圆点节点，节点颜色取 `--tone`；
 - **Toast / Lightbox**：保持 `js/interests.js` 原有 API（`showToast` / `openLightbox`），仅重绘外观。
 
