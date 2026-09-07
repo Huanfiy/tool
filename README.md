@@ -66,7 +66,7 @@
 
 **工作室回归测试：**
 
-启动本地服务器后打开 `http://localhost:8080/tests/studio-outdoor.html`，运行窗扇、景观、输出颜色、资源释放和重复初始化的浏览器契约测试。测试不需要包管理器，不随部署发布。完整视口 / 交互记录及真机待验收项见 [连续户外空间验证记录](docs/testing/studio-continuous-outdoor.md)；软件渲染与移动视口模拟不能替代真机性能验收。
+启动本地服务器后打开 `http://localhost:8080/tests/studio-outdoor.html`，运行窗扇、景观、输出颜色、资源释放和重复初始化的浏览器契约测试。测试不需要包管理器，不随部署发布。软件渲染与移动视口模拟不能替代真机性能验收，待验收项见 [工作室真机验收](docs/todo/studio-real-device-acceptance.md)。
 
 **生成文章索引：**
 

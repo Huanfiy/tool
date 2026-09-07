@@ -31,8 +31,8 @@ const helpers = {
     group(parent,x=0,y=0,z=0) { const group=new THREE.Group();group.position.set(x,y,z);parent.add(group);return group; },
     material(name,options) { return own(new THREE.MeshStandardMaterial(options)); }
 };
-// A module fixture, not a copy of the room camera presets. Full camera/interaction
-// acceptance is recorded separately in docs/testing/studio-continuous-outdoor.md.
+// A module fixture, not a copy of the room camera presets. Real-device acceptance
+// is tracked in docs/todo/studio-real-device-acceptance.md.
 const layout = {
     wall:{outerX:-5.33}, ground:{top:-.15,fadeCenter:[-9.5,0],fadeRadii:[16,14],yard:{center:[0,0],half:[8.8,7.3],feather:[4.5,4.5]}},
     background:{center:[-5.33,0,0],radius:80,horizonUV:.5}, sunDirection:[-4.4,7.8,2.7],

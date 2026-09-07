@@ -24,8 +24,7 @@ huanfly.com 的开源纯静态个人网站：原生 HTML5 + CSS3 + JavaScript，
 | [tests/](tests/) | Node 契约测试、浏览器契约页与可选 Chromium 回归；随 `.gitattributes` 排除，不进入部署产物 |
 | [docs/design/workbench.md](docs/design/workbench.md) | 工作室 18 项要素约束、镜头预设构图、显示器直接交互、终端与 Robot 能力边界；改工作室前必读 |
 | [docs/design/](docs/design/) | 拍板设计：设计系统、博客发布流程、主题封面、发布产物与部署边界 |
-| [docs/testing/](docs/testing/) | 工作室户外空间与显示器的验证记录、实测数据与待验收项 |
-| [docs/todo/](docs/todo/) | 已评审但暂缓的待办，一项一文件 |
+| [docs/todo/](docs/todo/) | 已评审但暂缓的待办，一项一文件（当前：启用 giscus 评论、工作室真机验收） |
 | [manifest.webmanifest](manifest.webmanifest)、[robots.txt](robots.txt)、[sitemap.xml](sitemap.xml) | PWA 与 SEO；四个主页面带 OG meta 与 canonical URL |
 
 ## 必须遵守
@@ -59,7 +58,7 @@ DEPLOY_TARGET=... PUBLIC_BASE_URL=... ./run.sh deploy        # 部署 HEAD
 DEPLOY_TARGET=... PUBLIC_BASE_URL=... ./run.sh deploy <ref>  # 部署指定提交，含回滚目标
 ```
 
-- 改动工作室后：启动本地服务器并打开 `tests/studio-outdoor.html` 运行浏览器契约测试（复用同一 pinned Three.js CDN，无需包管理器）；有 Puppeteer 环境时运行 `PUPPETEER_MODULE=/abs/path/puppeteer-core node tests/studio-apps-browser.cjs`。软件渲染与移动视口模拟不等于真机性能验收，剩余待验收项见 [docs/testing/](docs/testing/)。
+- 改动工作室后：启动本地服务器并打开 `tests/studio-outdoor.html` 运行浏览器契约测试（复用同一 pinned Three.js CDN，无需包管理器）；有 Puppeteer 环境时运行 `PUPPETEER_MODULE=/abs/path/puppeteer-core node tests/studio-apps-browser.cjs`。软件渲染与移动视口模拟不等于真机性能验收，待验收项见 [工作室真机验收](docs/todo/studio-real-device-acceptance.md)。
 - 改动博客封面或文章索引后：`node --test tests/blog-covers.test.js`，浏览器页 `tests/blog-covers.html`。
 - 改动键位练习算法后：`node tools/keyboard-algo.test.js`。
 
@@ -72,6 +71,6 @@ DEPLOY_TARGET=... PUBLIC_BASE_URL=... ./run.sh deploy <ref>  # 部署指定提�
 - 调整配色、组件或整体视觉：读 [设计系统](docs/design/design-system.md)。
 - 新增或修改文章、front matter、索引生成：读 [博客文章索引与发布流程](docs/design/blog-auto-publish.md)；涉及封面读 [博客主题 SVG 封面](docs/design/blog-covers.md)。
 - 修改 `run.sh deploy` 或 `.gitattributes` 导出边界：读 [发布产物与外部部署边界](docs/design/deployment-architecture.md)。
-- 修改显示器、相册或终端交互：读 [工作室要素约束](docs/design/workbench.md)「显示屏的直接交互」与 [显示器验证记录](docs/testing/studio-monitor.md)。
-- 修改窗景、庭院、镜头范围或户外动效：读 [工作室要素约束](docs/design/workbench.md)「窗外景观与动效」与 [连续户外空间验证记录](docs/testing/studio-continuous-outdoor.md)。
+- 修改显示器、相册或终端交互：读 [工作室要素约束](docs/design/workbench.md)「显示屏的直接交互」，回归跑 `tests/studio-apps-browser.cjs`。
+- 修改窗景、庭院、镜头范围或户外动效：读 [工作室要素约束](docs/design/workbench.md)「窗外景观与动效」，回归跑 `tests/studio-outdoor.html`。
 - 启用评论区：读 [docs/todo/enable-giscus-comments.md](docs/todo/enable-giscus-comments.md)。
