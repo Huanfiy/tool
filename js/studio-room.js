@@ -677,58 +677,113 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     const smokeTexture=canvasTexture(128,128,(ctx,w,h)=>{const g=ctx.createRadialGradient(w/2,h/2,0,w/2,h/2,w/2);g.addColorStop(0,'rgba(255,255,255,.55)');g.addColorStop(.45,'rgba(255,255,255,.28)');g.addColorStop(1,'rgba(255,255,255,0)');ctx.fillStyle=g;ctx.fillRect(0,0,w,h);}).texture;
     const smoke=new THREE.Points(smokeGeo,new THREE.PointsMaterial({color:'#8a9a94',size:.24,map:smokeTexture,transparent:true,opacity:.5,depthWrite:false}));smoke.frustumCulled=false;solder.root.add(smoke);
 
-    // FDM printer stands on its own rubber feet at the front of the window wall.
-    const printer=device('printer',-4.15,-.78,3.0,[-4.15,2.8,3.0]);
-    for(const x of [-.56,.56])for(const z of [-.50,.50])cylinder(printer.fixed,.075,.075,.10,x,.86,z,m.black,12);
-    box(printer.fixed,1.45,.28,1.35,0,1.03,0,m.black,.065);
-    box(printer.fixed,1.43,.24,.10,0,1.07,.69,m.orange,.035);
-    for(const x of [-.68,.68])for(const z of [-.59,.59]){
-        box(printer.fixed,.08,1.93,.08,x,2.07,z,m.metal,.015);
-        bar(printer.fixed,[x*.85,1.18,z*.87],[x*.85,2.96,z*.87],.018,m.silver);
-        box(printer.fixed,.13,.14,.15,x,2.96,z,m.orange,.018);
-    }
-    box(printer.fixed,1.45,.09,.08,0,3.02,.59,m.metal);
-    box(printer.fixed,1.45,.09,.08,0,3.02,-.59,m.metal);
-    for(const x of [-.68,.68])box(printer.fixed,.08,.09,1.20,x,3.02,0,m.metal);
-    // Smoked acrylic sides and door with a solid back and top: the enclosure reads as
-    // a closed machine instead of a bare frame. Panes never write depth or block picking.
+    // Enclosed CoreXY printer tucked under the window sill: the solid back stands
+    // against the wall and the glass door faces into the room (world +x). It is
+    // modelled with +z as the door side and the root turned a quarter turn, so the
+    // spool holder on its -x flank ends up on the side facing the open front.
+    const printer=device('printer',-4.42,floor.top,2.85,[-4.42,1.62,2.85]);printer.root.rotation.y=Math.PI/2;
+    const pW=1.40,pD=1.22,pBase=.28,pTop=1.26,pMid=(pBase+pTop)/2;
+    const partMat=material('printed',{color:'#81c6b0',roughness:.78});
+    // Smoked glass never writes depth or blocks picking; the frame around it does.
     const acrylic=material('printerAcrylic',{color:'#b9cbc0',transparent:true,opacity:.22,roughness:.18,metalness:.08,depthWrite:false,side:THREE.DoubleSide});
-    for(const x of [-.66,.66]){const pane=new THREE.Mesh(new THREE.PlaneGeometry(1.10,1.80),acrylic);pane.position.set(x,2.07,0);pane.rotation.y=Math.PI/2;printer.fixed.add(pane);}
-    const door=new THREE.Mesh(new THREE.PlaneGeometry(1.28,1.80),acrylic);door.position.set(0,2.07,.60);printer.fixed.add(door);
-    box(printer.fixed,1.28,1.80,.03,0,2.07,-.585,m.black,.01);
-    box(printer.fixed,1.28,.03,1.12,0,2.99,0,m.metal,.01);
-    bar(printer.fixed,[.48,1.75,.64],[.48,2.25,.64],.018,m.silver);
-    box(printer.fixed,1.12,.055,1.03,0,1.33,0,m.silver,.018);
-    box(printer.fixed,1.08,.015,.99,0,1.366,0,m.black,.012);
-    textLabel(printer.fixed,'one layer at a time',.95,.12,0,1.08,.747,{size:69,color:'#594c39',align:'center',font:'Georgia, serif'});
-    const gantry=group(printer.root,0,1.68,0);
-    box(gantry,1.30,.08,.10,0,0,-.10,m.silver,.012);
-    for(const x of [-.66,.66])box(gantry,.16,.19,.25,x,0,-.10,m.black,.015);
+    const pane=(w,h,x,y,z,ry=0,rx=0)=>{const p=new THREE.Mesh(new THREE.PlaneGeometry(w,h),acrylic);p.position.set(x,y,z);p.rotation.set(rx,ry,0);printer.fixed.add(p);return p;};
+    for(const x of [-.55,.55])for(const z of [-.46,.46])cylinder(printer.fixed,.05,.05,.06,x,.03,z,toolDark,12);
+    box(printer.fixed,pW,pBase-.06,pD,0,.06+(pBase-.06)/2,0,m.black,.04);
+    // Corner posts, solid back, framed side windows, a hinged door and a glass lid.
+    for(const x of [-1,1])for(const z of [-1,1])box(printer.fixed,.07,pTop-pBase,.07,x*(pW/2-.035),pMid,z*(pD/2-.035),m.black,.012);
+    box(printer.fixed,pW-.14,pTop-pBase,.03,0,pMid,-(pD/2-.035),m.black,.008);
+    for(const side of [-1,1]){
+        const x=side*(pW/2-.02);
+        for(const y of [pBase+.0175,pTop-.0175])box(printer.fixed,.04,.035,pD-.14,x,y,0,m.metal,.006);
+        pane(pD-.14,pTop-pBase-.07,x,pMid,0,Math.PI/2);
+    }
+    for(const y of [pBase+.0175,pTop-.0175])box(printer.fixed,pW-.14,.035,.03,0,y,pD/2-.02,m.metal,.006);
+    for(const x of [-1,1])box(printer.fixed,.035,pTop-pBase-.07,.03,x*(pW/2-.0875),pMid,pD/2-.02,m.metal,.006);
+    pane(pW-.21,pTop-pBase-.07,0,pMid,pD/2-.02);
+    for(const y of [.50,1.05])cylinder(printer.fixed,.02,.02,.08,pW/2-.035,y,pD/2+.006,m.silver,10);
+    const handleX=-(pW/2-.14);
+    bar(printer.fixed,[handleX,.66,pD/2+.045],[handleX,.90,pD/2+.045],.012,m.silver);
+    for(const y of [.68,.88])bar(printer.fixed,[handleX,y,pD/2-.005],[handleX,y,pD/2+.045],.009,m.silver);
+    for(const z of [-1,1])box(printer.fixed,pW,.08,.11,0,pTop+.04,z*(pD/2-.055),m.black,.02);
+    for(const x of [-1,1])box(printer.fixed,.11,.08,pD-.22,x*(pW/2-.055),pTop+.04,0,m.black,.02);
+    pane(pW-.22,pD-.22,0,pTop+.05,0,0,-Math.PI/2);
+    // Chamber fittings: light strip, camera, Y rails for the gantry and the Z screws.
+    emissiveStrip(printer.fixed,pW-.34,0,pTop-.03,pD/2-.09,m.amberGlow);
+    box(printer.fixed,.05,.04,.04,-(pW/2-.13),pTop-.07,pD/2-.11,toolDark,.008);
+    for(const x of [-1,1])box(printer.fixed,.035,.035,pD-.20,x*(pW/2-.10),1.16,0,m.silver,.005);
+    for(const x of [-.42,.42])bar(printer.fixed,[x,pBase+.01,-(pD/2-.12)],[x,pTop-.01,-(pD/2-.12)],.012,m.silver);
+    // Base front: status screen at the door-handle end, a motto and a power LED.
+    box(printer.fixed,.42,.21,.03,-.40,.17,pD/2+.01,toolDark,.012);
+    const printerTex=canvasTexture(256,112,()=>{});surface(printer.root,.36,.155,-.40,.17,pD/2+.026,printerTex.texture);
+    textLabel(printer.fixed,'one layer at a time',.60,.08,.24,.17,pD/2+.002,{size:69,color:'#b6c2b4',align:'center',font:'Georgia, serif'});
+    box(printer.fixed,.03,.012,.01,.62,.20,pD/2+.003,m.mintGlow,.003);
+    // Spool on a side bracket; the PTFE tube climbs over the lid into a rear entry.
+    box(printer.fixed,.07,.05,.07,-.52,pTop+.105,-(pD/2-.055),toolDark,.01);
+    box(printer.fixed,.03,.16,.14,-(pW/2+.015),1.02,-.50,m.metal,.006);
+    bar(printer.fixed,[-(pW/2+.02),1.02,-.50],[-(pW/2+.20),1.02,-.50],.022,m.silver);
+    cylinder(printer.fixed,.035,.035,.016,-(pW/2+.205),1.02,-.50,toolDark,12).rotation.z=Math.PI/2;
+    const spoolX=-(pW/2+.10);
+    cylinder(printer.fixed,.19,.19,.13,spoolX,1.02,-.50,partMat,32).rotation.z=Math.PI/2;
+    for(const dx of [-.07,.07])cylinder(printer.fixed,.225,.225,.018,spoolX+dx,1.02,-.50,toolDark,32).rotation.z=Math.PI/2;
+    cable(printer.fixed,[[spoolX,1.21,-.44],[spoolX-.04,1.36,-.47],[-.70,1.46,-.52],[-.56,1.43,-.555],[-.52,1.39,-.555]],m.cream,.011);
+    // CoreXY gantry: two carbon rods between Y carriages carry the toolhead; the
+    // rods stay at the top of the chamber while the bed sinks as the part grows.
+    const gantry=group(printer.root,0,1.16,0);
+    for(const z of [-.05,.05])cylinder(gantry,.016,.016,pW-.22,0,0,z,m.black,10).rotation.z=Math.PI/2;
+    for(const x of [-1,1])box(gantry,.10,.09,.16,x*(pW/2-.10),0,0,toolDark,.012);
     const printHead=group(gantry);
-    box(printHead,.28,.30,.27,0,-.08,-.08,m.orange,.035);
-    box(printHead,.17,.17,.04,0,-.04,.075,m.black,.025);
-    cylinder(printHead,.08,.08,.02,0,-.04,.104,m.silver,16).rotation.x=Math.PI/2;
-    cylinder(printHead,.047,.014,.09,0,-.275,-.08,m.gold,12);
-    glow(printHead,0,-.3,-.08,.38,'#ffc580');
-    const spool=group(printer.fixed,0,3.18,-.12);
-    const roll=cylinder(spool,.32,.32,.24,0,.13,0,m.cream,32);roll.rotation.z=Math.PI/2;
-    for(const x of [-.14,.14]){const rim=cylinder(spool,.37,.37,.03,x,.13,0,m.orange,32);rim.rotation.z=Math.PI/2;}
-    bar(printer.fixed,[-.30,3.02,-.12],[-.30,3.33,-.12],.035,m.black);
+    box(printHead,.22,.30,.20,0,-.11,.03,toolDark,.02);
+    box(printHead,.20,.20,.03,0,-.13,.145,m.cream,.012);
+    cylinder(printHead,.06,.06,.008,0,-.10,.165,toolDark,20).rotation.x=Math.PI/2;
+    cylinder(printHead,.02,.02,.012,0,-.10,.168,m.silver,12).rotation.x=Math.PI/2;
+    for(let i=0;i<4;i++)cylinder(printHead,.036,.036,.008,0,-.275-i*.016,.03,m.silver,14);
+    box(printHead,.05,.03,.05,0,-.35,.03,toolDark,.004);
+    taper(printHead,[0,-.365,.03],[0,-.41,.03],.016,.005,m.gold,10);
+    box(printHead,.05,.045,.03,0,-.33,.085,m.cream,.008);
+    const nozzleGlow=glow(printHead,0,-.41,.03,.3,'#ffc580');
+    // Heated bed on a rear Z carriage; home puts the textured plate under the nozzle.
+    const bedHome=.737,bed=group(printer.root,0,bedHome,0);
+    box(bed,.92,.03,.86,0,-.015,0,m.black,.006);
+    // Textured build plate reads as dark PEI without spending a texture slot.
+    box(bed,.90,.008,.84,0,.004,0,material('buildPlate',{color:'#2b3735',roughness:.5,metalness:.25}),.002);
+    box(bed,.10,.04,.80,0,-.05,-.10,toolDark,.006);
+    box(bed,.90,.05,.06,0,-.045,-(pD/2-.12),toolDark,.008);
+    for(const x of [-.42,.42])box(bed,.08,.10,.08,x,-.03,-(pD/2-.12),toolDark,.01);
+    // The part is a quadcopter frame: one outline joins the centre plate, four
+    // tapered arms and their motor mounts (with bolt holes), then a stacked cage
+    // rises from the centre. Each layer is its own mesh so the print grows visibly.
+    const quadFrame=(()=>{
+        const a=.15,b=.11,w=.03,r1=.36,rm=.065,c=Math.SQRT1_2,reach=Math.sqrt(rm*rm-w*w),beta=Math.asin(w/rm),s=new THREE.Shape();
+        for(let k=0;k<4;k++){
+            const ang=Math.PI/4+k*Math.PI/2,d=[Math.cos(ang),Math.sin(ang)],n=[-d[1],d[0]];
+            const tR=(k%2?b:a)/c-w,tL=(k%2?a:b)/c-w,t0=r1-reach;
+            const at=(t,side)=>[t*d[0]+side*w*n[0],t*d[1]+side*w*n[1]];
+            k?s.lineTo(...at(tR,-1)):s.moveTo(...at(tR,-1));
+            s.lineTo(...at(t0,-1));s.absarc(r1*d[0],r1*d[1],rm,ang-Math.PI+beta,ang+Math.PI-beta,false);s.lineTo(...at(tL,1));
+            const hole=(x,y,r)=>s.holes.push(new THREE.Path().absarc(x,y,r,0,Math.PI*2,true));
+            hole(r1*d[0],r1*d[1],.018);
+            for(let j=0;j<4;j++){const p=ang+Math.PI/4+j*Math.PI/2;hole(r1*d[0]+.04*Math.cos(p),r1*d[1]+.04*Math.sin(p),.006);}
+        }
+        s.closePath();
+        for(const x of [-.07,.07])for(const y of [-.045,.045])s.holes.push(new THREE.Path().absarc(x,y,.011,0,Math.PI*2,true));
+        for(const y of [-.082,.082]){const slot=new THREE.Path();slot.moveTo(-.035,y-.007);slot.lineTo(-.035,y+.007);slot.lineTo(.035,y+.007);slot.lineTo(.035,y-.007);slot.closePath();s.holes.push(slot);}
+        return s;
+    })();
+    const roundedRect=(hw,hh,r)=>{const p=new THREE.Shape();p.moveTo(-hw+r,-hh);p.lineTo(hw-r,-hh);p.absarc(hw-r,-hh+r,r,-Math.PI/2,0,false);p.lineTo(hw,hh-r);p.absarc(hw-r,hh-r,r,0,Math.PI/2,false);p.lineTo(-hw+r,hh);p.absarc(-hw+r,hh-r,r,Math.PI/2,Math.PI,false);p.lineTo(-hw,-hh+r);p.absarc(-hw+r,-hh+r,r,Math.PI,Math.PI*1.5,false);p.closePath();return p;};
+    const cage=roundedRect(.13,.09,.025);cage.holes.push(roundedRect(.095,.055,.015));
+    const layerH=.014,frameLayers=5,printLayers=16,printHeight=printLayers*layerH;
+    const frameGeo=own(new THREE.ExtrudeGeometry(quadFrame,{depth:layerH,bevelEnabled:false,curveSegments:8}));
+    const cageGeo=own(new THREE.ExtrudeGeometry(cage,{depth:layerH,bevelEnabled:false,curveSegments:8}));
+    const printPart=group(bed,0,.008,0);
+    for(let i=0;i<printLayers;i++){
+        const band=new THREE.Mesh(i<frameLayers?frameGeo:cageGeo,partMat);band.rotation.x=-Math.PI/2;band.position.y=i*layerH;
+        if(i%2)band.scale.set(.985,1,.985);
+        band.castShadow=true;band.receiveShadow=true;printPart.add(band);
+    }
     const filamentPositions=new Float32Array(25*3);
     const filamentGeometry=new THREE.BufferGeometry();filamentGeometry.setAttribute('position',new THREE.BufferAttribute(filamentPositions,3));
     const filament=new THREE.Line(filamentGeometry,new THREE.LineBasicMaterial({color:'#e8e2cc'}));printer.root.add(filament);
-    emissiveStrip(printer.fixed,1.17,0,2.96,-.48,m.amberGlow);
-    const printPart=group(printer.root,0,1.38,0);
-    const partMat=material('printed',{color:'#81c6b0',roughness:.78});
-    // A fluted enclosure: horizontal bands visibly reveal the layers being printed.
-    for(let i=0;i<30;i++){
-        const shape=new THREE.Shape(),radius=.245+.04*Math.sin(i*.23);
-        for(let j=0;j<=6;j++){const a=j*Math.PI/3;j?shape.lineTo(Math.cos(a)*radius,Math.sin(a)*radius):shape.moveTo(radius,0);}
-        if(i>1){const hole=new THREE.Path();for(let j=0;j<=6;j++){const a=-j*Math.PI/3;j?hole.lineTo(Math.cos(a)*(radius-.06),Math.sin(a)*(radius-.06)):hole.moveTo(radius-.06,0);}shape.holes.push(hole);}
-        const band=new THREE.Mesh(new THREE.ExtrudeGeometry(shape,{depth:.019,bevelEnabled:false,steps:1}),partMat);band.rotation.x=-Math.PI/2;band.position.y=i*.02;band.castShadow=true;band.receiveShadow=true;printPart.add(band);
-    }
-    const printerTex=canvasTexture(256,112,()=>{});surface(printer.root,.38,.16,.44,1.069,.751,printerTex.texture);
-    contact(printer.fixed,1.9,1.8,0,.815,0);
+    contact(printer.fixed,1.6,1.5,0,.01,0);
 
     // Robotics island with a brushless-motor dynamometer and articulated pick-and-place arm.
     const island=group(architecture,-.55,0,1.49);
@@ -742,24 +797,117 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
         box(island,.11,.12,1.56,x,1.03,0,deskSteel);
         strut(island,[x,.42,.77],[x,1.03,-.60]);
     }
+    // Brushless bench: an outrunner on an encoder pillar, its three phases wired to
+    // an FOC driver board on the same plate, and a tilted readout of the phase
+    // currents. Local -z faces the room, so labels and the screen are turned that way.
     const motor=device('motor',.65,1.30,1.64,[.80,2.29,1.95]);
-    box(motor.fixed,1.35,.06,1.17,0,0,0,m.black,.045);
-    for(const x of [-.50,.50])for(const z of [-.41,.41])cylinder(motor.fixed,.037,.037,.03,x,.04,z,m.silver,12);
-    box(motor.fixed,.54,.065,.60,.03,.08,-.03,m.silver);
-    cylinder(motor.fixed,.24,.27,.16,.03,.19,-.03,m.black,24);
-    for(let i=0;i<12;i++){
-        const a=i*Math.PI/6;bar(motor.fixed,[.03+Math.cos(a)*.16,.16,-.03+Math.sin(a)*.16],[.03+Math.cos(a)*.16,.37,-.03+Math.sin(a)*.16],.035,m.gold);
+    box(motor.fixed,1.38,.05,1.16,0,.015,0,m.black,.03);
+    for(const x of [-.62,.62])for(const z of [-.51,.51])cylinder(motor.fixed,.03,.03,.012,x,.045,z,m.silver,12);
+    const copper=material('copper',{color:'#b8804f',metalness:.45,roughness:.5});
+    const motorBell=material('motorBell',{color:'#9aa19a',metalness:.5,roughness:.42});
+    const propClay=material('propClay',{color:'#c48f6e',roughness:.75,side:THREE.DoubleSide});
+    // A twisted, tapered blade: chord and pitch vary along the span with a little
+    // camber, so the rotor reads as an aerofoil rather than a flat paddle.
+    function propBlade(parent,span,rootChord,tipChord,rootPitch,tipPitch,mat){
+        const geometry=new THREE.PlaneGeometry(span,1,16,3),p=geometry.attributes.position;
+        for(let i=0;i<p.count;i++){
+            const u=p.getX(i)/span+.5,v=p.getY(i);
+            const tipRound=u>.78?Math.max(.15,Math.sqrt(Math.max(0,1-Math.pow((u-.78)/.22,2)))):1,rootNeck=.55+.45*Math.min(1,u/.18);
+            const chord=THREE.MathUtils.lerp(rootChord,tipChord,u)*tipRound*rootNeck,pitch=THREE.MathUtils.lerp(rootPitch,tipPitch,u),camber=(1-4*v*v)*chord*.08;
+            p.setXYZ(i,u*span,v*chord*Math.sin(pitch)+camber*Math.cos(pitch),v*chord*Math.cos(pitch)-camber*Math.sin(pitch));
+        }
+        geometry.computeVertexNormals();
+        const blade=new THREE.Mesh(own(geometry),mat);blade.castShadow=true;parent.add(blade);return blade;
     }
-    const motorRotor=group(motor.root,.03,.40,-.03);
-    cylinder(motorRotor,.225,.225,.10,0,0,0,m.silver,24);
-    cylinder(motorRotor,.058,.058,.18,0,.10,0,m.black);
-    for(let i=0;i<3;i++){
-        const blade=box(motorRotor,.47,.035,.10,0,.20,0,m.orange,.03);blade.position.set(Math.cos(i*Math.PI*2/3)*.22,.20,Math.sin(i*Math.PI*2/3)*.22);blade.rotation.y=-i*Math.PI*2/3;
-    }
-    const guard=new THREE.Mesh(new THREE.TorusGeometry(.51,.012,6,48),m.silver);guard.rotation.x=Math.PI/2;guard.position.set(.03,.63,-.03);motor.fixed.add(guard);
-    for(const x of [-.43,.49])bar(motor.fixed,[x,.04,-.03],[x,.63,-.03],.012,m.silver);
-    cable(motor.fixed,[[-.13,.17,.05],[-.30,.04,.27],[-.45,.08,.34]],m.orange,.015);
-    const motorTex=canvasTexture(256,112,()=>{});surface(motor.root,.42,.19,-.39,.045,.38,motorTex.texture,-Math.PI/2);
+    // Stand: pedestal, pillar, magnetic encoder board on standoffs, motor mount plate,
+    // then the stator whose copper teeth stay visible below the bell.
+    const motorStand=group(motor.fixed,-.18,.04,.10);
+    box(motorStand,.46,.08,.46,0,.04,0,m.silver,.012);
+    for(const x of [-.19,.19])for(const z of [-.19,.19])cylinder(motorStand,.022,.022,.014,x,.086,z,toolDark,6);
+    cylinder(motorStand,.11,.12,.20,0,.18,0,m.silver,24);
+    box(motorStand,.28,.016,.28,0,.288,0,m.pcb,.004);
+    box(motorStand,.06,.03,.03,0,.31,-.13,m.cream,.004);
+    for(const x of [-.11,.11])for(const z of [-.11,.11])cylinder(motorStand,.011,.011,.05,x,.321,z,brass,6);
+    box(motorStand,.30,.02,.30,0,.356,0,toolDark,.006);
+    cylinder(motorStand,.10,.10,.04,0,.386,0,toolDark,20);
+    cylinder(motorStand,.145,.145,.10,0,.456,0,toolDark,24);
+    for(let i=0;i<12;i++){const a=i*Math.PI/6;box(motorStand,.045,.10,.052,Math.cos(a)*.165,.456,Math.sin(a)*.165,copper,0).rotation.y=-a;}
+    // Rotor: the bell with its magnet ring peeking below the rim, vent slots and hub
+    // on top, a shaft with prop adapter, three blades and the lock nut.
+    const motorRotor=group(motor.root,-.18,.04,.10);
+    cylinder(motorRotor,.225,.225,.22,0,.60,0,motorBell,32);
+    for(let i=0;i<14;i++){const a=i*Math.PI/7;box(motorRotor,.012,.03,.042,Math.cos(a)*.212,.495,Math.sin(a)*.212,i%2?toolDark:m.metal,0).rotation.y=-a;}
+    cylinder(motorRotor,.20,.20,.012,0,.716,0,toolDark,32);
+    for(let i=0;i<8;i++){const a=i*Math.PI/4;box(motorRotor,.05,.008,.022,Math.cos(a)*.14,.725,Math.sin(a)*.14,m.black,0).rotation.y=-a;}
+    cylinder(motorRotor,.055,.055,.025,0,.734,0,toolDark,16);
+    cylinder(motorRotor,.022,.022,.18,0,.81,0,m.silver,12);
+    cylinder(motorRotor,.058,.058,.04,0,.85,0,toolDark,12);
+    for(let i=0;i<3;i++){const a=i*Math.PI*2/3,blade=propBlade(motorRotor,.385,.075,.045,.55,.22,propClay);blade.position.set(Math.cos(a)*.055,.85,Math.sin(a)*.055);blade.rotation.y=-a;}
+    cylinder(motorRotor,.03,.03,.03,0,.885,0,m.silver,6);
+    const guard=new THREE.Mesh(new THREE.TorusGeometry(.47,.011,6,56),m.silver);guard.rotation.x=Math.PI/2;guard.position.set(0,.85,0);motorStand.add(guard);
+    for(const a of [-Math.PI/3,Math.PI/3,Math.PI]){const x=Math.cos(a)*.47,z=Math.sin(a)*.47;bar(motorStand,[x,.006,z],[x,.85,z],.011,m.silver);cylinder(motorStand,.025,.025,.012,x,.006,z,toolDark,10);}
+    // Three phase leads leave the stator, run down the pillar and across the plate
+    // into the driver's screw terminals; the encoder ribbon joins its SPI header.
+    [toolYellow,m.blue,toolRed].forEach((mat,j)=>{
+        const x0=-.21+.03*j,zEnd=-.28+.08*j;
+        cable(motor.fixed,[[x0,.44,-.01],[x0+.01,.30,-.06],[x0+.09,.06,-.18+.03*j],[.05+.01*j,.055,zEnd-.02],[.14,.10,zEnd-.01],[.185,.14,zEnd]],mat,.012);
+    });
+    cable(motor.fixed,[[-.18,.35,-.035],[-.16,.25,-.07],[-.06,.075,-.05],[.15,.075,-.02],[.30,.09,-.03],[.32,.12,-.03]],m.cream,.007);
+    // FOC driver: three half-bridges under a finned heatsink, gate driver and MCU,
+    // bulk capacitors, XT60 input, phase terminals with shunts, encoder and SWD headers.
+    const drv=group(motor.fixed,.42,.04,-.20),bw=.50,bd=.40,bTop=.068;
+    for(const x of [-.21,.21])for(const z of [-.16,.16])cylinder(drv,.011,.011,.05,x,.025,z,brass,6);
+    box(drv,bw,.018,bd,0,.059,0,m.pcb,.004);
+    const focArt=canvasTexture(512,410,(ctx,W,H)=>{
+        // The face is turned to read from the room side, so both axes are mirrored.
+        const X=x=>(.5-x/bw)*W,Z=z=>(.5-z/bd)*H,sx=W/bw,sz=H/bd;
+        const rect=(x,z,w,d)=>[X(x)-w*sx/2,Z(z)-d*sz/2,w*sx,d*sz];
+        const trace=(points,width=4)=>{ctx.strokeStyle='#6d9d7d';ctx.lineWidth=width;ctx.lineJoin='round';ctx.lineCap='round';ctx.beginPath();points.forEach(([x,z],i)=>i?ctx.lineTo(X(x),Z(z)):ctx.moveTo(X(x),Z(z)));ctx.stroke();};
+        const pad=(x,z,w,d)=>{ctx.fillStyle='#d3b374';ctx.fillRect(...rect(x,z,w,d));};
+        const silk=(x,z,w,d)=>{ctx.strokeStyle='rgba(238,242,230,.85)';ctx.lineWidth=2;ctx.strokeRect(...rect(x,z,w,d));};
+        const label=(text,x,z,size=13)=>{ctx.fillStyle='rgba(238,242,230,.9)';ctx.font=`600 ${size}px monospace`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(text,X(x),Z(z));};
+        ctx.fillStyle='#54856a';ctx.fillRect(0,0,W,H);
+        ctx.fillStyle='#4f7f63';ctx.fillRect(...rect(.19,-.05,.10,.26));ctx.fillRect(...rect(-.20,.15,.08,.08));
+        trace([[.21,.12],[.24,.09],[.24,-.145],[.21,-.175],[-.01,-.175]],10);
+        for(const x of [-.05,.03])trace([[x,-.175],[x,-.135]],10);
+        for(const [z,zT] of [[-.11,-.08],[0,0],[.11,.08]])trace([[-.085,z],[-.115,zT],[-.17,zT]],8);
+        for(let i=0;i<4;i++)trace([[.10+i*.012,-.065],[.10+i*.012,.005]],2.5);
+        for(let i=0;i<4;i++){const x=.08+i*.014,z=.13+i*.008,hx=-.0775-i*.015;trace([[x,.115],[x,z],[hx,z],[hx,.155]],2.5);}
+        for(const x of [-.05,.03])for(const z of [-.11,0,.11])pad(x,z,.07,.05);
+        for(const z of [-.08,0,.08]){pad(-.20,z,.05,.05);for(const s of [-1,1])pad(-.13,z+s*.017,.012,.014);}
+        for(const z of [-.12,-.04,.04])for(const s of [-1,1])pad(.21,z+s*.012,.01,.008);
+        for(const s of [-1,1])pad(.21,.14+s*.02,.012,.012);
+        silk(.12,-.11,.10,.10);silk(.12,.06,.12,.12);silk(-.10,.17,.065,.03);silk(.21,.14,.065,.05);silk(.02,.17,.075,.02);
+        for(const z of [-.12,-.04,.04]){ctx.strokeStyle='rgba(238,242,230,.85)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(X(.21),Z(z),.03*sx,0,Math.PI*2);ctx.stroke();}
+        ctx.strokeStyle='rgba(238,242,230,.85)';ctx.lineWidth=2;ctx.strokeRect(...rect(0,0,bw-.008,bd-.008));
+        label('FOC-DRV v2',-.19,-.17,14);label('HUANFLY',.02,-.19,12);
+        ['U','V','W'].forEach((t,i)=>label(t,-.24,-.08+i*.08,13));
+        label('VIN 12–48V',.21,.185,11);label('ENC SPI',-.10,.19,11);label('SWD',.02,.19,11);label('RUN',.12,.19,10);label('FLT',.16,.19,10);
+    });
+    const focFace=new THREE.Mesh(new THREE.PlaneGeometry(bw-.004,bd-.004),own(new THREE.MeshStandardMaterial({map:focArt.texture,roughness:.88})));
+    focFace.rotation.set(-Math.PI/2,0,Math.PI);focFace.position.y=bTop+.001;focFace.receiveShadow=true;drv.add(focFace);
+    const terminalBlue=material('terminalBlue',{color:'#4b6a8f',roughness:.8});
+    for(let k=0;k<3;k++){const z=-.08+k*.08;box(drv,.06,.06,.065,-.20,bTop+.03,z,terminalBlue,.006);cylinder(drv,.014,.014,.006,-.20,bTop+.063,z,m.silver,10);box(drv,.03,.008,.014,-.13,bTop+.004,z,m.silver,0);}
+    for(const x of [-.05,.03])for(const z of [-.11,0,.11])box(drv,.07,.028,.05,x,bTop+.014,z,toolDark,0);
+    box(drv,.19,.02,.34,-.01,bTop+.038,0,m.silver,0);
+    for(let i=0;i<8;i++)box(drv,.19,.06,.006,-.01,bTop+.078,-.16+i*.0457,m.silver,0);
+    box(drv,.09,.012,.09,.12,bTop+.006,-.11,m.black,0);
+    box(drv,.11,.012,.11,.12,bTop+.006,.06,m.black,0);
+    for(let i=0;i<8;i++)for(const s of [-1,1]){const o=-.049+i*.014;box(drv,.006,.006,.018,.12+o,bTop+.003,.06+s*.062,m.silver,0);box(drv,.018,.006,.006,.12+s*.062,bTop+.003,.06+o,m.silver,0);}
+    for(const z of [-.12,-.04,.04]){cylinder(drv,.028,.028,.07,.21,bTop+.035,z,capBody,16);cylinder(drv,.028,.028,.004,.21,bTop+.072,z,m.silver,16);}
+    box(drv,.06,.05,.045,.21,bTop+.025,.14,toolYellow,.006);
+    box(drv,.06,.03,.025,-.10,bTop+.015,.17,m.cream,0);
+    for(let i=0;i<4;i++)box(drv,.008,.03,.008,-.01+i*.02,bTop+.015,.17,m.gold,0);
+    box(drv,.02,.01,.012,.12,bTop+.005,.17,m.mintGlow,0);box(drv,.02,.01,.012,.16,bTop+.005,.17,m.amberGlow,0);
+    glow(drv,.12,bTop+.03,.17,.16);
+    // Power pair from the XT60 runs off the plate and drops behind the bench.
+    for(const [mat,dx] of [[toolRed,0],[toolDark,.03]])cable(motor.fixed,[[.66+dx,.11,-.06],[.69+dx,.08,.05],[.66+dx,.05,.30],[.60+dx,.005,.62],[.58+dx,.005,.72],[.58+dx,-.15,.80],[.56+dx,-.55,.81]],mat,.011);
+    // Tilted readout at the front-left corner, its glass facing the room.
+    const screenTilt=.40,screenBody=group(motor.fixed,-.44,.04,-.43);screenBody.rotation.x=screenTilt;
+    box(motor.fixed,.30,.03,.14,-.44,.055,-.40,toolDark,.006);
+    box(screenBody,.48,.30,.035,0,.16,0,toolDark,.015);
+    const screenFace=group(motor.root,-.44,.04,-.43);screenFace.rotation.x=screenTilt;
+    const motorTex=canvasTexture(320,200,()=>{});surface(screenFace,.42,.26,0,.165,-.019,motorTex.texture).rotation.y=Math.PI;
     const arm=device('arm',-1.65,1.31,1.45,[-1.70,2.75,1.30]);
     box(arm.fixed,1.60,.06,1.36,0,0,0,m.teal,.06);
     cylinder(arm.fixed,.29,.33,.13,0,.10,0,m.black);
@@ -923,12 +1071,13 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
         overview:{pos:[10.8,8.4,14.8],target:[-.20,2.0,0]},
         panorama:{pos:[11.8,9.2,13.8],target:[-.15,1.75,-.25]},
         bench:{pos:[1.0,4.4,4.4],target:[-.30,2.35,-2.5]},
-        // Printer seen from the open front with the window wall behind it, so the
-        // courtyard is only a narrow strip past the wall's end.
-        fabrication:{pos:[-2.7,3.9,8.0],target:[-4.15,1.78,3.0]},
-        // Robotics bench framed from inside the room: the printer stays out of the
-        // frame on the left and the wall face / casement form the backdrop.
-        robotics:{pos:[-.72,4.1,2.77],target:[-4.1,2.3,-.2]},
+        // Printer seen from the open front, a little to the right so its glass door
+        // (facing into the room) and spool flank both read; the window wall, sill and
+        // side bench form the backdrop and the courtyard is only a strip past the wall.
+        fabrication:{pos:[-1.26,2.44,5.32],target:[-4.42,.55,2.55]},
+        // Robotics bench framed from inside the room: the printer's lid stays just
+        // below the bottom edge and the wall face / casement form the backdrop.
+        robotics:{pos:[-.72,4.1,2.52],target:[-4.1,2.55,-.45]},
         monitor:{pos:[.3,3.01,1.25],target:[.3,3.01,-2.825]}
     };
     const deviceViews={
@@ -1074,6 +1223,26 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     function smallDisplay(display,top,bottom,tint='#a7eac8'){
         const {ctx,canvas,texture}=display;ctx.fillStyle='#102b2b';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#698e83';ctx.font='16px monospace';ctx.fillText(top,13,25);ctx.fillStyle=tint;ctx.font='30px monospace';ctx.fillText(bottom,13,canvas.height-17);texture.needsUpdate=true;
     }
+    // FOC readout: speed, dq currents, the electrical angle derived from the rotor
+    // (seven pole pairs) and the three phase currents in the lead colours.
+    const phaseColors=['#e1b55e','#91adb5','#cf735d'];
+    function drawMotorDisplay(display,rpm,rotorAngle){
+        const {ctx,canvas,texture}=display,w=canvas.width,h=canvas.height,running=rpm>1,theta=rotorAngle*7;
+        ctx.fillStyle='#102b2b';ctx.fillRect(0,0,w,h);ctx.textBaseline='alphabetic';
+        ctx.font='15px monospace';ctx.fillStyle='#698e83';ctx.textAlign='left';ctx.fillText('FOC · BLDC 2806 · 12N14P',12,22);
+        ctx.textAlign='right';ctx.fillText(running?'SVPWM 20 kHz':'STANDBY',w-12,22);ctx.textAlign='left';
+        ctx.fillStyle=running?'#a7eac8':'#7aaca0';ctx.font='34px monospace';ctx.fillText(Math.round(rpm)+' RPM',12,64);
+        const iq=running?.4+rpm/6000*2.8:0,degrees=Math.round(((theta%(Math.PI*2))+Math.PI*2)%(Math.PI*2)*180/Math.PI);
+        ctx.font='14px monospace';ctx.fillStyle=phaseColors[0];ctx.fillText(`Iq ${iq.toFixed(2)} A`,12,90);ctx.fillStyle=phaseColors[1];ctx.fillText('Id 0.00 A',122,90);ctx.fillStyle=phaseColors[2];ctx.fillText(`θe ${String(degrees).padStart(3,' ')}°`,224,90);
+        const top=104,bottom=h-10,mid=(top+bottom)/2,amp=(bottom-top)/2*.82*(running?Math.min(1,.35+rpm/4000):0);
+        ctx.strokeStyle='#1e3d3c';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(12,mid);ctx.lineTo(w-12,mid);ctx.stroke();
+        phaseColors.forEach((colour,k)=>{
+            ctx.strokeStyle=colour;ctx.lineWidth=2;ctx.beginPath();
+            for(let x=12;x<w-12;x+=2){const y=mid-Math.sin(theta+(x-12)/(w-24)*Math.PI*4+k*Math.PI*2/3)*amp;x===12?ctx.moveTo(x,y):ctx.lineTo(x,y);}
+            ctx.stroke();
+        });
+        texture.needsUpdate=true;
+    }
     function tickSimulation(dt){
         if(disposed)return;
         if(studioWindow.update(dt,state.breeze))renderer.shadowMap.needsUpdate=true;
@@ -1096,18 +1265,21 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
         sunPatch.rotation.z=-.42+Math.sin(breezeTime*.19)*.013;
         if(state.printer==='printing'){
             state.printProgress=Math.min(100,state.printProgress+dt/26*100);
-            if(state.printProgress>=100){state.printer='done';onEvent('打印完成。第一件原型，诞生了。');}
+            if(state.printProgress>=100){state.printer='done';onEvent('打印完成。一副无人机机架从热床上长了出来。');}
         }
         if(state.firmware==='flashing'){
             state.flashProgress=Math.min(100,state.flashProgress+dt/4.5*100);
             if(state.flashProgress>=100){state.firmware='done';onEvent('固件校验通过 · UART: Hello, world!');}
         }
-        const h=state.printProgress/100*.60;
-        printPart.children.forEach((child,i)=>{child.visible=i/30<state.printProgress/100;});
-        gantry.position.y=1.71+h;
-        printHead.position.x=state.printer==='printing'?Math.sin(elapsed*3.1)*.24:0;
-        printHead.position.z=state.printer==='printing'?Math.cos(elapsed*2.4)*.17:0;
-        const filamentCurve=new THREE.CubicBezierCurve3(new THREE.Vector3(0,3.34,.03),new THREE.Vector3(.48,3.02,.25),new THREE.Vector3(printHead.position.x+.32,gantry.position.y+.65,.18),new THREE.Vector3(printHead.position.x,gantry.position.y+.09,printHead.position.z-.08));
+        // CoreXY: the bed sinks by the printed height while the toolhead sweeps the
+        // frame's footprint; idle or finished, the head parks at the rear-left corner.
+        printPart.children.forEach((child,i)=>{child.visible=i/printLayers<state.printProgress/100;});
+        bed.position.y=bedHome-state.printProgress/100*printHeight;
+        const printing=state.printer==='printing',headRate=printing?14:4;
+        printHead.position.x=THREE.MathUtils.damp(printHead.position.x,printing?Math.sin(elapsed*3.1)*.30:-.40,headRate,dt);
+        gantry.position.z=THREE.MathUtils.damp(gantry.position.z,printing?Math.cos(elapsed*2.4)*.24:-.30,headRate,dt);
+        nozzleGlow.visible=printing;
+        const filamentCurve=new THREE.CubicBezierCurve3(new THREE.Vector3(-.52,pTop,-.50),new THREE.Vector3(-.40,1.31,-.40),new THREE.Vector3(printHead.position.x*.6,1.31,gantry.position.z*.6-.15),new THREE.Vector3(printHead.position.x,1.20,gantry.position.z+.03));
         for(let i=0;i<25;i++)filamentCurve.getPoint(i/24).toArray(filamentPositions,i*3);
         filamentGeometry.attributes.position.needsUpdate=true;filamentGeometry.computeBoundingSphere();
         const spread=state.boardExploded?1:0;pcbAssembly.position.y=THREE.MathUtils.damp(pcbAssembly.position.y,spread*.15,6,dt);processor.position.y=THREE.MathUtils.damp(processor.position.y,chipY+spread*.64,6,dt);boardTop.position.y=THREE.MathUtils.damp(boardTop.position.y,spread*.39,6,dt);
@@ -1150,7 +1322,7 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
         controls.update();
         devices.forEach(item=>{item.brackets.visible=item.id!=='monitor'&&!paused&&(item.id===selected||item.id===hovered);if(item.brackets.visible&&reportElapsed+dt>.1)updateBrackets(item);});
         textureElapsed+=dt;reportElapsed+=dt;
-        if(textureElapsed>(active?.15:.35)){textureElapsed=0;drawScope(scopeTex.ctx,512,320,reducedMotion?0:scopeTime);scopeTex.texture.needsUpdate=true;smallDisplay(solderTex,'T12 STATION',state.iron?'350°C':'STANDBY',state.iron?'#f0bd7e':'#7aaca0');smallDisplay(printerTex,'FDM / 0.2mm',state.printer==='idle'?'READY':Math.round(state.printProgress)+'%');smallDisplay(motorTex,'BLDC / FOC',Math.round(currentRPM)+' RPM');smallDisplay(boardOLED,state.firmware==='done'?'SOIL / ADC':'STM32 H7',state.firmware==='flashing'?Math.round(state.flashProgress)+'%':state.firmware==='done'?Math.round(state.soilMoisture)+'%':'480 MHz');smallDisplay(soilDisplay,'SOIL / DEMO',Math.round(state.soilMoisture)+'%');}
+        if(textureElapsed>(active?.15:.35)){textureElapsed=0;drawScope(scopeTex.ctx,512,320,reducedMotion?0:scopeTime);scopeTex.texture.needsUpdate=true;smallDisplay(solderTex,'T12 STATION',state.iron?'350°C':'STANDBY',state.iron?'#f0bd7e':'#7aaca0');smallDisplay(printerTex,'CoreXY · 0.2 mm',state.printer==='idle'?'READY':state.printer==='done'?'DONE':Math.round(state.printProgress)+'%');drawMotorDisplay(motorTex,currentRPM,motorRotor.rotation.y);smallDisplay(boardOLED,state.firmware==='done'?'SOIL / ADC':'STM32 H7',state.firmware==='flashing'?Math.round(state.flashProgress)+'%':state.firmware==='done'?Math.round(state.soilMoisture)+'%':'480 MHz');smallDisplay(soilDisplay,'SOIL / DEMO',Math.round(state.soilMoisture)+'%');}
         const motionState=`${state.arm}:${state.boardExploded}:${state.printer}:${state.iron}:${state.breeze}`;
         if(motionState!==lastMotionState){lastMotionState=motionState;shadowUntil=elapsed+2;}
         if(elapsed<shadowUntil||state.printer==='printing'||currentRPM>1||state.arm||state.iron||spirit.isActive())renderer.shadowMap.needsUpdate=true;

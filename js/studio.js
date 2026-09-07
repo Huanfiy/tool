@@ -16,8 +16,8 @@ const devices = {
     pcb: { n: '02', label: '开发板', title: '从一行代码开始', category: 'DEVELOPMENT / STM32 H743', description: '给开发板烧录一份固件，观察状态灯和板载 OLED 的反馈。展开电路板，看看芯片、排针与 PCB 的层次。' },
     scope: { n: '03', label: '示波器', title: '让信号有迹可循', category: 'MEASUREMENT / DIGITAL OSCILLOSCOPE', description: '正弦波、方波、锯齿波。在屏幕上观察信号，调节频率，或者暂停捕获这一瞬间。' },
     solder: { n: '04', label: '焊接台', title: '把想法焊在一起', category: 'REWORK / T12 SOLDERING STATION', description: '打开焊台，烙铁进入工作状态，排烟风扇随之启动。工作结束后，记得让它休息。' },
-    printer: { n: '05', label: '3D 打印', title: '一层一层，成为实物', category: 'FABRICATION / FDM PRINTER', description: '从空白热床开始，打印一个六角原型外壳。看喷头沿导轨移动，零件逐层长出来。' },
-    motor: { n: '06', label: '电机测试', title: '让代码转起来', category: 'MOTION / BRUSHLESS MOTOR', description: '启动无刷电机测试台，调节目标转速。转子平滑加速，转速读数同步更新。' },
+    printer: { n: '05', label: '3D 打印', title: '一层一层，成为实物', category: 'FABRICATION / COREXY FDM PRINTER', description: '从空白热床开始，打印一副四轴无人机机架。看喷头在导轨上穿梭、热床随层高缓缓下降，中心板、机臂与电机座逐层长出来。' },
+    motor: { n: '06', label: '电机测试', title: '让代码转起来', category: 'MOTION / BLDC + FOC DRIVER', description: 'FOC 驱动板经三相线驱动外转子无刷电机，磁编码器回读转子角度。启动测试台、调节目标转速，看三相电流与电角度在小屏上同步变化。' },
     arm: { n: '07', label: '机械臂', title: '重复的事，交给机械', category: 'ROBOTICS / PICK & PLACE', description: '让机械臂执行一轮又一轮的取放装配。底座、肩部、肘部与夹爪协同完成运动。' },
     plant: { n: '08', label: '绿植与传感器', title: '也照顾一下小小的绿意', category: 'LITTLE GARDEN / SOIL SENSOR', description: '给桌边绿植浇一点水，观察模拟土壤湿度的变化。开发板烧录完成后，OLED 也会显示它的读数。' }
 };
@@ -66,7 +66,7 @@ function updatePanel() {
             action = '切换信号波形 ↻'; secondary = state.scopeRunning ? '暂停采集' : '继续采集'; break;
         case 'solder': status = state.iron ? '加热中 · 排烟已开启' : '焊台待机'; value = state.iron ? '350 °C' : 'OFF'; action = state.iron ? '关闭焊台' : '开启焊台 →'; break;
         case 'printer':
-            status = { idle: '热床已就绪', printing: '正在逐层打印', paused: '打印已暂停', done: '原型打印完成' }[state.printer];
+            status = { idle: '热床已就绪', printing: '正在逐层打印', paused: '打印已暂停', done: '机架打印完成' }[state.printer];
             value = `${Math.round(state.printProgress)}%`;
             action = { idle: '开始打印 →', printing: '暂停打印', paused: '继续打印 →', done: '打印新零件 ↻' }[state.printer];
             secondary = state.printProgress > 0 ? '重置' : ''; progress = state.printProgress; break;
@@ -170,7 +170,7 @@ function act(id = selected, secondary = false) {
         case 'printer':
             if (secondary) { state.printer = 'idle'; state.printProgress = 0; announce('热床已清空，可以开始新的打印。'); }
             else if (state.printer === 'printing') { state.printer = 'paused'; announce('打印已暂停。'); }
-            else { if (state.printer === 'done') state.printProgress = 0; state.printer = 'printing'; announce('FDM 打印已开始，正在制造六角外壳。'); }
+            else { if (state.printer === 'done') state.printProgress = 0; state.printer = 'printing'; announce('FDM 打印已开始，正在打印无人机机架。'); }
             break;
         case 'motor': state.motor = !state.motor; announce(state.motor ? `电机已启动，目标 ${state.rpm} RPM。` : '电机正在平滑减速。'); break;
         case 'arm': state.arm = !state.arm; state.armStarted = true; announce(state.arm ? '机械臂开始执行取放装配循环。' : '机械臂已暂停。'); break;

@@ -294,7 +294,8 @@ try {
             pass('屏幕九宫格点击靠近、应用停止冒泡、原生点击保留、滚动不靠近、遮挡检查与减少动态正对靠近');
         }
         for(let j=0;j<20;j++){room.setNight(true);room.setNight(false);}
-        const stats=room.getStats();assert(stats.drawCalls<=350&&stats.triangles<=260000&&stats.geometries<=320&&stats.textures<=35,'main-pass resource budget');
+        // Texture slots: pegboard multimeter faces, book spines, instrument screens and the FOC driver silk (40 at present).
+        const stats=room.getStats();assert(stats.drawCalls<=350&&stats.triangles<=260000&&stats.geometries<=320&&stats.textures<=42,'main-pass resource budget');
         room.dispose();room.dispose();room.setPaused(false);await frame();
         assert(stage.children.length===0&&desktop.parentElement.id==='home'&&desktop.inert&&desktop.style.cssText==='','room DOM cleanup');
         assert(readyCount===i+1,'readiness repeated during rendering or disposal');
