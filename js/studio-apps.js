@@ -179,6 +179,7 @@
                 }
                 if (version !== loadVersion) return;
                 items = cache[key];
+                grid.dataset.density = items.length && items.length <= 4 ? 'sparse' : 'dense';
                 grid.innerHTML = items.length ? items.map((item, index) => `<figure class="album-item" role="button" tabindex="0" data-idx="${index}"><img src="${escapeHtml(item.src)}" alt="${escapeHtml(item.caption || '')}" loading="lazy" decoding="async"><figcaption>${escapeHtml(item.caption || '')}</figcaption></figure>`).join('') : '<div class="album-empty"><i class="fas fa-image"></i><p>这个相册还是空的</p></div>';
             } catch (_) {
                 if (version !== loadVersion) return;

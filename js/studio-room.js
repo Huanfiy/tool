@@ -695,17 +695,22 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
         overview:{pos:[10.8,8.4,14.8],target:[-.20,2.0,0]},
         panorama:{pos:[11.8,9.2,13.8],target:[-.15,1.75,-.25]},
         bench:{pos:[1.0,4.4,4.4],target:[-.30,2.35,-2.5]},
-        fabrication:{pos:[.2,4.3,8.6],target:[-4.15,1.28,3.0]},
-        robotics:{pos:[.7,4.7,6.1],target:[-4.02,2.1,.10]},
+        // Printer seen from the open front with the window wall behind it, so the
+        // courtyard is only a narrow strip past the wall's end.
+        fabrication:{pos:[-2.7,3.9,8.0],target:[-4.15,1.78,3.0]},
+        // Robotics bench framed from inside the room: the printer stays out of the
+        // frame on the left and the wall face / casement form the backdrop.
+        robotics:{pos:[-.72,4.1,2.77],target:[-4.1,2.3,-.2]},
         monitor:{pos:[.3,3.01,1.25],target:[.3,3.01,-2.825]}
     };
     const deviceViews={
         monitor:{pos:[3.4,4.65,3.2],target:[.25,2.85,-2.6]},
-        pcb:{pos:[.1,4.7,1.5],target:[-1.55,1.95,-2.35]},
+        // Steeper, closer board view keeps the monitor to a band along the top edge.
+        pcb:{pos:[-1.9,4.65,0],target:[-1.55,1.95,-2.35]},
         scope:{pos:[-1.7,4.0,.9],target:[-3.1,2.38,-2.8]},
         solder:{pos:[-1.8,3.7,1.9],target:[-3.72,2.07,-1.9]},
-        printer:presets.fabrication, motor:{pos:[-.8,4.5,5.1],target:[-4.2,2.0,1.3]},
-        arm:{pos:[-.7,4.6,3.0],target:[-4.0,2.5,-1.0]},
+        printer:presets.fabrication, motor:{pos:[-2.0,3.5,3.0],target:[-4.2,2.2,1.1]},
+        arm:{pos:[-1.3,4.3,2.4],target:[-4.0,2.5,-1.0]},
         plant:{pos:[.8,3.7,.2],target:[2.38,2.4,-2.99]}
     };
     function destination(preset, forDevice=false) {

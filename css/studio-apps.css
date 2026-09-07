@@ -346,6 +346,13 @@
     scrollbar-width: thin;
 }
 
+/* A handful of photos should read as a few large prints, not a sparse thumbnail sheet. */
+.album-grid[data-density="sparse"] {
+    grid-template-columns: repeat(auto-fill, minmax(min(300px, 45%), 1fr));
+    gap: 16px;
+    padding: 18px;
+}
+
 .album-item {
     position: relative;
     aspect-ratio: 4 / 3;

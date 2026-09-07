@@ -68,7 +68,7 @@ body.studio-page {
 .lab-tour { display: flex; align-items: center; justify-content: space-between; gap: 22px; margin-top: 13px; color: var(--lab-ink); background: var(--lab-paper); border: 1px solid var(--lab-line); border-radius: 8px 10px 7px 11px; padding: 8px 13px; font-size: 11px !important; }
 .tour-arrow { color: var(--lab-mint); font-size: 16px; transition: transform .2s; }
 .lab-tour:hover .tour-arrow { transform: translateX(3px); }
-.lab-footer { position: absolute; left: 30px; right: 30px; bottom: max(26px, env(safe-area-inset-bottom)); display: flex; justify-content: space-between; align-items: center; gap: 20px; }
+.lab-footer { position: absolute; left: 30px; right: 30px; bottom: max(26px, env(safe-area-inset-bottom)); display: flex; justify-content: space-between; align-items: center; gap: 20px; transition: opacity .35s, transform .35s; }
 .lab-view-info { display: flex; align-items: center; gap: 8px; font-size: 11px; min-width: 200px; }
 .lab-view-dot { width: 5px; height: 5px; background: var(--lab-mint); border-radius: 50%; }
 .lab-view-info small { margin-left: 7px; font: 10px ui-monospace, monospace; color: var(--lab-muted); }
@@ -128,6 +128,8 @@ body.studio-page {
 .studio.is-at-monitor .lab-intro, .studio.is-at-monitor .lab-log { opacity: 0; pointer-events: none; }
 .studio.is-at-monitor .lab-intro button { pointer-events: none; }
 .studio.is-at-monitor .lab-gesture { visibility: hidden; }
+/* At the screen only the header and "step back" stay; room navigation would sit on the keyboard. */
+.studio.is-at-monitor .lab-footer { opacity: 0; transform: translateY(8px); visibility: hidden; pointer-events: none; transition: opacity .35s, transform .35s, visibility 0s .35s; }
 /* Paper grain belongs to the room, not to the illuminated close-up display. */
 .studio.is-at-monitor .lab-vignette { opacity: 0; }
 .studio.is-computer-fallback .lab-ui { visibility: hidden; }
