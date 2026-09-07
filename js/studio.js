@@ -1,4 +1,6 @@
 /* Huanfly Lab: device controls, camera navigation and the HTML computer. */
+import { createSpiritSpeech } from './studio-spirit-speech.js';
+import { createSpiritBubble } from './studio-spirit-bubble.js';
 const $ = id => document.getElementById(id);
 const root = $('studio');
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -20,6 +22,11 @@ const devices = {
     plant: { n: '08', label: '绿植与传感器', title: '也照顾一下小小的绿意', category: 'LITTLE GARDEN / SOIL SENSOR', description: '给桌边绿植浇一点水，观察模拟土壤湿度的变化。开发板烧录完成后，OLED 也会显示它的读数。' }
 };
 const views = { overview: '窗边工作室', bench: '木头工作桌', fabrication: '打印角', robotics: '窗边的小实验', panorama: '房间全景' };
+// The desk spirit: a poke hops the figure and asks the speech seam for one line.
+// Swap `spiritSpeech.setProvider(...)` to talk to something smarter later.
+const spiritSpeech = createSpiritSpeech();
+const spiritBubble = createSpiritBubble({ host: $('lab-ui') });
+let spiritPokes = 0;
 // Share the main site's theme memory; without one, let the real clock pick the lighting.
 function readSavedTheme() { try { return localStorage.getItem('theme'); } catch { return null; } }
 function initialNight() {
@@ -91,8 +98,22 @@ function buildOptions(id) {
     range.addEventListener('change', () => announce(id === 'scope' ? `信号频率设为 ${state.frequency.toFixed(1)} kHz。` : `目标转速设为 ${state.rpm} RPM。`));
     $('device-options').append(label, range);
 }
+function spiritContext() {
+    return {
+        hour: new Date().getHours(), night, view: room?.getView() ?? 'overview', pokeCount: spiritPokes,
+        breeze: state.breeze, printer: state.printer, iron: state.iron, motor: state.motor, arm: state.arm,
+        firmware: state.firmware, watering: state.watering, soilMoisture: state.soilMoisture
+    };
+}
+function pokeSpirit() {
+    if (!room || focused) return;
+    spiritPokes++;
+    room.pokeSpirit();
+    spiritBubble.speak(spiritSpeech.say(spiritContext()));
+}
 function selectDevice(id, fromTour = false) {
     if (id === 'window') { toggleWindow(); return; }
+    if (id === 'spirit') { pokeSpirit(); return; }
     if (!room || !devices[id]) return;
     if (id === 'monitor') { focusMonitor(); return; }
     leaveMonitorView();
@@ -190,7 +211,7 @@ function closeDeviceList() { $('lab-device-list').hidden = true; $('lab-devices'
 function focusMonitor() {
     if (focused) return;
     returnFocus = document.activeElement; focused = true;
-    closeDeviceList(); closePanel(false);
+    closeDeviceList(); closePanel(false); spiritBubble.hide();
     root.classList.add('is-at-monitor');
     $('lab-intro').inert = true;
     $('mf-exit').hidden = false; $('studio-enter').hidden = true;
@@ -232,7 +253,7 @@ function toggleWindow() {
     $('lab-breeze').querySelector('span').textContent = state.breeze ? '微风入室' : '窗已关上';
     announce(state.breeze ? '窗扇向外打开，田野的微风吹了进来。' : '窗扇已合上，窗外的风景还在。');
 }
-window.Studio = { focusMonitor, unfocusMonitor, toggleTheme, isFocused: () => focused, state, action: act, select: selectDevice, setView, getStats: () => room?.getStats() };
+window.Studio = { focusMonitor, unfocusMonitor, toggleTheme, isFocused: () => focused, state, action: act, select: selectDevice, setView, pokeSpirit, spiritSpeech, getStats: () => room?.getStats() };
 $('studio-enter').addEventListener('click', focusMonitor);
 $('mf-exit').addEventListener('click', unfocusMonitor);
 $('device-close').addEventListener('click', () => closePanel());
@@ -273,7 +294,7 @@ if (matchMedia('(pointer: coarse)').matches) $('lab-gesture').innerHTML = '拖�
 function showError(message) {
     booted = false; clearTimeout(loadingMessage);
     const wasFocused = focused;
-    room?.dispose(); room = null; leaveMonitorView();
+    room?.dispose(); room = null; leaveMonitorView(); spiritBubble.hide();
     if (wasFocused) focusMonitor();
     const loader = $('lab-loader'); loader.classList.remove('ready'); loader.classList.add('error');
     $('loader-title').textContent = '工作室暂时未能启动'; $('loader-detail').textContent = message || '请检查网络与浏览器的图形支持。仍可从右上角打开桌面。'; $('loader-retry').hidden = false;
@@ -293,6 +314,13 @@ try {
         const picker = document.createElement('button'); picker.type = 'button'; picker.dataset.pick = id;
         picker.innerHTML = `<span>${device.n}</span>${device.label} ↗`; picker.addEventListener('click', () => selectDevice(id)); $('lab-device-list').append(picker);
     }
+    // The spirit gets a projected label for hover and keyboard access, but no inspector,
+    // tour stop or device-list entry: it is company, not an instrument.
+    const spiritMarker = document.createElement('button'); spiritMarker.type = 'button'; spiritMarker.className = 'lab-marker'; spiritMarker.dataset.device = 'spirit';
+    spiritMarker.setAttribute('aria-label', '和桌上的小精灵说说话'); spiritMarker.setAttribute('aria-pressed', 'false');
+    spiritMarker.innerHTML = '<span class="marker-dot" aria-hidden="true">✦</span><span class="marker-label">小精灵</span>';
+    spiritMarker.addEventListener('click', pokeSpirit); $('lab-markers').append(spiritMarker); markerEls.set('spirit', spiritMarker);
+    spiritMarker.addEventListener('pointerenter', () => room?.setHovered('spirit')); spiritMarker.addEventListener('pointerleave', () => room?.setHovered(null));
     room = createStudioRoom({ container: $('studio-stage'), state, reducedMotion, onSelect: selectDevice, onEvent: announce, onError: showError, onWindowToggle: toggleWindow,
         onReady: () => {
             booted = true; clearTimeout(loadingMessage);
@@ -308,6 +336,11 @@ try {
             for (const marker of markers) {
                 const el = markerEls.get(marker.id);
                 let visible = marker.visible && !focused && (labelsVisible || marker.hovered || marker.id === selected);
+                if (marker.id === 'spirit') {
+                    spiritBubble.place({ x: marker.x, y: marker.y, visible: marker.visible && !focused });
+                    // While it is talking, the bubble is the label.
+                    if (spiritBubble.isOpen()) visible = false;
+                }
                 if (selected) visible = visible && marker.id === selected;
                 if (!selected && compact && room?.getView() === 'overview' && ['solder', 'scope'].includes(marker.id)) visible = false;
                 // Prevent labels from covering the mobile header, intro or device controls.

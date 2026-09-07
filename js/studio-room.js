@@ -6,6 +6,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { createStudioArt } from './studio-art.js';
 import { createStudioMonitor } from './studio-monitor.js';
 import { createStudioFigures } from './studio-figures.js';
+import { createStudioSpirit } from './studio-spirit.js';
 import { createStudioWindow } from './studio-window.js';
 import { createStudioLandscape } from './studio-landscape.js';
 
@@ -757,6 +758,12 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     const soilDisplay=canvasTexture(256,112,()=>{});surface(sensorPlant.root,.235,.12,.36,.12,.307,soilDisplay.texture);
     const waterPositions=new Float32Array(12*3),waterGeo=new THREE.BufferGeometry();waterGeo.setAttribute('position',new THREE.BufferAttribute(waterPositions,3));
     const droplets=new THREE.Points(waterGeo,new THREE.PointsMaterial({color:'#93b7c0',size:.045,transparent:true,opacity:.75,depthWrite:false}));droplets.visible=false;sensorPlant.root.add(droplets);
+    // A palm-sized desk spirit keeps the free right end of the bench company, clear of
+    // the screen's width. It lives outside the static batch so it can move, and outside
+    // the device map so a poke answers with a speech bubble rather than the inspector.
+    const spirit=createStudioSpirit({parent:scene,sphere,bar,group,material,paintedLeaf,glow,leafMaterials:{dark:leafDark,light:leafLight},reducedMotion});
+    spirit.root.position.set(3.50,1.77,-2.35);spirit.root.rotation.y=.30;
+    contact(architecture,.6,.6,3.50,1.776,-2.35);
     batch(architecture);
     for(const item of devices.values())batch(item.fixed);
     batch(pcbAssembly);batch(boardTop);batch(processor);batch(leaves);
@@ -909,6 +916,7 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
         bracketMaterial.color.set(night?'#d2dfb9':'#72885d');m.amberGlow.emissiveIntensity=night?1.4:.4;
         studioWindow.setNight(night);
         landscape.setTheme(palette);
+        spirit.setNight(night);
         renderer.shadowMap.needsUpdate=true;
     }
     const pointer=new THREE.Vector2(),raycaster=new THREE.Raycaster();let pointerStart=null,lastHover=0,multiTouch=false;
@@ -943,7 +951,9 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     for(const type of ['pointerdown','click','dblclick','contextmenu','wheel'])listen(container,type,guardScreenPointer,{capture:true,passive:false});
     listen(controls,'start',()=>{tween=null;interactiveUntil=performance.now()+2000;});
     listen(controls,'end',()=>{interactiveUntil=performance.now()+1600;});
-    function projectedMarkers(){const result=[];camera.updateMatrixWorld();devices.forEach(item=>{const p=item.anchor.clone().project(camera);result.push({id:item.id,x:(p.x*.5+.5)*container.clientWidth,y:(-.5*p.y+.5)*container.clientHeight,hovered:item.id===hovered,visible:p.z>-1&&p.z<1&&Math.abs(p.x)<.94&&Math.abs(p.y)<.88});});return result;}
+    const projected=new THREE.Vector3();
+    function projectAnchor(id,anchor,result){const p=projected.copy(anchor).project(camera);result.push({id,x:(p.x*.5+.5)*container.clientWidth,y:(-.5*p.y+.5)*container.clientHeight,hovered:id===hovered,visible:p.z>-1&&p.z<1&&Math.abs(p.x)<.94&&Math.abs(p.y)<.88});}
+    function projectedMarkers(){const result=[];camera.updateMatrixWorld();devices.forEach(item=>projectAnchor(item.id,item.anchor,result));projectAnchor('spirit',spirit.worldAnchor(),result);return result;}
     function resize(){if(disposed)return;const w=container.clientWidth,h=container.clientHeight;renderer.setPixelRatio(Math.min(window.devicePixelRatio,mobile()?1.35:1.5));renderer.setSize(w,h);liveMonitor.resize(w,h);camera.aspect=w/h;camera.fov=w/h<1?48:36;fitOutdoorCoverage();camera.updateProjectionMatrix();if(selected)moveTo(deviceViews[selected],true,true);else if(!paused)setView(view,true);}
     const resizeObserver=new ResizeObserver(resize);resizeObserver.observe(container);
     cleanups.push(() => resizeObserver.disconnect());
@@ -1022,11 +1032,12 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
         pickupPart.visible=!state.armStarted||phase<.28||phase>.93;deliveredPart.visible=state.armStarted&&phase>=.75&&phase<.93;
         jawA.position.x=carried.visible?-.07:-.11;jawB.position.x=-jawA.position.x;
         dust.visible=state.breeze&&!reducedMotion;dust.rotation.y=Math.sin(breezeTime*.11)*.06;
+        spirit.setHovered(hovered==='spirit');spirit.update(dt,camera.position);
     }
     function render(now){
         frameId=null;if(disposed||lost||document.hidden)return;
         try {
-        const active=tween||now<interactiveUntil||state.printer==='printing'||state.motor||currentRPM>1||state.arm||state.firmware==='flashing'||state.watering;
+        const active=tween||now<interactiveUntil||state.printer==='printing'||state.motor||currentRPM>1||state.arm||state.firmware==='flashing'||state.watering||spirit.isActive();
         // Never throttle the first frame: the loader is waiting for real pixels.
         // Quiet room: 30 fps with cached shadows; camera and device actions: up to 60 fps.
         if(renderedFrames>0&&!paused&&now-lastTime<1000/(active?60:30)-1){frameId=requestAnimationFrame(render);return;}
@@ -1039,7 +1050,7 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
         if(textureElapsed>(active?.15:.35)){textureElapsed=0;drawScope(scopeTex.ctx,512,320,reducedMotion?0:scopeTime);scopeTex.texture.needsUpdate=true;smallDisplay(solderTex,'T12 STATION',state.iron?'350°C':'STANDBY',state.iron?'#f0bd7e':'#7aaca0');smallDisplay(printerTex,'FDM / 0.2mm',state.printer==='idle'?'READY':Math.round(state.printProgress)+'%');smallDisplay(motorTex,'BLDC / FOC',Math.round(currentRPM)+' RPM');smallDisplay(boardOLED,state.firmware==='done'?'SOIL / ADC':'STM32 H7',state.firmware==='flashing'?Math.round(state.flashProgress)+'%':state.firmware==='done'?Math.round(state.soilMoisture)+'%':'480 MHz');smallDisplay(soilDisplay,'SOIL / DEMO',Math.round(state.soilMoisture)+'%');}
         const motionState=`${state.arm}:${state.boardExploded}:${state.printer}:${state.iron}:${state.breeze}`;
         if(motionState!==lastMotionState){lastMotionState=motionState;shadowUntil=elapsed+2;}
-        if(elapsed<shadowUntil||state.printer==='printing'||currentRPM>1||state.arm||state.iron)renderer.shadowMap.needsUpdate=true;
+        if(elapsed<shadowUntil||state.printer==='printing'||currentRPM>1||state.arm||state.iron||spirit.isActive())renderer.shadowMap.needsUpdate=true;
         if(renderer.shadowMap.needsUpdate)shadowUpdates++;
         liveMonitor.render();
         renderer.render(scene,camera);
@@ -1060,7 +1071,7 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     // Render the first instrument display before exposing the workspace.
     drawScope(scopeTex.ctx,512,320,0);scopeTex.texture.needsUpdate=true;
     frameId=requestAnimationFrame(render);
-    return {setView,select,focusMonitor,setNight,setPaused,dispose,projectedMarkers,setHovered:id=>{if(!disposed)hovered=id;},getStats:()=>({drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,geometries:renderer.info.memory.geometries,textures:renderer.info.memory.textures,renderedFrames,shadowUpdates}),getView:()=>view};
+    return {setView,select,focusMonitor,setNight,setPaused,dispose,projectedMarkers,pokeSpirit:()=>{if(!disposed&&!paused)spirit.poke();},setHovered:id=>{if(!disposed)hovered=id;},getStats:()=>({drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,geometries:renderer.info.memory.geometries,textures:renderer.info.memory.textures,renderedFrames,shadowUpdates}),getView:()=>view};
     } catch (error) {
         dispose();
         throw error;
