@@ -1992,6 +1992,15 @@ footer::before {
         font-size: 2rem;
     }
 
+    /* 窄屏让副标题自然换行，避免硬换行叠加自动换行产生孤字 */
+    .hero-sub br {
+        display: none;
+    }
+
+    .hero-kicker {
+        letter-spacing: 0.16em;
+    }
+
     .hero-cat {
         right: 8%;
         width: 68px;
