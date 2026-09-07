@@ -124,7 +124,9 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
         const key = `b${w},${h},${d},${radius}`;
         if (!geometries.has(key)) geometries.set(key, own(radius ? new RoundedBoxGeometry(w,h,d,1,radius) : new THREE.BoxGeometry(w,h,d)));
         const obj = new THREE.Mesh(geometries.get(key), mat); obj.position.set(x,y,z); obj.castShadow = true; obj.receiveShadow = true; parent.add(obj);
-        if (w >= .45 && w < 10 && d >= .25 && h >= .08 && h < 1.6) {
+        // Rounded shells beyond this radius diverge visibly from a straight-edged
+        // wireframe, leaving a detached second silhouette; rely on the contour pass.
+        if (radius < .04 && w >= .45 && w < 10 && d >= .25 && h >= .08 && h < 1.6) {
             const outlineGeometry = new THREE.BoxGeometry(w-.012,h-.006,d-.012);
             const ink = new THREE.LineSegments(new THREE.EdgesGeometry(outlineGeometry),inkMaterial);
             outlineGeometry.dispose(); ink.userData.ink = true; obj.add(ink);
@@ -447,12 +449,13 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
         const knob=cylinder(scope.fixed,row===0?.065:.042,row===0?.065:.042,.04,.41+col*.135,.58-row*.16,.34,col?m.silver:m.metal,18);knob.rotation.x=Math.PI/2;
     }
     for(let i=0;i<4;i++){const port=cylinder(scope.fixed,.038,.038,.055,-.36+i*.20,.11,.35,[m.amberGlow,m.blueGlow,m.silver,m.silver][i],16);port.rotation.x=Math.PI/2;}
-    textLabel(scope.fixed,'SIGNAL / DSO',.44,.065,-.15,.708,.321,{color:'#29463e',size:58});
+    // Model badge sits low beside the ports, clear of the supply resting on top.
+    textLabel(scope.fixed,'SIGNAL / DSO',.26,.06,.44,.105,.321,{color:'#29463e',size:58,align:'center'});
     box(scope.fixed,.16,.065,.49,-.46,-.02,.02,m.black);box(scope.fixed,.16,.065,.49,.46,-.02,.02,m.black);
     cable(architecture,[[-3.58,1.93,-2.55],[-3.7,1.80,-2.05],[-2.6,1.80,-1.82],[-1.4,1.93,-2.2]],m.gold,.014);
-    box(architecture,1.10,.30,.64,-3.22,2.755,-2.94,m.metal,.035);
-    textLabel(architecture,['DC POWER','05.00 V   0.32 A'],.70,.16,-3.30,2.78,-2.61,{size:53,color:'#a7eace',background:'#122c2b'});
-    const psuKnob=cylinder(architecture,.06,.06,.04,-2.78,2.77,-2.60,m.orange);psuKnob.rotation.x=Math.PI/2;
+    box(architecture,1.10,.30,.64,-3.22,2.725,-2.98,m.metal,.035);
+    textLabel(architecture,['DC POWER','05.00 V   0.32 A'],.70,.16,-3.30,2.75,-2.65,{size:53,color:'#a7eace',background:'#122c2b'});
+    const psuKnob=cylinder(architecture,.06,.06,.04,-2.78,2.74,-2.64,m.orange);psuKnob.rotation.x=Math.PI/2;
 
     // Soldering station and its automatic extraction fan.
     const solder=device('solder',-3.72,1.80,-1.94,[-4.02,2.31,-1.45]);
@@ -465,10 +468,13 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     bar(solder.fixed,[.73,.25,.00],[.73,.55,.13],.055,m.orange);
     bar(solder.fixed,[.73,.51,.12],[.73,.70,.21],.014,m.silver);
     const extractor=group(solder.root,-.7,.34,-.10);box(extractor,.45,.43,.18,0,0,0,m.metal,.035);
+    // Dark intake behind the blades, then a round wire guard: two rings and six spokes.
+    const intake=cylinder(extractor,.175,.175,.012,0,0,.094,m.black,28);intake.rotation.x=Math.PI/2;
     const rotor=group(extractor,0,0,.102);
     for(let i=0;i<5;i++){const blade=box(rotor,.16,.067,.014,0,0,0,m.silver,.018);blade.position.set(Math.cos(i*Math.PI*2/5)*.10,Math.sin(i*Math.PI*2/5)*.10,0);blade.rotation.z=i*Math.PI*2/5+.7;}
     const fanHub=cylinder(extractor,.052,.052,.035,0,0,.119,m.black);fanHub.rotation.x=Math.PI/2;
-    for(const x of [-.13,0,.13])box(extractor,.016,.38,.018,x,0,.142,m.black,.004);
+    for(const r of [.175,.10]){const ring=new THREE.Mesh(new THREE.TorusGeometry(r,.007,6,36),m.black);ring.position.z=.14;extractor.add(ring);}
+    for(let i=0;i<6;i++){const a=i*Math.PI/3;bar(extractor,[Math.cos(a)*.045,Math.sin(a)*.045,.14],[Math.cos(a)*.175,Math.sin(a)*.175,.14],.006,m.black);}
     bar(solder.fixed,[-.7,.08,-.1],[-.7,.30,-.1],.03,m.silver);
     const smokeGeo=new THREE.BufferGeometry(),smokeArray=new Float32Array(18*3);smokeGeo.setAttribute('position',new THREE.BufferAttribute(smokeArray,3));
     const smoke=new THREE.Points(smokeGeo,new THREE.PointsMaterial({color:'#b7cfc3',size:.085,map:glowTexture,transparent:true,opacity:.24,depthWrite:false}));solder.root.add(smoke);

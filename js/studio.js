@@ -10,7 +10,7 @@ const state = {
     breeze: true, soilMoisture: 42, watering: false, waterProgress: 0
 };
 const devices = {
-    monitor: { n: '01', label: '工作站', title: '思考的主屏幕', category: 'WORKSTATION / HUANFLY-OS', description: '写代码，也收集灵感。直接点击屏幕上的终端、相册或 AI 助手；靠近时，仍然是同一块屏幕。' },
+    monitor: { n: '01', label: '工作站', title: '思考的主屏幕', category: 'WORKSTATION / HUANFLY-OS', description: '写代码，也收集灵感。直接点击屏幕上的终端、相册，或看看还在研究中的 Robot；靠近时，仍然是同一块屏幕。' },
     pcb: { n: '02', label: '开发板', title: '从一行代码开始', category: 'DEVELOPMENT / STM32 H743', description: '给开发板烧录一份固件，观察状态灯和板载 OLED 的反馈。展开电路板，看看芯片、排针与 PCB 的层次。' },
     scope: { n: '03', label: '示波器', title: '让信号有迹可循', category: 'MEASUREMENT / DIGITAL OSCILLOSCOPE', description: '正弦波、方波、锯齿波。在屏幕上观察信号，调节频率，或者暂停捕获这一瞬间。' },
     solder: { n: '04', label: '焊接台', title: '把想法焊在一起', category: 'REWORK / T12 SOLDERING STATION', description: '打开焊台，烙铁进入工作状态，排烟风扇随之启动。工作结束后，记得让它休息。' },
@@ -20,7 +20,15 @@ const devices = {
     plant: { n: '08', label: '绿植与传感器', title: '也照顾一下小小的绿意', category: 'LITTLE GARDEN / SOIL SENSOR', description: '给桌边绿植浇一点水，观察模拟土壤湿度的变化。开发板烧录完成后，OLED 也会显示它的读数。' }
 };
 const views = { overview: '窗边工作室', bench: '木头工作桌', fabrication: '打印角', robotics: '窗边的小实验', panorama: '房间全景' };
-let room = null, selected = null, focused = false, night = false, labelsVisible = false;
+// Share the main site's theme memory; without one, let the real clock pick the lighting.
+function readSavedTheme() { try { return localStorage.getItem('theme'); } catch { return null; } }
+function initialNight() {
+    const saved = readSavedTheme();
+    if (saved === 'dark' || saved === 'light') return saved === 'dark';
+    const hour = new Date().getHours();
+    return hour >= 18 || hour < 6;
+}
+let room = null, selected = null, focused = false, night = initialNight(), labelsVisible = false;
 let tourIndex = -1, returnFocus = null, booted = false;
 let currentRPM = 0, armPhase = 0;
 const tour = ['pcb', 'scope', 'solder', 'printer', 'motor', 'arm', 'plant', 'monitor'];
@@ -153,13 +161,26 @@ function act(id = selected, secondary = false) {
     }
     updatePanel(); return true;
 }
-function toggleTheme() {
-    night = !night; document.documentElement.setAttribute('data-theme', night ? 'dark' : 'light');
-    room?.setNight(night);
+function ambientLine() {
+    const hour = new Date().getHours(), lateHours = hour >= 18 || hour < 6;
+    if (night) return lateHours ? '窗外入夜了，架子下的暖光亮着。' : '把光调暗一点，架子下的暖光正好。';
+    if (lateHours) return '留着白天的光，继续做点喜欢的事。';
+    if (hour < 11) return '早晨的光刚照进房间，先泡杯咖啡。';
+    if (hour < 17) return '午后，适合做一点喜欢的事。';
+    return '傍晚的光斜斜地落在桌上。';
+}
+function applyTheme() {
+    document.documentElement.setAttribute('data-theme', night ? 'dark' : 'light');
     document.querySelector('meta[name="theme-color"]').content = night ? '#344840' : '#eee5d2';
     $('lab-theme').setAttribute('aria-label', night ? '切换日间灯光' : '切换夜间灯光'); $('lab-theme').title = $('lab-theme').getAttribute('aria-label');
-    announce(night ? '窗外入夜了，架子下的暖光亮了起来。' : '午后的阳光，又照进了房间。');
 }
+function toggleTheme() {
+    night = !night; applyTheme();
+    room?.setNight(night);
+    try { localStorage.setItem('theme', night ? 'dark' : 'light'); } catch { /* private mode: keep the session-only choice */ }
+    announce(night ? '窗外入夜了，架子下的暖光亮了起来。' : '阳光又照进了房间。');
+}
+applyTheme(); setText($('lab-log-text'), ambientLine());
 function toggleLabels() {
     labelsVisible = !labelsVisible; $('lab-labels').setAttribute('aria-pressed', String(labelsVisible));
 }
@@ -209,7 +230,7 @@ function toggleWindow() {
     state.breeze = !state.breeze; $('lab-breeze').setAttribute('aria-pressed', String(state.breeze));
     $('lab-breeze').setAttribute('aria-label', state.breeze ? '关上窗，暂停微风' : '打开窗，让微风进来');
     $('lab-breeze').querySelector('span').textContent = state.breeze ? '微风入室' : '窗已关上';
-    announce(state.breeze ? '窗扇向外打开，让森林里的微风进来。' : '窗扇已合上，窗外的风景还在。');
+    announce(state.breeze ? '窗扇向外打开，田野的微风吹了进来。' : '窗扇已合上，窗外的风景还在。');
 }
 window.Studio = { focusMonitor, unfocusMonitor, toggleTheme, isFocused: () => focused, state, action: act, select: selectDevice, setView, getStats: () => room?.getStats() };
 $('studio-enter').addEventListener('click', focusMonitor);
