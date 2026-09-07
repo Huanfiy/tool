@@ -724,7 +724,9 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     }
     box(rack,.46,.06,.32,0,1.34,0,m.silver);
     for(const x of [-.19,.19])bar(rack,[x,1.35,-.10],[x,1.73,-.13],.018,m.black);
-    const poster=group(architecture,3.53,3.19,-3.70);poster.rotation.z=.018;
+    // Memo board ends flush with the shelf above, leaving a clear strip of wall between
+    // the monitor's right edge (x 2.12) and the board for the taped sketch.
+    const poster=group(architecture,3.98,3.19,-3.70);poster.rotation.z=.018;
     box(poster,1.78,1.18,.055,0,0,0,m.oak,.035);
     const memoArt=canvasTexture(768,512,(ctx,w,h)=>{
         ctx.fillStyle='#bb9e72';ctx.fillRect(0,0,w,h);
@@ -737,15 +739,16 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
         ctx.fillStyle='#b5bd8c';ctx.fillRect(470,74,110,25);
     });
     surface(poster,1.66,1.06,0,0,.032,memoArt.texture);
-    // A botanical sketch, taped beside the monitor.
+    // A botanical sketch taped on the wall strip between the monitor and the memo board,
+    // its top level with the board and above the potted plant's crown.
     const sketch=canvasTexture(256,384,(ctx,w,h)=>{
         ctx.fillStyle='#f4ecd5';ctx.fillRect(0,0,w,h);ctx.strokeStyle='#718164';ctx.lineWidth=3;
         ctx.beginPath();ctx.moveTo(119,291);ctx.quadraticCurveTo(90,160,143,55);ctx.stroke();
         for(let i=0;i<6;i++){ctx.fillStyle=i%2?'#97aa7a':'#b2bf90';ctx.beginPath();ctx.ellipse(122+(i%2?20:-17),86+i*31,15,29,i%2?.6:-.7,0,Math.PI*2);ctx.fill();ctx.stroke();}
         ctx.fillStyle='#85866d';ctx.font='italic 21px Georgia';ctx.fillText('keep growing',55,344);
     });
-    const botanical=surface(architecture,.54,.79,1.89,3.04,-3.718,sketch.texture);botanical.rotation.z=-.06;
-    box(architecture,.19,.055,.014,1.88,3.443,-3.704,m.mint,.003);
+    const botanical=surface(architecture,.54,.79,2.60,3.36,-3.718,sketch.texture);botanical.rotation.z=-.06;
+    box(architecture,.19,.055,.014,2.59,3.763,-3.704,m.mint,.003);
     for(let i=0;i<3;i++)box(architecture,.63,.055,.47,2.26,1.82+i*.06,-2.99,[m.cream,m.orange,m.teal][i]);
     // Trailing pothos at the free end of the book shelf: the pot stands clear of the
     // last book and its strands climb over the rim before hanging past the shelf edge.
