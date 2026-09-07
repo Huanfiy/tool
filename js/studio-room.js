@@ -408,10 +408,9 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
         for(const y of [.65,1.40])cylinder(architecture,.03,.03,.015,x,y,-3.351,m.silver,8).rotation.x=Math.PI/2;
     }
     contact(architecture,9.8,2.7,-.25,.036,-2.47);
-    // ESD desk mat and signal-routing cable.
+    // ESD desk mat.
     box(architecture,3.40,.016,1.35,-.30,1.784,-2.5,m.teal,.07);
     textLabel(architecture,'a work in progress',1.05,.08,-1.15,1.795,-1.89,{rotation:-Math.PI/2,color:'#dce0be',font:'Georgia, serif'});
-    cable(architecture,[[-2.4,1.80,-2.2],[-2.2,1.82,-1.84],[-1.4,1.84,-1.85],[-1.27,1.85,-2.2]],m.orange,.014);
 
     // Keep the 16:9 desktop full-size, with a uniform, near-borderless rim.
     const monitor=device('monitor',.30,1.79,-2.86,[.30,4.02,-2.80]);
@@ -543,6 +542,12 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     box(oled,.27,.012,.17,0,.046,0,material('oledBlue',{color:'#37536f',roughness:.85}),.004);
     box(oled,.245,.008,.125,0,.056,.012,m.black,.002);
     const boardOLED=canvasTexture(256,128,()=>{});surface(oled,.235,.115,0,.0615,.012,boardOLED.texture,-Math.PI/2);
+    // USB-C lead: an overmoulded plug seated in the board's port, its cable leaving the
+    // mat to the left and dropping over the back edge of the desk towards the computer.
+    // It stays in the static room so the exploded board lifts away from it.
+    const usbY=pcb.root.position.y+board.top+.019;
+    box(architecture,.075,.026,.048,-2.056,usbY,-2.38,toolDark,.008);
+    cable(architecture,[[-2.09,usbY,-2.38],[-2.20,usbY-.01,-2.395],[-2.33,1.88,-2.50],[-2.42,1.80,-2.80],[-2.41,1.785,-3.20],[-2.38,1.785,-3.52],[-2.37,1.72,-3.64],[-2.39,1.40,-3.67]],m.orange,.014);
 
     // Oscilloscope and bench power supply.
     const scope=device('scope',-3.23,1.81,-2.90,[-3.20,2.83,-2.90]);
@@ -556,7 +561,19 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     // Model badge sits low beside the ports, clear of the supply resting on top.
     textLabel(scope.fixed,'SIGNAL / DSO',.26,.06,.44,.105,.321,{color:'#29463e',size:58,align:'center'});
     box(scope.fixed,.16,.065,.49,-.46,-.02,.02,m.black);box(scope.fixed,.16,.065,.49,.46,-.02,.02,m.black);
-    cable(architecture,[[-3.58,1.93,-2.55],[-3.7,1.80,-2.05],[-2.6,1.80,-1.82],[-1.4,1.93,-2.2]],m.gold,.014);
+    // CH1 probe: a BNC plug on the first port, the lead kept to the strip between the
+    // instruments and the bench front (clear of the soldering station and iron stand),
+    // then a probe body resting on the mat with its nose on the front header and the
+    // hook tip on PA0, instead of a bare cable ending on the board face.
+    cylinder(architecture,.032,.032,.05,-3.59,1.92,-2.495,toolDark,14).rotation.x=Math.PI/2;
+    cylinder(architecture,.018,.018,.04,-3.59,1.92,-2.45,m.black,10).rotation.x=Math.PI/2;
+    const probeTip=new THREE.Vector3(-1.845,2.03,-2.075),probeRear=new THREE.Vector3(-2.005,1.83,-1.868);
+    const probeDir=probeTip.clone().sub(probeRear).normalize(),probeNose=probeTip.clone().addScaledVector(probeDir,-.06);
+    const probeAt=t=>probeRear.clone().addScaledVector(probeDir,t).toArray();
+    bar(architecture,probeAt(0),probeNose.toArray(),.02,toolDark);
+    bar(architecture,probeAt(.05),probeAt(.07),.024,toolYellow);
+    bar(architecture,probeNose.toArray(),probeTip.toArray(),.006,toolSteel);
+    cable(architecture,[probeAt(-.01),[-2.13,1.80,-1.83],[-2.40,1.79,-1.85],[-2.70,1.79,-2.08],[-2.95,1.79,-2.30],[-3.30,1.79,-2.36],[-3.55,1.83,-2.38],[-3.60,1.90,-2.41],[-3.59,1.92,-2.43]],m.gold,.014);
     box(architecture,1.10,.30,.64,-3.22,2.725,-2.98,m.metal,.035);
     textLabel(architecture,['DC POWER','05.00 V   0.32 A'],.70,.16,-3.30,2.75,-2.65,{size:53,color:'#a7eace',background:'#122c2b'});
     const psuKnob=cylinder(architecture,.06,.06,.04,-2.78,2.74,-2.64,m.orange);psuKnob.rotation.x=Math.PI/2;
