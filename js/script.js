@@ -381,10 +381,15 @@ function initTimeGreeting() {
 
 /* =============================================================
  * 最新动态时间线：posts.json（文章）+ activity.json（站事）合流（仅首页）
+ * 站点事件常比文章更新，为避免首页完全看不到文章，至少保留 MIN_POSTS 篇最新文章。
  * ============================================================= */
 function initActivityTimeline() {
     const box = document.getElementById('activity-timeline');
     if (!box) return;
+
+    const MAX_ITEMS = 6;
+    const MIN_POSTS = 3;
+    const byDateDesc = (a, b) => b.date.localeCompare(a.date);
 
     const TYPE_BADGE = {
         post: { label: '文章', tone: 'tone-green', icon: 'fa-pen-nib' },
@@ -404,17 +409,20 @@ function initActivityTimeline() {
         fetch('posts/posts.json').then(r => r.ok ? r.json() : []).catch(() => []),
         fetch('activity.json').then(r => r.ok ? r.json() : []).catch(() => [])
     ]).then(([posts, activities]) => {
-        const items = [
-            ...posts.map(p => ({
-                type: 'post',
-                date: p.date,
-                title: p.title,
-                link: 'blog.html#post=' + encodeURIComponent(p.file)
-            })),
-            ...activities
-        ].filter(item => item.date && item.title)
-         .sort((a, b) => b.date.localeCompare(a.date))
-         .slice(0, 6);
+        const isValid = item => item && item.date && item.title;
+        const postItems = posts.map(p => ({
+            type: 'post',
+            date: p.date,
+            title: p.title,
+            link: 'blog.html#post=' + encodeURIComponent(p.file)
+        })).filter(isValid).sort(byDateDesc);
+        const siteItems = activities.filter(isValid).sort(byDateDesc);
+
+        const reserved = postItems.slice(0, MIN_POSTS);
+        const rest = [...postItems.slice(MIN_POSTS), ...siteItems]
+            .sort(byDateDesc)
+            .slice(0, Math.max(0, MAX_ITEMS - reserved.length));
+        const items = [...reserved, ...rest].sort(byDateDesc);
 
         if (!items.length) {
             box.closest('section')?.remove();
