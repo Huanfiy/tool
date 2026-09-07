@@ -119,6 +119,8 @@
 
 html {
     scroll-behavior: smooth;
+    /* 页内锚点跳转时避开吸顶导航 */
+    scroll-padding-top: calc(var(--header-height) + 16px);
 }
 
 html,
@@ -381,7 +383,11 @@ header .container {
 
 .menu-toggle {
     display: none;
+    padding: 4px 8px;
+    background: none;
+    border: none;
     font-size: 1.5rem;
+    line-height: 1;
     cursor: pointer;
     color: var(--dark-text);
 }
@@ -751,6 +757,14 @@ header .container {
     margin-top: auto;
 }
 
+/* 整卡即链接：悬停 / 聚焦卡片时同步点亮其中的 CTA 按钮 */
+.tool-card:hover .btn-outline,
+.tool-card:focus-visible .btn-outline {
+    background-color: var(--primary-soft);
+    color: var(--primary-hover);
+    border-color: var(--ink);
+}
+
 .section-lead {
     text-align: center;
     color: var(--light-text);
@@ -787,6 +801,8 @@ header .container {
     padding: 12px 22px 12px 46px;
     border: 2px solid var(--line);
     border-radius: var(--wobble-btn);
+    -webkit-appearance: none;
+    appearance: none;
     font-family: inherit;
     font-size: 1rem;
     background: var(--card-bg);
@@ -1627,11 +1643,19 @@ header .container {
     position: absolute;
     top: 20px;
     right: 30px;
+    padding: 4px 10px;
+    background: none;
+    border: none;
+    font-family: inherit;
     font-size: 2.5rem;
     color: #fffdf5;
     cursor: pointer;
     opacity: 0.8;
     line-height: 1;
+}
+
+.lightbox-close:focus-visible {
+    outline-color: #fffdf5;
 }
 
 .lightbox-close:hover {

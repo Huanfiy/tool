@@ -52,8 +52,8 @@
                 <img src="picture/icon.png" alt="Logo">
                 <span>Huanfly</span>
             </a>
-            <div class="menu-toggle"><i class="fas fa-bars"></i></div>
-            <nav class="nav-links">
+            <button type="button" class="menu-toggle" aria-label="打开菜单" aria-expanded="false" aria-controls="site-nav"><i class="fas fa-bars"></i></button>
+            <nav class="nav-links" id="site-nav">
                 <a href="index.html" class="active">主页</a>
                 <a href="blog.html">博客</a>
                 <a href="tool.html">工具</a>
@@ -138,29 +138,27 @@
     <section id="explore" class="container" style="padding-top: 2rem;">
         <h2 class="section-title" data-reveal>随便逛逛</h2>
         <div class="grid-3">
-            <!-- 博客入口 -->
-            <article class="card entry-card tone-green" data-reveal style="--rise-delay: .1s" onclick="location.href='blog.html'">
-                <div class="card-icon"><i class="fas fa-pen-nib"></i></div>
+            <!-- 入口卡片是真实链接：可键盘聚焦、可中键 / 新标签打开 -->
+            <a class="card entry-card tone-green" data-reveal style="--rise-delay: .1s" href="blog.html">
+                <div class="card-icon"><i class="fas fa-pen-nib" aria-hidden="true"></i></div>
                 <h3>技术博客</h3>
                 <p>分享嵌入式开发、编程心得与折腾记录，记录成长的每一步。</p>
-                <span class="card-link">阅读文章 <i class="fas fa-arrow-right"></i></span>
-            </article>
+                <span class="card-link">阅读文章 <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
+            </a>
 
-            <!-- 工具入口 -->
-            <article class="card entry-card tone-teal" data-reveal style="--rise-delay: .2s" onclick="location.href='tool.html'">
-                <div class="card-icon"><i class="fas fa-toolbox"></i></div>
+            <a class="card entry-card tone-teal" data-reveal style="--rise-delay: .2s" href="tool.html">
+                <div class="card-icon"><i class="fas fa-toolbox" aria-hidden="true"></i></div>
                 <h3>实用工具箱</h3>
                 <p>自制或收集的实用在线工具。提高效率，解决小问题。</p>
-                <span class="card-link">使用工具 <i class="fas fa-arrow-right"></i></span>
-            </article>
+                <span class="card-link">使用工具 <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
+            </a>
 
-            <!-- 关于入口 -->
-            <article class="card entry-card tone-violet" data-reveal style="--rise-delay: .3s" onclick="location.href='about.html'">
-                <div class="card-icon"><i class="fas fa-user-astronaut"></i></div>
+            <a class="card entry-card tone-violet" data-reveal style="--rise-delay: .3s" href="about.html">
+                <div class="card-icon"><i class="fas fa-user-astronaut" aria-hidden="true"></i></div>
                 <h3>关于我</h3>
                 <p>了解更多关于我的故事、技能栈以及联系方式。</p>
-                <span class="card-link">查看详情 <i class="fas fa-arrow-right"></i></span>
-            </article>
+                <span class="card-link">查看详情 <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
+            </a>
         </div>
     </section>
 
@@ -176,10 +174,10 @@
     <footer>
         <div class="container">
             <div class="social-icons">
-                <a href="https://github.com/Huanfiy" target="_blank" title="GitHub"><i class="fab fa-github"></i></a>
-                <a href="https://gitee.com/Huanfly" target="_blank" title="Gitee"><i class="fab fa-git-alt"></i></a>
-                <a href="https://space.bilibili.com/179895513" target="_blank" title="Bilibili"><i class="fab fa-bilibili"></i></a>
-                <a href="mailto:huanfly999@gmail.com" title="Email"><i class="fas fa-envelope"></i></a>
+                <a href="https://github.com/Huanfiy" target="_blank" rel="noopener" title="GitHub" aria-label="GitHub"><i class="fab fa-github"></i></a>
+                <a href="https://gitee.com/Huanfly" target="_blank" rel="noopener" title="Gitee" aria-label="Gitee"><i class="fab fa-git-alt"></i></a>
+                <a href="https://space.bilibili.com/179895513" target="_blank" rel="noopener" title="Bilibili" aria-label="Bilibili"><i class="fab fa-bilibili"></i></a>
+                <a href="mailto:huanfly999@gmail.com" title="Email" aria-label="Email"><i class="fas fa-envelope"></i></a>
             </div>
             <p class="footer-note">&copy; 2026 Huanfly. Design with <i class="fas fa-heart"></i> &amp; 罗小黑</p>
             <p class="footer-note site-stats" id="site-stats">

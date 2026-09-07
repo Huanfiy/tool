@@ -96,7 +96,7 @@
         const src = item.src || '';
         const cap = item.caption || '';
         const objectPosition = normalizeObjectPosition(item.position);
-        return '<div class="interest-media-card" onclick="openLightbox(\'' + escapeJsString(src) + '\', \'' + escapeJsString(cap) + '\')"><div class="interest-media-frame"><img src="' + src + '" alt="' + escapeHtml(cap) + '" loading="lazy" decoding="async" style="object-position: ' + objectPosition + ';"></div><p class="interest-caption">' + escapeHtml(cap) + '</p></div>';
+        return '<div class="interest-media-card" role="button" tabindex="0" aria-label="放大查看：' + escapeHtml(cap) + '" onclick="openLightbox(\'' + escapeJsString(src) + '\', \'' + escapeJsString(cap) + '\')"><div class="interest-media-frame"><img src="' + src + '" alt="' + escapeHtml(cap) + '" loading="lazy" decoding="async" style="object-position: ' + objectPosition + ';"></div><p class="interest-caption">' + escapeHtml(cap) + '</p></div>';
     }
 
     function normalizeObjectPosition(value) {
@@ -145,17 +145,29 @@
         }
     }
 
+    let lightboxOpener = null;
+
     window.openLightbox = function (src, caption) {
         const lb = document.getElementById('lightbox');
         const img = document.getElementById('lightbox-img');
         const capEl = document.getElementById('lightbox-caption');
         if (lb && img) {
+            lightboxOpener = document.activeElement;
             img.src = src;
             if (capEl) capEl.textContent = caption || '';
             lb.style.display = 'flex';
             document.body.style.overflow = 'hidden';
+            const closeBtn = lb.querySelector('.lightbox-close');
+            if (closeBtn) closeBtn.focus();
         }
     };
+
+    // Esc 关闭灯箱
+    document.addEventListener('keydown', function (event) {
+        if (event.key !== 'Escape') return;
+        const lb = document.getElementById('lightbox');
+        if (lb && lb.style.display !== 'none') window.closeLightbox();
+    });
 
     window.showToast = function (msg) {
         const toast = document.getElementById('toast');
@@ -184,11 +196,13 @@
     };
 
     window.closeLightbox = function (event) {
-        if (event && event.target !== event.currentTarget && !event.target.classList.contains('lightbox-close')) return;
+        if (event && event.target !== event.currentTarget && !event.target.closest('.lightbox-close')) return;
         const lb = document.getElementById('lightbox');
         if (lb) {
             lb.style.display = 'none';
             document.body.style.overflow = '';
         }
+        if (lightboxOpener && typeof lightboxOpener.focus === 'function') lightboxOpener.focus();
+        lightboxOpener = null;
     };
 })();

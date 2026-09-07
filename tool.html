@@ -50,8 +50,8 @@
                 <img src="picture/icon.png" alt="Logo">
                 <span>Huanfly</span>
             </a>
-            <div class="menu-toggle"><i class="fas fa-bars"></i></div>
-            <nav class="nav-links">
+            <button type="button" class="menu-toggle" aria-label="打开菜单" aria-expanded="false" aria-controls="site-nav"><i class="fas fa-bars"></i></button>
+            <nav class="nav-links" id="site-nav">
                 <a href="index.html">主页</a>
                 <a href="blog.html">博客</a>
                 <a href="tool.html" class="active">工具</a>
@@ -73,44 +73,43 @@
                 一些为提高效率而开发的小工具，全部在浏览器本地运行。
             </p>
 
+            <!-- 全部卡片都是真实链接：页内工具走 #ico hash（可后退、可直链），独立工具页直接跳转 -->
             <div class="grid-3">
                 <!-- 1. 图片转 ICO (页内运行) -->
-                <div class="card tool-card tone-green" data-reveal onclick="openIcoTool()">
-                    <div class="card-icon"><i class="fas fa-image"></i></div>
+                <a class="card tool-card tone-green" data-reveal href="#ico">
+                    <div class="card-icon"><i class="fas fa-image" aria-hidden="true"></i></div>
                     <h3>图片转 ICO</h3>
                     <p>快速将 PNG/JPG 图片转换为网站图标文件。</p>
-                    <button class="btn btn-outline">立即使用</button>
-                </div>
+                    <span class="btn btn-outline">立即使用</span>
+                </a>
 
-                <!-- 2. 打字练习 (外部链接) -->
-                <div class="card tool-card tone-violet" data-reveal style="--rise-delay: .1s" onclick="location.href='tools/keyboard.html'">
-                    <div class="card-icon"><i class="fas fa-keyboard"></i></div>
+                <!-- 2. 打字练习 (独立页) -->
+                <a class="card tool-card tone-violet" data-reveal style="--rise-delay: .1s" href="tools/keyboard.html">
+                    <div class="card-icon"><i class="fas fa-keyboard" aria-hidden="true"></i></div>
                     <h3>键位练习</h3>
                     <p>全键位刻意练习，智能分析弱键，提升盲打准确率。</p>
-                    <button class="btn btn-outline">开始练习</button>
-                </div>
+                    <span class="btn btn-outline">开始练习</span>
+                </a>
 
-                <!-- 3. 淘宝链接转换 (外部链接) -->
-                <div class="card tool-card tone-rose" data-reveal style="--rise-delay: .2s" onclick="location.href='tools/buy.html'">
-                    <div class="card-icon"><i class="fas fa-shopping-cart"></i></div>
+                <!-- 3. 淘宝链接转换 (独立页) -->
+                <a class="card tool-card tone-rose" data-reveal style="--rise-delay: .2s" href="tools/buy.html">
+                    <div class="card-icon"><i class="fas fa-shopping-cart" aria-hidden="true"></i></div>
                     <h3>链接转换器</h3>
                     <p>淘宝/京东链接快速清理与转换。</p>
-                    <button class="btn btn-outline">打开工具</button>
-                </div>
+                    <span class="btn btn-outline">打开工具</span>
+                </a>
 
                 <!-- 4. 技术可视化 -->
-                <a class="card tool-card tone-teal" data-reveal style="--rise-delay: .3s"
-                    href="tools/visualizations.html" aria-label="进入技术可视化">
-                    <div class="card-icon"><i class="fas fa-diagram-project"></i></div>
+                <a class="card tool-card tone-teal" data-reveal style="--rise-delay: .3s" href="tools/visualizations.html">
+                    <div class="card-icon"><i class="fas fa-diagram-project" aria-hidden="true"></i></div>
                     <h3>技术可视化</h3>
                     <p>用可操作的图解拆开控制算法、系统架构与技术原理。</p>
                     <span class="btn btn-outline">开始探索</span>
                 </a>
 
                 <!-- 5. 下载中心 -->
-                <a class="card tool-card tone-green" data-reveal style="--rise-delay: .4s"
-                    href="tools/downloads.html" aria-label="进入下载中心">
-                    <div class="card-icon"><i class="fas fa-cloud-arrow-down"></i></div>
+                <a class="card tool-card tone-green" data-reveal style="--rise-delay: .4s" href="tools/downloads.html">
+                    <div class="card-icon"><i class="fas fa-cloud-arrow-down" aria-hidden="true"></i></div>
                     <h3>下载中心</h3>
                     <p>获取可复用的 Skills、配置与开发资源，并查看真实下载统计。</p>
                     <span class="btn btn-outline">浏览下载</span>
@@ -118,10 +117,10 @@
             </div>
         </div>
 
-        <!-- ICO 工具运行界面 (默认隐藏) -->
+        <!-- ICO 工具运行界面 (默认隐藏，由 #ico hash 打开) -->
         <div id="ico-tool-view" style="display: none; max-width: 800px; margin: 0 auto;">
-            <button onclick="closeIcoTool()" class="btn btn-outline btn-back">
-                <i class="fas fa-arrow-left"></i> 返回工具库
+            <button type="button" onclick="closeIcoTool()" class="btn btn-outline btn-back">
+                <i class="fas fa-arrow-left" aria-hidden="true"></i> 返回工具库
             </button>
 
             <div class="card tone-green">
@@ -131,8 +130,8 @@
                     <p>建议上传正方形图片 (PNG/JPG)</p>
                 </div>
 
-                <div class="upload-zone" id="drop-zone">
-                    <i class="fas fa-cloud-upload-alt"></i>
+                <div class="upload-zone" id="drop-zone" role="button" tabindex="0" aria-label="选择或拖拽图片">
+                    <i class="fas fa-cloud-upload-alt" aria-hidden="true"></i>
                     <p>点击选择或拖拽图片至此</p>
                     <input type="file" id="imageInput" accept="image/png, image/jpeg, image/jpg" style="display: none;">
                 </div>
@@ -177,22 +176,37 @@
         const previewArea = document.getElementById('preview-area');
         const imagePreview = document.getElementById('imagePreview');
 
-        function openIcoTool() {
-            toolsGrid.style.display = 'none';
-            icoView.style.display = 'block';
-            window.scrollTo(0, 0);
+        // 视图由 #ico hash 驱动：卡片是 <a href="#ico">，浏览器后退可回到列表，也可直链 tool.html#ico
+        const BASE_TITLE = document.title;
+        let enteredFromGrid = false;
+
+        function handleToolRoute(event) {
+            const showIco = location.hash === '#ico';
+            if (showIco && event && !event.oldURL.endsWith('#ico')) enteredFromGrid = true;
+            if (!showIco) enteredFromGrid = false;
+            toolsGrid.style.display = showIco ? 'none' : 'block';
+            icoView.style.display = showIco ? 'block' : 'none';
+            document.title = showIco ? `图片转 ICO - ${BASE_TITLE}` : BASE_TITLE;
+            if (showIco) window.scrollTo({ top: 0, behavior: 'instant' });
+            else resetIcoTool();
         }
 
         function closeIcoTool() {
-            icoView.style.display = 'none';
-            toolsGrid.style.display = 'block';
-            resetIcoTool();
+            if (enteredFromGrid) {
+                history.back();   // 触发 hashchange → handleToolRoute，不额外堆历史记录
+            } else {
+                history.replaceState(null, '', location.pathname + location.search);
+                handleToolRoute();
+            }
         }
 
         function resetIcoTool() {
             imageInput.value = '';
             previewArea.style.display = 'none';
         }
+
+        window.addEventListener('hashchange', handleToolRoute);
+        if (location.hash === '#ico') handleToolRoute();
 
         // Upload Handlers
         dropZone.addEventListener('click', () => imageInput.click());

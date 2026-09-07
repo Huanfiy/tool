@@ -64,8 +64,8 @@
                 <img src="picture/icon.png" alt="Logo">
                 <span>Huanfly</span>
             </a>
-            <div class="menu-toggle"><i class="fas fa-bars"></i></div>
-            <nav class="nav-links">
+            <button type="button" class="menu-toggle" aria-label="打开菜单" aria-expanded="false" aria-controls="site-nav"><i class="fas fa-bars"></i></button>
+            <nav class="nav-links" id="site-nav">
                 <a href="index.html">主页</a>
                 <a href="blog.html" class="active">博客</a>
                 <a href="tool.html">工具</a>
@@ -85,10 +85,10 @@
         <div class="blog-toolbar" data-reveal>
             <div class="blog-search">
                 <i class="fas fa-search"></i>
-                <input type="text" id="blog-search-input" placeholder="搜索文章标题、简介或标签…">
+                <input type="search" id="blog-search-input" placeholder="搜索文章标题、简介或标签…" aria-label="搜索文章" autocomplete="off">
             </div>
             <!-- 标签筛选：由 JS 根据 posts.json 动态生成 -->
-            <div class="filter-chips" id="blog-filter-chips"></div>
+            <div class="filter-chips" id="blog-filter-chips" role="group" aria-label="按标签筛选"></div>
         </div>
 
         <div class="blog-list" id="blog-cards-grid">
@@ -146,8 +146,8 @@
                 return;
             }
             grid.innerHTML = posts.map((post, i) => `
-                <article class="card blog-card" data-reveal style="--rise-delay: ${Math.min(i, 4) * 80}ms"
-                         onclick="openPost('${post.file}')">
+                <a class="card blog-card" data-reveal style="--rise-delay: ${Math.min(i, 4) * 80}ms"
+                   href="#post=${encodeURIComponent(post.file)}">
                     <div class="blog-thumb">
                         <img src="${getCoverUrl(post)}" alt="${getCoverAlt(post)}"
                              class="${getCoverUrl(post).startsWith('picture/blog/') ? 'illustrated' : post.coverFit === 'contain' ? 'contain' : ''}"
@@ -163,7 +163,7 @@
                         <p class="blog-summary">${post.summary || ''}</p>
                         <div class="blog-readmore">阅读全文</div>
                     </div>
-                </article>
+                </a>
             `).join('');
             observeReveal(grid);
         }

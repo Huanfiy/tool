@@ -50,8 +50,8 @@
                 <img src="picture/icon.png" alt="Logo">
                 <span>Huanfly</span>
             </a>
-            <div class="menu-toggle"><i class="fas fa-bars"></i></div>
-            <nav class="nav-links">
+            <button type="button" class="menu-toggle" aria-label="打开菜单" aria-expanded="false" aria-controls="site-nav"><i class="fas fa-bars"></i></button>
+            <nav class="nav-links" id="site-nav">
                 <a href="index.html">主页</a>
                 <a href="blog.html">博客</a>
                 <a href="tool.html">工具</a>
@@ -117,29 +117,30 @@
             <h2 class="section-title">兴趣爱好</h2>
 
             <!-- 兴趣卡片列表视图 -->
+            <!-- 卡片是页内动作：role="button" + tabindex 让键盘可聚焦，Enter / 空格由 js/script.js 统一转为点击 -->
             <div id="interest-list-view" class="grid-3">
-                <div class="card interest-card tone-green" onclick="showInterest('photography')">
-                    <i class="fas fa-camera"></i>
+                <div class="card interest-card tone-green" role="button" tabindex="0" onclick="showInterest('photography')">
+                    <i class="fas fa-camera" aria-hidden="true"></i>
                     <h4>摄影</h4>
                     <p>记录日常与旅途瞬间</p>
                 </div>
-                <div class="card interest-card tone-teal" onclick="showInterest('tech')">
-                    <i class="fas fa-tools"></i>
+                <div class="card interest-card tone-teal" role="button" tabindex="0" onclick="showInterest('tech')">
+                    <i class="fas fa-tools" aria-hidden="true"></i>
                     <h4>科技制作</h4>
                     <p>把想法做成可运行实物</p>
                 </div>
-                <div class="card interest-card tone-violet" onclick="showToast('当前还没内容哦~')">
-                    <i class="fas fa-gamepad"></i>
+                <div class="card interest-card tone-violet" role="button" tabindex="0" onclick="showToast('当前还没内容哦~')">
+                    <i class="fas fa-gamepad" aria-hidden="true"></i>
                     <h4>游戏</h4>
                     <p>作为放松和节奏切换方式</p>
                 </div>
-                <div class="card interest-card tone-amber" onclick="showToast('当前还没内容哦~')">
-                    <i class="fas fa-cube"></i>
+                <div class="card interest-card tone-amber" role="button" tabindex="0" onclick="showToast('当前还没内容哦~')">
+                    <i class="fas fa-cube" aria-hidden="true"></i>
                     <h4>3D 建模与打印</h4>
                     <p>工业建模 + FDM 打印实践</p>
                 </div>
-                <div class="card interest-card tone-rose" onclick="showInterest('reading')">
-                    <i class="fas fa-book"></i>
+                <div class="card interest-card tone-rose" role="button" tabindex="0" onclick="showInterest('reading')">
+                    <i class="fas fa-book" aria-hidden="true"></i>
                     <h4>阅读</h4>
                     <p>推荐书籍、书评与优质图书平台</p>
                 </div>
@@ -147,21 +148,21 @@
 
             <!-- 摄影详情视图 -->
             <div id="interest-photography-view" style="display: none;">
-                <button onclick="hideInterest()" class="btn btn-outline btn-back"><i class="fas fa-arrow-left"></i> 返回</button>
+                <button type="button" onclick="hideInterest()" class="btn btn-outline btn-back"><i class="fas fa-arrow-left" aria-hidden="true"></i> 返回</button>
                 <h3 class="section-title">摄影作品</h3>
                 <div id="photo-gallery" class="interest-gallery"></div>
             </div>
 
             <!-- 科技制作详情视图 -->
             <div id="interest-tech-view" style="display: none;">
-                <button onclick="hideInterest()" class="btn btn-outline btn-back"><i class="fas fa-arrow-left"></i> 返回</button>
+                <button type="button" onclick="hideInterest()" class="btn btn-outline btn-back"><i class="fas fa-arrow-left" aria-hidden="true"></i> 返回</button>
                 <h3 class="section-title">科技制作</h3>
                 <div id="tech-gallery" class="interest-gallery"></div>
             </div>
 
             <!-- 阅读详情视图 -->
             <div id="interest-reading-view" style="display: none;">
-                <button onclick="hideInterest()" class="btn btn-outline btn-back"><i class="fas fa-arrow-left"></i> 返回</button>
+                <button type="button" onclick="hideInterest()" class="btn btn-outline btn-back"><i class="fas fa-arrow-left" aria-hidden="true"></i> 返回</button>
                 <h3 class="section-title">推荐书籍</h3>
                 <div id="books-list" class="interest-books"></div>
                 <h3 class="section-title" style="margin-top: 3rem;">优质图书平台</h3>
@@ -173,8 +174,8 @@
         <div id="toast" class="toast" aria-live="polite"></div>
 
         <!-- 图片放大 Lightbox -->
-        <div id="lightbox" class="lightbox" style="display: none;" onclick="closeLightbox(event)">
-            <span class="lightbox-close">&times;</span>
+        <div id="lightbox" class="lightbox" style="display: none;" role="dialog" aria-modal="true" aria-label="图片预览" onclick="closeLightbox(event)">
+            <button type="button" class="lightbox-close" aria-label="关闭预览">&times;</button>
             <img id="lightbox-img" src="" alt="放大预览">
             <p id="lightbox-caption" class="lightbox-caption"></p>
         </div>
@@ -184,9 +185,9 @@
     <footer>
         <div class="container">
             <div class="social-icons">
-                <a href="https://github.com/Huanfiy" target="_blank" title="GitHub"><i class="fab fa-github"></i></a>
-                <a href="https://gitee.com/Huanfly" target="_blank" title="Gitee"><i class="fab fa-git-alt"></i></a>
-                <a href="https://space.bilibili.com/179895513" target="_blank" title="Bilibili"><i class="fab fa-bilibili"></i></a>
+                <a href="https://github.com/Huanfiy" target="_blank" rel="noopener" title="GitHub" aria-label="GitHub"><i class="fab fa-github"></i></a>
+                <a href="https://gitee.com/Huanfly" target="_blank" rel="noopener" title="Gitee" aria-label="Gitee"><i class="fab fa-git-alt"></i></a>
+                <a href="https://space.bilibili.com/179895513" target="_blank" rel="noopener" title="Bilibili" aria-label="Bilibili"><i class="fab fa-bilibili"></i></a>
             </div>
             <p class="footer-note">&copy; 2026 Huanfly.</p>
             <p class="footer-note site-stats" id="site-stats">

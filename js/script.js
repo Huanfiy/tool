@@ -2,7 +2,8 @@
  * Huanfly · 手绘森林主题交互
  * 1. 点击灵气迸发（绿/青色粒子）
  * 2. 全屏漂浮萤火灵气（缓慢上浮的发光点）
- * 3. 主题切换 / 移动端菜单 / 平滑滚动
+ * 3. 主题切换 / 移动端菜单 / 键盘可达性
+ * 4. 首页问候与动态时间线 / 不蒜子统计 / 滚动浮现
  * ============================================================= */
 
 const SPIRIT_BURST_CONFIG = {
@@ -493,7 +494,10 @@ window.observeReveal = root => {
 };
 
 /* =============================================================
- * 基础交互：主题切换 / 移动端菜单 / 平滑滚动
+ * 基础交互：主题切换 / 移动端菜单 / 键盘可达性
+ * 首帧主题由各页 <head> 内联脚本写入 data-theme，这里只负责图标同步与切换。
+ * 页内锚点交给浏览器原生处理：style.css 的 scroll-behavior / scroll-padding-top 负责
+ * 平滑滚动与避开吸顶导航，博客与工具页的 #hash 视图路由也因此不会被拦截。
  * ============================================================= */
 document.addEventListener('DOMContentLoaded', () => {
     observeReveal(document);
@@ -503,88 +507,73 @@ document.addEventListener('DOMContentLoaded', () => {
     initActivityTimeline();
     initBusuanzi();
 
-    // Theme Toggle Logic
+    // --- 主题切换 ---
     const themeToggles = document.querySelectorAll('.theme-toggle');
-
-    // Check saved theme or system preference
-    const savedTheme = localStorage.getItem('theme');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-    if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
-        document.documentElement.setAttribute('data-theme', 'dark');
-        updateThemeIcons('dark');
-    }
-
-    themeToggles.forEach(toggle => {
-        toggle.addEventListener('click', () => {
-            const currentTheme = document.documentElement.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-
-            document.documentElement.setAttribute('data-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
-            updateThemeIcons(newTheme);
-        });
-    });
 
     function updateThemeIcons(theme) {
         themeToggles.forEach(toggle => {
             const icon = toggle.querySelector('i');
-            if (icon) {
-                if (theme === 'dark') {
-                    icon.classList.remove('fa-moon');
-                    icon.classList.add('fa-sun');
-                } else {
-                    icon.classList.remove('fa-sun');
-                    icon.classList.add('fa-moon');
-                }
-            }
+            if (!icon) return;
+            icon.classList.toggle('fa-sun', theme === 'dark');
+            icon.classList.toggle('fa-moon', theme !== 'dark');
         });
     }
 
+    updateThemeIcons(document.documentElement.getAttribute('data-theme'));
+
+    themeToggles.forEach(toggle => {
+        toggle.addEventListener('click', () => {
+            const newTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            try { localStorage.setItem('theme', newTheme); } catch (error) { /* 隐私模式下忽略 */ }
+            updateThemeIcons(newTheme);
+        });
+    });
+
+    // --- 移动端菜单 ---
     const menuToggle = document.querySelector('.menu-toggle');
     const navLinks = document.querySelector('.nav-links');
 
-    if (menuToggle && navLinks) {
-        menuToggle.addEventListener('click', () => {
-            navLinks.classList.toggle('active');
+    function setMenuOpen(open) {
+        if (!menuToggle || !navLinks) return;
+        navLinks.classList.toggle('active', open);
+        menuToggle.setAttribute('aria-expanded', String(open));
+        menuToggle.setAttribute('aria-label', open ? '关闭菜单' : '打开菜单');
+        const icon = menuToggle.querySelector('i');
+        if (icon) {
+            icon.classList.toggle('fa-times', open);
+            icon.classList.toggle('fa-bars', !open);
+        }
+    }
 
-            // Toggle icon between bars and times (X)
-            const icon = menuToggle.querySelector('i');
-            if (icon.classList.contains('fa-bars')) {
-                icon.classList.replace('fa-bars', 'fa-times');
-            } else {
-                icon.classList.replace('fa-times', 'fa-bars');
+    if (menuToggle && navLinks) {
+        setMenuOpen(false);
+        menuToggle.addEventListener('click', () => setMenuOpen(!navLinks.classList.contains('active')));
+
+        // 点击菜单外、选中任一导航链接或按 Esc 都收起菜单
+        document.addEventListener('click', (e) => {
+            if (!navLinks.classList.contains('active')) return;
+            if (e.target.closest('a') && navLinks.contains(e.target)) {
+                setMenuOpen(false);
+            } else if (!navLinks.contains(e.target) && !menuToggle.contains(e.target)) {
+                setMenuOpen(false);
+            }
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && navLinks.classList.contains('active')) {
+                setMenuOpen(false);
+                menuToggle.focus();
             }
         });
     }
 
-    // Close mobile menu when clicking outside
-    document.addEventListener('click', (e) => {
-        if (navLinks && navLinks.classList.contains('active')) {
-            if (!navLinks.contains(e.target) && !menuToggle.contains(e.target)) {
-                navLinks.classList.remove('active');
-                const icon = menuToggle.querySelector('i');
-                icon.classList.replace('fa-times', 'fa-bars');
-            }
-        }
-    });
-
-    // Smooth scroll for anchor links
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function (e) {
-            e.preventDefault();
-            const target = document.querySelector(this.getAttribute('href'));
-            if (target) {
-                target.scrollIntoView({
-                    behavior: 'smooth'
-                });
-                // Close menu if open
-                if (navLinks && navLinks.classList.contains('active')) {
-                    navLinks.classList.remove('active');
-                    const icon = menuToggle.querySelector('i');
-                    icon.classList.replace('fa-times', 'fa-bars');
-                }
-            }
-        });
+    // --- 键盘可达性：带 role="button" 的可点击卡片支持 Enter / 空格 ---
+    document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        const target = e.target;
+        if (!(target instanceof HTMLElement) || target.getAttribute('role') !== 'button') return;
+        if (target.matches('button, a, input, select, textarea')) return;
+        e.preventDefault();
+        target.click();
     });
 });

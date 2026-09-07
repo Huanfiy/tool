@@ -40,12 +40,14 @@ Three.js 工作室是 Huanfly 个人设计风格在三维空间中的延展。
 | `js/interests.js` | 关于页兴趣详情视图（摄影 / 科技制作 / 阅读）渲染，Toast 与 Lightbox |
 | `index.html` | Hero 场景（山丘 + 小黑 SVG 内联于此文件）、板块入口卡片、动态时间线 |
 | `blog.html` | 文章列表 / 详情双视图、标签筛选、搜索、`#post=` hash 路由、Markdown 渲染、文章信息、AI 摘要与可选评论 |
-| `tool.html` | 6 个工具入口 + 页内 ICO 转换器（含拖拽上传） |
+| `tool.html` | 5 个工具入口（均为真实链接）+ 页内 ICO 转换器（`#ico` hash 视图，含拖拽上传） |
 | `about.html` | 简介、时间线、兴趣卡片与详情视图容器 |
 | `tools/downloads.html` | 下载资源卡片、校验值、GitHub 下载统计；复用共享主题并补充页内样式 |
 | `tools/visualizations.html` | 技术可视化索引；复用共享主题并补充页内样式 |
 
 页面结构模式：单页内「列表视图 ↔ 详情视图」通过 `display` 切换（博客文章、ICO 工具、兴趣详情均采用此模式）。
+博客与 ICO 工具由 `#post=` / `#ico` hash 驱动：入口卡片是真实 `<a href="#…">`，浏览器后退可回到列表，「返回」按钮在由本页进入时调用 `history.back()`、直链进入时用 `replaceState` 清 hash，不额外堆叠历史记录。
+入口卡片、工具卡片与博客卡片一律是 `<a>`；页内动作卡片（兴趣、上传区）用 `role="button" tabindex="0"`，Enter / 空格由 `js/script.js` 统一转为点击。
 
 ## 3. 设计 Token
 
