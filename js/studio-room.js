@@ -331,25 +331,56 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
         emissiveStrip(architecture,width-.16,cx,4.145,-3.22,m.amberGlow);
         for(const offset of [-width*.36,width*.36])bar(architecture,[cx+offset,3.96,-3.68],[cx+offset,4.16,-3.25],.025,m.black);
     }
-    // Left shelf: individually modeled books with raised spines, page blocks, bands and titles.
-    const bookSpines=['刻意练习','我们为什么要睡觉','foc 原理','嵌入式设计','信号与系统'];
-    const bookColors=[m.teal,m.orange,m.blue,m.cream,m.mint];
-    const bookInk=['#f7efd9','#fff2d8','#eef1df','#31453a','#31453a'];
-    const bookXs=[-4.40,-4.02,-3.64,-3.25,-2.84];
-    const bookHeights=[.63,.70,.56,.66,.58];
-    bookSpines.forEach((title,i)=>{
-        const book=group(architecture,bookXs[i],4.53,-3.42);book.rotation.z=(i===1?.055:i===3?-.035:0);
-        const h=bookHeights[i],w=i===1?.28:i===2?.23:.25;
-        box(book,w,h,.39,0,0,0,bookColors[i],.012);
-        // Recessed page block, raised spine ridge and cover bands keep each book
-        // readable as a bound volume instead of a row of coloured boxes.
-        box(book,w-.045,.025,.34,0,h/2-.028,.015,m.cream,.004);
-        box(book,.022,h-.065,.34,w/2-.025,-.006,.015,m.cream,.003);
-        box(book,.026,h-.08,.025,-w/2+.026,0,.217,bookColors[(i+2)%bookColors.length],.003);
-        const titlePlane=textLabel(book,title,h-.12,w-.075,0,0,.222,{size:145,color:bookInk[i],align:'center',bold:true,font:'Microsoft YaHei, sans-serif'});
-        titlePlane.rotation.z=-Math.PI/2;
-        for(const y of [-h*.39,h*.39])bar(book,[-w/2+.032,y,.222],[w/2-.032,y,.222],.005,material(`bookInk:${bookInk[i]}`,{color:bookInk[i]}));
+    // Left shelf: hardcover volumes built from two boards, a recessed page block with
+    // painted page edges, a rounded spine with raised bands and an upright-stacked
+    // spine title. Books stand on the shelf top, touching; the last one leans.
+    const shelfTop=4.26,bookBackZ=-3.615;
+    const pageEdges=canvasTexture(256,64,(ctx,cw,ch)=>{
+        ctx.fillStyle='#f1e8cf';ctx.fillRect(0,0,cw,ch);
+        for(let x=0;x<cw;x+=3){ctx.fillStyle=`rgba(150,132,96,${.18+((x*7)%11)/40})`;ctx.fillRect(x,0,1,ch);}
     });
+    const pageMaterial=material('pages',{color:'#ffffff',map:pageEdges.texture});
+    function spineTitle(parent,title,w,h,z,ink){
+        // Chinese spine titles stack upright glyphs; Latin runs turn to read downward.
+        const runs=[];for(const ch of title){if(/[A-Za-z0-9]/.test(ch)&&runs.length&&runs.at(-1).latin)runs.at(-1).text+=ch;else if(ch!==' ')runs.push({latin:/[A-Za-z0-9]/.test(ch),text:ch});}
+        const tex=canvasTexture(256,Math.round(256*h/w),(ctx,cw,ch)=>{
+            const measure=size=>runs.reduce((sum,run)=>{ctx.font=`600 ${run.latin?size*.82:size}px ${run.latin?'Georgia, serif':'Microsoft YaHei, sans-serif'}`;return sum+(run.latin?ctx.measureText(run.text).width+size*.3:size*1.12);},0);
+            let size=Math.round(cw*.6);while(size>20&&measure(size)>ch*.72)size-=2;
+            ctx.fillStyle=ink;ctx.textAlign='center';ctx.textBaseline='middle';
+            let y=(ch*.78-measure(size))/2;
+            for(const run of runs){
+                ctx.font=`600 ${run.latin?size*.82:size}px ${run.latin?'Georgia, serif':'Microsoft YaHei, sans-serif'}`;
+                if(run.latin){const len=ctx.measureText(run.text).width+size*.3;ctx.save();ctx.translate(cw/2,y+len/2);ctx.rotate(Math.PI/2);ctx.fillText(run.text,0,0);ctx.restore();y+=len;}
+                else{ctx.fillText(run.text,cw/2,y+size*.56);y+=size*1.12;}
+            }
+            ctx.globalAlpha=.7;ctx.lineWidth=3;ctx.strokeStyle=ink;
+            ctx.beginPath();ctx.arc(cw/2,ch*.90,cw*.06,0,Math.PI*2);ctx.stroke();
+            ctx.fillRect(cw*.40,ch*.945-1.5,cw*.20,3);
+        });
+        return surface(parent,w,h,0,0,z,tex.texture);
+    }
+    const volumes=[
+        {title:'刻意练习',cover:m.teal,ink:'#f7efd9',w:.25,h:.63,d:.39},
+        {title:'我们为什么要睡觉',cover:m.orange,ink:'#fff2d8',w:.28,h:.70,d:.41,ribbon:true},
+        {title:'foc 原理',cover:m.blue,ink:'#eef1df',w:.23,h:.56,d:.36},
+        {title:'嵌入式设计',cover:m.cream,ink:'#31453a',w:.25,h:.66,d:.40,ribbon:true},
+        {title:'信号与系统',cover:m.mint,ink:'#31453a',w:.25,h:.58,d:.38},
+        {title:'自动控制原理',cover:m.darkOrange,ink:'#f3e6c8',w:.27,h:.64,d:.40,tilt:.21}
+    ];
+    let bookLeft=-4.655;
+    for(const {title,cover,ink,w,h,d,tilt=0,ribbon} of volumes){
+        // Pivot on the bottom-left corner so upright and leaning books both rest on the shelf.
+        const left=bookLeft+h*Math.sin(tilt);
+        const book=group(architecture,left+(w/2)*Math.cos(tilt)-(h/2)*Math.sin(tilt),shelfTop+(w/2)*Math.sin(tilt)+(h/2)*Math.cos(tilt),bookBackZ+d/2);
+        book.rotation.z=tilt;bookLeft=left+w*Math.cos(tilt)+.018;
+        const boardT=.016,overhang=.012,spineT=.03,inkMat=material(`bookInk:${ink}`,{color:ink});
+        box(book,w,h,spineT,0,0,d/2-spineT/2,cover,.013);
+        for(const side of [-1,1])box(book,boardT,h,d-spineT,side*(w/2-boardT/2),0,-spineT/2,cover,.004);
+        box(book,w-2*boardT,h-2*overhang,d-spineT-overhang,0,0,(overhang-spineT)/2,pageMaterial,.003);
+        for(const y of [-h*.38,h*.38])box(book,w-.012,.012,.008,0,y,d/2+.002,inkMat,.003);
+        spineTitle(book,title,w-.05,h-.16,d/2+.0015,ink);
+        if(ribbon){const tab=box(book,.022,.06,.003,w*.16,h/2+.012,-d*.12,m.darkOrange,.001);tab.rotation.z=-.35;}
+    }
     const shelfFigures=createStudioFigures({parent:architecture,box,cylinder,sphere,bar,group,material});
     shelfFigures.position.set(3.36,4.26,-3.43);
     // An L-shaped walnut workbench on rear cantilever frames, with a clear knee space.
@@ -424,30 +455,93 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     bar(notebook,[-.10,.043,-.20],[.26,.043,.17],.015,m.orange);
     bar(notebook,[.26,.043,.17],[.31,.043,.22],.009,m.darkOrange);
 
-    // Development board: daughterboard, standoffs, chip pins, headers and blinking status LEDs.
+    // Development board: a green PCB on brass standoffs above a dark carrier. Copper
+    // routing, pads, vias and silkscreen are painted onto the board face; the parts
+    // standing on it (gull-wing LQFP, double-row headers, USB-C, regulator, crystal,
+    // capacitors, buttons, LEDs and an OLED module) sit on their painted footprints.
     const pcb=device('pcb',-1.55,1.82,-2.38,[-1.55,2.40,-2.28]);
     box(pcb.fixed,1.0,.045,.81,0,0,0,m.black,.025);
-    const pcbAssembly=group(pcb.root);box(pcbAssembly,.91,.035,.70,0,.05,0,m.pcb,.015);
-    for(const x of [-.40,.40])for(const z of [-.28,.28]){cylinder(pcbAssembly,.026,.026,.056,x,.047,z,m.gold,12);}
-    const processor=group(pcb.root,0,.11,0);box(processor,.26,.055,.27,0,0,0,m.black,.008);
-    for(let i=0;i<9;i++)for(const side of [-1,1]){
-        box(processor,.012,.014,.045,-.105+i*.026,-.016,side*.148,m.silver,.002);
-        box(processor,.045,.014,.012,side*.148,-.016,-.105+i*.026,m.silver,.002);
+    const board={w:.91,d:.70,t:.035,top:.1075},chipY=board.top+.037,pinX=i=>-.121+i*.022;
+    // SMD passives: [x, z, turned]; turned parts lie along z. Kept clear of every routed trace.
+    const passives=[[-.235,-.052,0],[-.235,-.074,0],[-.235,.08,0],[.27,.03,0],[.27,.10,0],[.36,.10,0],[-.16,.205,1],[.16,.205,1],[-.16,-.205,1],[.16,-.205,1],[-.27,-.10,0],[-.27,-.122,0]];
+    const brass=material('brass',{color:'#c9a86a',metalness:.35,roughness:.45});
+    const pcbAssembly=group(pcb.root);box(pcbAssembly,board.w,board.t,board.d,0,board.top-board.t/2,0,m.pcb,.006);
+    for(const x of [-.40,.40])for(const z of [-.28,.28]){
+        cylinder(pcbAssembly,.03,.03,.05,x,.0475,z,brass,6);
+        cylinder(pcbAssembly,.022,.022,.008,x,board.top+.004,z,m.silver,12);
     }
+    const pcbArt=canvasTexture(1024,788,(ctx,W,H)=>{
+        const X=x=>(x+board.w/2)/board.w*W,Z=z=>(z+board.d/2)/board.d*H,sx=W/board.w,sz=H/board.d,tip=.17;
+        const trace=(points,width=4)=>{ctx.strokeStyle='#6d9d7d';ctx.lineWidth=width;ctx.lineJoin='round';ctx.lineCap='round';ctx.beginPath();points.forEach(([x,z],i)=>i?ctx.lineTo(X(x),Z(z)):ctx.moveTo(X(x),Z(z)));ctx.stroke();};
+        const pad=(x,z,w,d)=>{ctx.fillStyle='#d3b374';ctx.fillRect(X(x)-w*sx/2,Z(z)-d*sz/2,w*sx,d*sz);ctx.strokeStyle='#8f7847';ctx.lineWidth=1;ctx.strokeRect(X(x)-w*sx/2,Z(z)-d*sz/2,w*sx,d*sz);};
+        const via=(x,z)=>{ctx.fillStyle='#d3b374';ctx.beginPath();ctx.arc(X(x),Z(z),5,0,Math.PI*2);ctx.fill();ctx.fillStyle='#3c5d4a';ctx.beginPath();ctx.arc(X(x),Z(z),2,0,Math.PI*2);ctx.fill();};
+        const silk=(x,z,w,d)=>{ctx.strokeStyle='rgba(238,242,230,.85)';ctx.lineWidth=2;ctx.strokeRect(X(x)-w*sx/2,Z(z)-d*sz/2,w*sx,d*sz);};
+        const label=(text,x,z,size=16)=>{ctx.fillStyle='rgba(238,242,230,.9)';ctx.font=`600 ${size}px monospace`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(text,X(x),Z(z));};
+        ctx.fillStyle='#54856a';ctx.fillRect(0,0,W,H);
+        // Ground pour on both free regions, then the routed signal and power nets.
+        ctx.fillStyle='#4f7f63';for(const [x,w] of [[-.31,.24],[.32,.22]])ctx.fillRect(X(x)-w*sx/2,Z(-.2),w*sx,.4*sz);
+        for(const side of [-1,1]){
+            const used=new Set();
+            for(let i=0;i<12;i++){
+                const x=pinX(i),j=Math.round((x+.2925)/.039),hx=-.2925+j*.039;
+                if(i%3!==1&&!used.has(j)){used.add(j);trace([[x,side*tip],[x,side*.19],[hx,side*(.19+Math.abs(hx-x))],[hx,side*.23]]);}
+                else{const z=side*(.196+(i%2)*.012);trace([[x,side*tip],[x,z]]);via(x,z);}
+            }
+            for(let i=0;i<16;i++)label((side<0?'PB':'PA')+i,-.2925+i*.039,side*.341,12);
+        }
+        trace([[-tip,pinX(4)],[-.196,pinX(4)],[-.206,-.05]]);trace([[-tip,pinX(5)],[-.196,pinX(5)],[-.206,-.03]]);
+        trace([[-tip,pinX(7)],[-.25,pinX(7)],[-.28,.003],[-.35,.003]]);trace([[-tip,pinX(8)],[-.26,pinX(8)],[-.30,.015],[-.35,.015]]);
+        trace([[-tip,pinX(1)],[-.22,pinX(1)],[-.26,-.139],[-.28,-.139]],7);trace([[-tip,pinX(10)],[-.22,pinX(10)],[-.25,.129],[-.27,.129]],7);
+        trace([[-.35,-.02],[-.33,-.02],[-.31,-.04],[-.31,-.115]],7);trace([[-.31,-.185],[-.31,-.23]],7);
+        for(const i of [0,2,3,6,9,11]){const z=pinX(i),vx=-.196-(i%2)*.012;trace([[-tip,z],[vx,z]]);via(vx,z);}
+        trace([[tip,pinX(2)],[.20,pinX(2)],[.23,-.107],[.23,-.15],[.26,-.18]]);trace([[tip,pinX(3)],[.215,pinX(3)],[.245,-.085],[.245,-.125],[.30,-.18]]);
+        trace([[tip,pinX(6)],[.30,pinX(6)],[.33,.041]]);trace([[tip,pinX(8)],[.30,pinX(8)],[.40,.155]]);trace([[tip,pinX(9)],[.20,pinX(9)],[.24,.117],[.24,.13]]);
+        for(const i of [0,1,4,5,7,10,11]){const z=pinX(i),vx=.196+(i%2)*.012;trace([[tip,z],[vx,z]]);via(vx,z);}
+        for(let i=0;i<12;i++){pad(pinX(i),-.15,.01,.044);pad(pinX(i),.15,.01,.044);pad(-.15,pinX(i),.044,.01);pad(.15,pinX(i),.044,.01);}
+        for(const [x,z,turned] of passives)for(const s of [-1,1])pad(x+(turned?0:s*.008),z+(turned?s*.008:0),turned?.012:.006,turned?.006:.012);
+        for(const x of [-.245,-.215])pad(x,-.04,.012,.014);
+        for(const x of [.26,.30,.34,.38])pad(x,-.18,.018,.018);
+        for(const [x,z] of [[-.35,.14],[-.27,.15]])for(const s of [-1,1])via(x+s*.018,z);
+        ctx.strokeStyle='rgba(238,242,230,.85)';ctx.lineWidth=2;ctx.strokeRect(X(-.443),Z(-.338),.886*sx,.676*sz);
+        for(const x of [-.40,.40])for(const z of [-.28,.28]){ctx.strokeStyle='#d3b374';ctx.lineWidth=5;ctx.beginPath();ctx.arc(X(x),Z(z),.03*sx,0,Math.PI*2);ctx.stroke();}
+        silk(0,0,.36,.36);ctx.fillStyle='rgba(238,242,230,.9)';ctx.beginPath();ctx.arc(X(-.195),Z(-.195),4,0,Math.PI*2);ctx.fill();
+        silk(-.40,0,.12,.14);silk(-.31,-.15,.07,.075);silk(-.23,-.04,.05,.026);silk(.24,.15,.065,.065);silk(.40,.15,.065,.065);silk(.32,-.10,.28,.18);
+        for(const [x,z] of [[-.35,.14],[-.27,.15]]){ctx.strokeStyle='rgba(238,242,230,.85)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(X(x),Z(z),.031*sx,0,Math.PI*2);ctx.stroke();}
+        label('HUANFLY · DEV-H7 · v1.2',-.31,-.212,17);label('USB-C',-.40,.095,14);label('3V3',-.36,-.15,13);label('XTAL',-.23,-.012,11);
+        label('RST',.24,.198,13);label('BOOT',.40,.198,13);label('ACT',.34,.075,11);label('PWR',.42,.075,11);label('I2C1 OLED',.32,-.208,11);
+    });
+    const pcbFace=new THREE.Mesh(new THREE.PlaneGeometry(board.w-.004,board.d-.004),new THREE.MeshStandardMaterial({map:pcbArt.texture,roughness:.88}));
+    pcbFace.rotation.x=-Math.PI/2;pcbFace.position.y=board.top+.002;pcbFace.receiveShadow=true;pcbAssembly.add(pcbFace);
+    // LQFP-48: the body floats on pins whose feet rest on the painted pads.
+    const processor=group(pcb.root,0,chipY,0);box(processor,.26,.05,.26,0,0,0,m.black,.006);
+    for(let i=0;i<12;i++)for(const side of [-1,1]){
+        box(processor,.008,.012,.038,pinX(i),-.031,side*.149,m.silver,0);
+        box(processor,.038,.012,.008,side*.149,-.031,pinX(i),m.silver,0);
+    }
+    cylinder(processor,.006,.006,.003,-.10,.026,-.10,m.silver,8);
     textLabel(processor,['STM32','H743'],.18,.11,0,.029,0,{rotation:-Math.PI/2,color:'#c4d6c4',align:'center',size:46});
     const boardTop=group(pcb.root);
     for(const z of [-.28,.28]){
-        box(boardTop,.65,.065,.09,0,.115,z,m.black,.008);
-        for(let i=0;i<16;i++)box(boardTop,.014,.019,.014,-.29+i*.039,.155,z,m.gold,.002);
+        box(boardTop,.66,.065,.10,0,board.top+.0325,z,m.black,.006);
+        for(let i=0;i<16;i++)for(const row of [-1,1])box(boardTop,.012,.03,.012,-.2925+i*.039,board.top+.08,z+row*.02,m.gold,0);
     }
-    box(boardTop,.12,.08,.17,-.40,.095,0,m.silver,.009);box(boardTop,.016,.04,.10,-.462,.092,0,m.black,.005);
-    for(let i=0;i<11;i++){
-        box(boardTop,.07,.04,.045,-.3+(i%4)*.18,.09,-.18+Math.floor(i/4)*.15,i%3?m.cream:m.black,.005);
-    }
-    for(let i=0;i<8;i++)bar(pcbAssembly,[-.31+i*.085,.072,-.22],[-.20+i*.06,.072,.18],.003,m.gold);
-    const boardLed=box(boardTop,.035,.02,.035,.34,.10,.08,m.mintGlow,.004);
-    glow(pcb.root,.34,.14,.08,.23);
-    const boardOLED=canvasTexture(256,128,()=>{});const oledPlane=surface(pcb.root,.25,.125,.28,.112,-.115,boardOLED.texture,-Math.PI/2);
+    box(boardTop,.10,.038,.12,-.415,board.top+.019,0,m.silver,.014);box(boardTop,.02,.022,.09,-.46,board.top+.019,0,m.black,.008);
+    box(boardTop,.065,.018,.07,-.31,board.top+.009,-.15,m.black,.003);box(boardTop,.03,.004,.03,-.31,board.top+.002,-.195,m.silver,0);
+    box(boardTop,.045,.014,.022,-.23,board.top+.007,-.04,m.silver,.007);
+    const capBody=material('capBody',{color:'#2c3a44',roughness:.7});
+    for(const [x,z] of [[-.35,.14],[-.27,.15]]){cylinder(boardTop,.028,.028,.075,x,board.top+.0375,z,capBody,16);cylinder(boardTop,.028,.028,.004,x,board.top+.077,z,m.silver,16);}
+    for(const x of [.24,.40]){box(boardTop,.06,.02,.06,x,board.top+.01,.15,m.black,.004);cylinder(boardTop,.017,.017,.016,x,board.top+.028,.15,m.silver,14);}
+    passives.forEach(([x,z,turned],i)=>box(boardTop,turned?.008:.014,.007,turned?.014:.008,x,board.top+.0035,z,i%3?m.cream:toolDark,0));
+    const boardLed=box(boardTop,.03,.014,.02,.34,board.top+.007,.04,m.mintGlow,.003);
+    box(boardTop,.03,.014,.02,.42,board.top+.007,.04,material('powerGlow',{color:'#f0a070',emissive:'#e8703c',emissiveIntensity:.7}),.003);
+    glow(boardTop,.34,board.top+.045,.04,.2);
+    // 0.96" OLED module standing in a 4-pin socket, glass facing up.
+    const oled=group(boardTop,.32,board.top,-.10);
+    box(oled,.17,.04,.03,0,.02,-.08,m.black,.003);
+    for(let i=0;i<4;i++)box(oled,.01,.032,.01,-.06+i*.04,.04,-.08,m.gold,0);
+    box(oled,.27,.012,.17,0,.046,0,material('oledBlue',{color:'#37536f',roughness:.85}),.004);
+    box(oled,.245,.008,.125,0,.056,.012,m.black,.002);
+    const boardOLED=canvasTexture(256,128,()=>{});surface(oled,.235,.115,0,.0615,.012,boardOLED.texture,-Math.PI/2);
 
     // Oscilloscope and bench power supply.
     const scope=device('scope',-3.23,1.81,-2.90,[-3.20,2.83,-2.90]);
@@ -635,12 +729,16 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     const botanical=surface(architecture,.54,.79,1.89,3.04,-3.718,sketch.texture);botanical.rotation.z=-.06;
     box(architecture,.19,.055,.014,1.88,3.443,-3.704,m.mint,.003);
     for(let i=0;i<3;i++)box(architecture,.63,.055,.47,2.26,1.82+i*.06,-2.99,[m.cream,m.orange,m.teal][i]);
-    const trailing=group(architecture,-2.72,4.26,-3.41);
-    cylinder(trailing,.17,.12,.24,0,.13,0,m.orange);
+    // Trailing pothos at the free end of the book shelf: the pot stands clear of the
+    // last book and its strands climb over the rim before hanging past the shelf edge.
+    const trailing=group(architecture,-2.45,shelfTop,-3.41);
+    cylinder(trailing,.17,.12,.24,0,.12,0,m.orange);
+    cylinder(trailing,.15,.15,.012,0,.242,0,m.darkOrange,24);
     for(let strand=0;strand<3;strand++){
         const xx=-.08+strand*.10;
-        cable(trailing,[[xx,.16,0],[xx+.13,-.05,.17],[xx+.08,-.4,.20],[xx+.13,-.71+strand*.13,.22]],leafDark,.009);
-        for(let i=0;i<5;i++){const leaf=paintedLeaf(trailing,.095,.17,xx+.09+(i%2?.06:-.06),.10-i*.14,.22,i%2?leafDark:leafLight);leaf.rotation.z=i%2?.6:-.7;}
+        cable(trailing,[[xx,.25,.03],[xx+.06,.30,.14],[xx+.12,.08,.24],[xx+.08,-.36,.25],[xx+.13,-.71+strand*.13,.26]],leafDark,.009);
+        const crown=paintedLeaf(trailing,.09,.15,xx+.04,.31,.12,strand%2?leafLight:leafDark);crown.rotation.set(-1.1,0,strand*.5-.5);
+        for(let i=0;i<5;i++){const leaf=paintedLeaf(trailing,.095,.17,xx+.09+(i%2?.06:-.06),.04-i*.15,.255,i%2?leafDark:leafLight);leaf.rotation.z=i%2?.6:-.7;}
     }
     // Soil-moisture sensor: a small, interactive plant beside the development desk.
     const sensorPlant=device('plant',2.38,2.01,-2.99,[2.38,2.86,-2.99]);
@@ -900,7 +998,7 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
         const filamentCurve=new THREE.CubicBezierCurve3(new THREE.Vector3(0,3.34,.03),new THREE.Vector3(.48,3.02,.25),new THREE.Vector3(printHead.position.x+.32,gantry.position.y+.65,.18),new THREE.Vector3(printHead.position.x,gantry.position.y+.09,printHead.position.z-.08));
         for(let i=0;i<25;i++)filamentCurve.getPoint(i/24).toArray(filamentPositions,i*3);
         filamentGeometry.attributes.position.needsUpdate=true;filamentGeometry.computeBoundingSphere();
-        const spread=state.boardExploded?1:0;pcbAssembly.position.y=THREE.MathUtils.damp(pcbAssembly.position.y,spread*.15,6,dt);processor.position.y=THREE.MathUtils.damp(processor.position.y,.11+spread*.64,6,dt);boardTop.position.y=THREE.MathUtils.damp(boardTop.position.y,spread*.39,6,dt);oledPlane.position.y=.112+boardTop.position.y;
+        const spread=state.boardExploded?1:0;pcbAssembly.position.y=THREE.MathUtils.damp(pcbAssembly.position.y,spread*.15,6,dt);processor.position.y=THREE.MathUtils.damp(processor.position.y,chipY+spread*.64,6,dt);boardTop.position.y=THREE.MathUtils.damp(boardTop.position.y,spread*.39,6,dt);
         boardLed.material.emissiveIntensity=state.firmware==='flashing'?.65+Math.sin(elapsed*10)*.3:.55;
         rotor.rotation.z-=state.iron&&!reducedMotion?dt*14:0;
         smoke.visible=state.iron&&!reducedMotion;
