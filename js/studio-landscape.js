@@ -55,23 +55,33 @@ export function createStudioLandscape({ layout, palette, compact, disposeOnce })
     const paperUniform = { value: new THREE.Color(palette.paper) };
     const centerUniform = { value: new THREE.Vector2(...layout.ground.fadeCenter) };
     const radiiUniform = { value: new THREE.Vector2(...layout.ground.fadeRadii) };
+    // Without a yard entry the rounded band collapses to nothing and only the ellipse paints.
+    const yard = layout.ground.yard || { center: [0, 0], half: [-1, -1], feather: [1, 1] };
+    const yardCenterUniform = { value: new THREE.Vector2(...yard.center) };
+    const yardHalfUniform = { value: new THREE.Vector2(...yard.half) };
+    const yardFeatherUniform = { value: new THREE.Vector2(...yard.feather) };
     // The ONLY exterior fragment customization is a world-space paint feather.
     // Blend AFTER the production tone mapping / output conversion, so the outer
     // land matches scene.background in the default framebuffer in both themes.
     groundMat.onBeforeCompile = shader => {
-        Object.assign(shader.uniforms, { landscapePaper: paperUniform, landscapeCenter: centerUniform, landscapeRadii: radiiUniform });
+        Object.assign(shader.uniforms, { landscapePaper: paperUniform, landscapeCenter: centerUniform, landscapeRadii: radiiUniform,
+            landscapeYardCenter: yardCenterUniform, landscapeYardHalf: yardHalfUniform, landscapeYardFeather: yardFeatherUniform });
         shader.vertexShader = 'varying vec3 landscapePosition;\n' + shader.vertexShader;
         shader.vertexShader = shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n landscapePosition=(modelMatrix*vec4(position,1.0)).xyz;');
-        shader.fragmentShader = 'uniform vec3 landscapePaper; uniform vec2 landscapeCenter; uniform vec2 landscapeRadii; varying vec3 landscapePosition;\n' + shader.fragmentShader;
+        shader.fragmentShader = 'uniform vec3 landscapePaper; uniform vec2 landscapeCenter; uniform vec2 landscapeRadii; uniform vec2 landscapeYardCenter; uniform vec2 landscapeYardHalf; uniform vec2 landscapeYardFeather; varying vec3 landscapePosition;\n' + shader.fragmentShader;
         shader.fragmentShader = shader.fragmentShader.replace('#include <fog_fragment>', `#include <fog_fragment>
             vec2 p = landscapePosition.xz;
             float edge = length((p - landscapeCenter) / landscapeRadii);
+            // Union with a rounded rectangle: fully painted inside the half extents,
+            // reaching paper one feather width beyond them.
+            vec2 yardOutside = max(abs(p - landscapeYardCenter) - landscapeYardHalf, vec2(0.0)) / landscapeYardFeather;
+            edge = min(edge, .35 + length(yardOutside) * .65);
             edge += sin(p.y * .40 + p.x * .13) * .035;
             float paint = 1.0 - smoothstep(.35, 1.0, edge);
             gl_FragColor.rgb = mix(linearToOutputTexel(vec4(landscapePaper, 1.0)).rgb, gl_FragColor.rgb, paint);
         `);
     };
-    groundMat.customProgramCacheKey = () => 'studio-landscape-world-paint-v1';
+    groundMat.customProgramCacheKey = () => 'studio-landscape-world-paint-v2';
     function terrainGeometry(extent) {
         // Nonuniform grid: fine at the building, sparse at the distant support.
         // One topology crosses the former garden boundary in BOTH X and Z.
@@ -121,9 +131,35 @@ export function createStudioLandscape({ layout, palette, compact, disposeOnce })
             scale: [.40 + random() * .09, .045, .26 + random() * .05], color: i % 2 ? '#f3e5c7' : '#d6d6bd' });
     }
     instances('side-garden-stepping-stones', pebble, stoneMat, stones, true);
+    // A short branch leaves the path and crosses the front yard towards the printer
+    // corner. It is a separate batch so the side path stays the grass-clearance reference.
+    const yardRandom = landscapeRandom(4211), approach = [];
+    for (const [x, z] of [[-9.0, 4.15], [-8.05, 4.62], [-7.1, 4.98], [-6.1, 5.22], [-5.05, 5.36], [-4.0, 5.4]]) approach.push({
+        x, y: heightAt(x, z) + .025, z, ry: (yardRandom() - .5) * .5,
+        scale: [.38 + yardRandom() * .08, .045, .27 + yardRandom() * .05], color: approach.length % 2 ? '#d6d6bd' : '#f3e5c7'
+    });
+    instances('front-yard-stepping-stones', pebble, stoneMat, approach, true);
 
     const barkMat = material('bark', { color: palette.bark });
     const crownMat = material('crown', { color: palette.crown });
+    // A low hedge marks the yard's outer edge on the right. It sits at the painted
+    // band's limit so the overview sees it beside the room, never over the wall foot.
+    const hedge = [];
+    for (const [x, z, size] of [[8.2, -3.3, .44], [8.75, -2.5, .38], [8.35, -1.5, .5], [8.9, -.7, .4], [8.4, .3, .46], [8.8, 1.1, .36]]) hedge.push({
+        x, y: heightAt(x, z) + size * .55, z, ry: yardRandom() * Math.PI,
+        scale: [size, size * .78, size * .9], color: ['#dbe8c8', '#bed5ae', '#ccdcb4'][hedge.length % 3]
+    });
+    instances('yard-hedge', pebble, crownMat, hedge);
+    // Low, hazy copses bridge the near orchard and the painted far fields. They stay
+    // beyond the camera's outermost reach (x >= -20.5) and below every sight line.
+    const copses = [];
+    for (const [x, z, size] of [[-22.5, -9.8, 1.6], [-24.2, 7.4, 1.9], [-26.5, -2.2, 2.1], [-23.6, 12.6, 1.4]]) {
+        for (const [dx, dz, s] of [[0, 0, 1], [-.9, .3, .72], [.85, -.25, .66]]) copses.push({
+            x: x + dx * size, y: heightAt(x + dx * size, z + dz * size) + size * s * .32, z: z + dz * size,
+            ry: yardRandom() * Math.PI, scale: [size * s, size * s * .5, size * s * .85], color: copses.length % 2 ? '#d3dfbf' : '#c6d6b1'
+        });
+    }
+    instances('midfield-copses', pebble, crownMat, copses);
     const trunkGeometry = own(new THREE.CylinderGeometry(.72, 1, 1, 7));
     const trunks = [], crowns = [];
     // Tall assets stay on the outward side of the camera's conservative half-plane.
@@ -246,6 +282,12 @@ export function createStudioLandscape({ layout, palette, compact, disposeOnce })
     for (let i = 0; i < 48; i++) {
         const x = layout.wall.outerX - .60 - random() * 2.45, z = -5.8 + random() * 11.6, size = .65 + random() * .6;
         flowers.push({ x, y: heightAt(x, z) + .015, z, ry: random() * 6.28, phase: random() * 6.28,
+            scale: [size, size, size], color: ['#ffffff', '#fff1ba', '#ccc0ee'][i % 3] });
+    }
+    // A small drift of the same flowers at the front-right corner, beside the hedge.
+    for (let i = 0; i < 9; i++) {
+        const x = 4.6 + yardRandom() * 2.8, z = 4.6 + yardRandom() * 1.1, size = .6 + yardRandom() * .5;
+        flowers.push({ x, y: heightAt(x, z) + .015, z, ry: yardRandom() * 6.28, phase: yardRandom() * 6.28,
             scale: [size, size, size], color: ['#ffffff', '#fff1ba', '#ccc0ee'][i % 3] });
     }
     const flowerMesh = instances('low-window-flower-beds', flowerGeometry, flowerMat, flowers);

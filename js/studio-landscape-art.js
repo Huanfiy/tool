@@ -48,7 +48,7 @@ export function createLandscapeArt(width, height) {
             for (let i = 0; i <= 140; i++) {
                 const u = .22 + i / 140 * .56;
                 const envelope = Math.sin((u - .22) / .56 * Math.PI);
-                const rise = (.013 + .012 * Math.sin(u * 31 + row * 1.8) + (2 - row) * .011) * envelope;
+                const rise = (.018 + .016 * Math.sin(u * 31 + row * 1.8) + (2 - row) * .015) * envelope;
                 ink.lineTo(w * u, horizon - h * Math.max(.001, rise));
             }
             ink.lineTo(w * .78, horizon); ink.closePath(); ink.fill();
@@ -61,7 +61,9 @@ export function createLandscapeArt(width, height) {
             ink.fillRect(x - s * .12, y, s * .24, s * 1.6);
             ink.beginPath(); ink.ellipse(x, y - s * .6, s, s * 1.4, 0, 0, Math.PI * 2); ink.fill();
         }
-        const x = w * .457, y = horizon - h * .009, cw = w * .011, ch = h * .013;
+        // Longitude .485 (almost straight out from the window wall) keeps the cottage
+        // clear of the overview frame's left edge and header.
+        const x = w * .485, y = horizon - h * .009, cw = w * .013, ch = h * .015;
         ink.fillStyle = night ? '#6b7064' : '#d9ba87'; ink.fillRect(x, y - ch, cw, ch);
         ink.fillStyle = night ? '#525c60' : '#a88165';
         ink.beginPath(); ink.moveTo(x - cw * .15, y - ch); ink.lineTo(x + cw * .5, y - ch * 1.65); ink.lineTo(x + cw * 1.15, y - ch); ink.fill();

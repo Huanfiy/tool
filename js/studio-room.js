@@ -55,7 +55,9 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
         opening: { bottom: .76 + 1.55 / 2, top: 5.055 - 1.57 / 2, zMin: -3.16 + 1.25 / 2, zMax: 3.25 - 1.1 / 2 },
         casement: { hingeX: -5.145, width: 2.58, maxAngle: Math.PI / 3, bottom: 1.655, top: 4.315, zMin: -2.66, zMax: 2.52 },
         garden: { xMin: wall.outerX - 6.2, xMax: wall.outerX, zMin: -8, zMax: 8 },
-        ground: { top: floor.top - .17, fadeCenter: [wall.outerX - 4.17, 0], fadeRadii: [16, 14] },
+        // The garden ellipse keeps its painted extent; a rounded yard band around the
+        // whole footprint grounds the right side and the open front before the paper.
+        ground: { top: floor.top - .17, fadeCenter: [wall.outerX - 4.17, 0], fadeRadii: [16, 14], yard: { center: [0, 0], half: [8.8, 7.3], feather: [4.5, 4.5] } },
         background: { center: [wall.outerX, 0, 0], radius: 80, horizonUV: .5 },
         sunDirection: [-4.4, 7.8, 2.7]
     };
@@ -63,10 +65,10 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     function outdoorPalette(night) {
         return night ? {
             night: true, paper: '#344840', ground: '#526950', crown: '#526c60', grass: '#71876a', bark: '#695f53', stone: '#697767', flower: '#9da9a2',
-            sky: '#405960', haze: '#567163', hills: ['#4c655b', '#466052', '#3e594c'], cloud: '#a4b9b1', bird: '#b8c6b6'
+            sky: '#405960', haze: '#567163', hills: ['#4f6a5e', '#455f52', '#3a5449'], cloud: '#a4b9b1', bird: '#b8c6b6'
         } : {
             night: false, paper: '#eee5d2', ground: '#93a574', crown: '#78a274', grass: '#a4b97e', bark: '#8f7256', stone: '#d0c5ab', flower: '#fff6e3',
-            sky: '#b7d8d4', haze: '#dde5cc', hills: ['#becbb1', '#a7bd9b', '#93ad86'], cloud: '#fcf5df', bird: '#6c8077'
+            sky: '#b7d8d4', haze: '#dde5cc', hills: ['#b3c3a4', '#98b08b', '#829f76'], cloud: '#fcf5df', bird: '#6c8077'
         };
     }
     const camera = new THREE.PerspectiveCamera(36, 1, .1, 160);
@@ -296,10 +298,13 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
         bar(scissors,[side*.055,-.03,.02],[side*.30,.30,.02],.018,toolSteel);
         const pivot=sphere(scissors,.027,0,.02,.035,toolDark);pivot.castShadow=true;
     }
-    // Phillips screwdriver: knurled handle, shaft, and a cross tip.
-    const driver=group(architecture,-3.91,3.31,-3.53);peg(-3.91,3.70);
-    cylinder(driver,.105,.12,.27,0,-.05,0,toolRed,16);cylinder(driver,.055,.055,.35,0,.24,0,toolSteel,10);
-    bar(driver,[-.025,.42,.01],[.025,.49,.01],.012,toolDark);bar(driver,[0,.45,-.035],[0,.45,.035],.012,toolDark);
+    // Phillips screwdriver: slim handle with grip bands, a domed end, a collar and a long shaft.
+    const driver=group(architecture,-3.91,3.22,-3.53);peg(-3.91,3.62);
+    cylinder(driver,.072,.084,.34,0,-.02,0,toolRed,16);
+    for(const y of [-.11,0,.10])cylinder(driver,.088,.088,.022,0,y,0,toolDark,16);
+    sphere(driver,.072,0,-.19,0,toolRed);cylinder(driver,.05,.062,.06,0,.18,0,toolDark,12);
+    cylinder(driver,.028,.028,.42,0,.42,0,toolSteel,10);
+    bar(driver,[-.028,.60,.01],[.028,.66,.01],.011,toolDark);bar(driver,[0,.63,-.036],[0,.63,.036],.011,toolDark);
     // Diagonal cutters: two rubber handles, pivot, and short jaws.
     const cutters=group(architecture,-3.39,3.30,-3.52);peg(-3.39,3.67);
     for(const side of [-1,1]){
@@ -307,10 +312,14 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
         bar(cutters,[0,.03,.01],[side*.16,.30,.01],.021,toolSteel);
     }
     sphere(cutters,.042,0,.02,.04,toolDark);
-    // Utility knife: molded body, thumb slider, and exposed blade.
-    const knife=group(architecture,-2.89,3.30,-3.53);peg(-2.89,3.66);
-    box(knife,.22,.40,.11,0,-.02,0,toolYellow,.035);box(knife,.07,.11,.125,0,.08,.02,toolDark,.012);
-    box(knife,.055,.22,.035,0,.29,0,toolSteel,.006);box(knife,.03,.075,.05,0,.43,0,toolSteel,.004);
+    // Snap-off knife hanging blade-down: slim handle, rubber grip band, side slider and a
+    // slanted exposed blade, so it cannot be mistaken for a phone or lighter.
+    const knife=group(architecture,-2.89,3.30,-3.53);peg(-2.89,3.66);knife.rotation.z=-.08;
+    box(knife,.15,.42,.09,0,.10,0,toolYellow,.02);box(knife,.16,.13,.095,0,-.02,0,toolDark,.015);
+    box(knife,.045,.11,.025,0,.16,.055,toolRed,.008);
+    const bladeShape=new THREE.Shape();bladeShape.moveTo(-.045,0);bladeShape.lineTo(.045,0);bladeShape.lineTo(.045,-.19);bladeShape.lineTo(-.045,-.29);bladeShape.closePath();
+    const blade=new THREE.Mesh(new THREE.ExtrudeGeometry(bladeShape,{depth:.012,bevelEnabled:false}),toolSteel);blade.position.set(0,-.11,-.006);blade.castShadow=true;knife.add(blade);
+    bar(knife,[-.02,-.19,.007],[.03,-.19,.007],.004,toolDark);
     // Multimeter: casing, screen, dial, test sockets and two hanging probes.
     const meter=group(architecture,-2.49,3.29,-3.52);peg(-2.49,3.74);
     box(meter,.38,.57,.13,0,0,0,m.orange,.035);box(meter,.26,.15,.012,0,.13,.072,m.black,.008);
@@ -492,6 +501,14 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     box(printer.fixed,1.45,.09,.08,0,3.02,.59,m.metal);
     box(printer.fixed,1.45,.09,.08,0,3.02,-.59,m.metal);
     for(const x of [-.68,.68])box(printer.fixed,.08,.09,1.20,x,3.02,0,m.metal);
+    // Smoked acrylic sides and door with a solid back and top: the enclosure reads as
+    // a closed machine instead of a bare frame. Panes never write depth or block picking.
+    const acrylic=material('printerAcrylic',{color:'#b9cbc0',transparent:true,opacity:.22,roughness:.18,metalness:.08,depthWrite:false,side:THREE.DoubleSide});
+    for(const x of [-.66,.66]){const pane=new THREE.Mesh(new THREE.PlaneGeometry(1.10,1.80),acrylic);pane.position.set(x,2.07,0);pane.rotation.y=Math.PI/2;printer.fixed.add(pane);}
+    const door=new THREE.Mesh(new THREE.PlaneGeometry(1.28,1.80),acrylic);door.position.set(0,2.07,.60);printer.fixed.add(door);
+    box(printer.fixed,1.28,1.80,.03,0,2.07,-.585,m.black,.01);
+    box(printer.fixed,1.28,.03,1.12,0,2.99,0,m.metal,.01);
+    bar(printer.fixed,[.48,1.75,.64],[.48,2.25,.64],.018,m.silver);
     box(printer.fixed,1.12,.055,1.03,0,1.33,0,m.silver,.018);
     box(printer.fixed,1.08,.015,.99,0,1.366,0,m.black,.012);
     textLabel(printer.fixed,'one layer at a time',.95,.12,0,1.08,.747,{size:69,color:'#594c39',align:'center',font:'Georgia, serif'});
@@ -680,7 +697,11 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     // Reuse the existing desk light slot rather than adding a bloom/render pass.
     const monitorLight=new THREE.PointLight('#a6eadb',1.6,4.5,2);
     monitorLight.name='monitor-spill';monitorLight.position.set(0,monitorScreen.y-.18,monitorScreen.z+.65);monitor.root.add(monitorLight);
-    const warmLight=new THREE.PointLight('#ffd398',1.2,9,2);warmLight.position.set(1.6,4.10,-3.10);scene.add(warmLight);
+    // One warm source per shelf strip, so the night glow reads as the LED strips
+    // rather than a single hotspot; a cool window-side moonlight balances them.
+    const warmLight=new THREE.PointLight('#ffd398',.9,11,2);warmLight.position.set(3.36,4.05,-3.0);scene.add(warmLight);
+    const shelfLight=new THREE.PointLight('#ffd398',.9,11,2);shelfLight.position.set(-3.47,4.05,-3.0);scene.add(shelfLight);
+    const moonLight=new THREE.DirectionalLight('#9fb7c9',0);moonLight.position.set(-8,6,2.5);moonLight.target.position.set(-1,1.5,-.5);scene.add(moonLight.target);scene.add(moonLight);
     const frontFill=new THREE.DirectionalLight('#e9ecd7',.5);frontFill.position.set(4,2,8);scene.add(frontFill);
     // Floating dust is subtle and pauses with reduced motion.
     const dustPositions=new Float32Array(16*3);
@@ -780,10 +801,10 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     function focusMonitor(){if(disposed)return;selected=null;view='monitor';moveTo(presets.monitor);}
     function setNight(value){
         if(disposed)return;
-        night=value;hemi.color.set(night?'#b5c4d1':'#fffaf0');hemi.groundColor.set(night?'#697862':'#a7b093');hemi.intensity=night?.7:2.1;
-        key.color.set(night?'#c0cfdd':'#fff0d6');key.intensity=night?.55:1.85;rimLight.intensity=night?.25:.4;
+        night=value;hemi.color.set(night?'#b5c4d1':'#fffaf0');hemi.groundColor.set(night?'#697862':'#a7b093');hemi.intensity=night?.55:2.1;
+        key.color.set(night?'#c0cfdd':'#fff0d6');key.intensity=night?.5:1.85;rimLight.intensity=night?.25:.4;
         monitorLight.intensity=night?3.2:1.6;monitorFrame.emissiveIntensity=night?.07:.025;
-        warmLight.intensity=night?16:1.2;frontFill.intensity=night?.20:.5;
+        warmLight.intensity=shelfLight.intensity=night?6:.9;moonLight.intensity=night?.35:0;frontFill.intensity=night?.20:.5;
         const palette=outdoorPalette(night);
         scene.background.set(palette.paper);scene.fog.color.copy(scene.background);ground.material.color.set(night?'#101c18':'#7b7357');ground.material.opacity=night?.24:.18;
         sunPatch.material.opacity=night?.07:.60;inkMaterial.color.set(night?'#374a40':'#586048');
