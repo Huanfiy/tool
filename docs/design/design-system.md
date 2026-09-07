@@ -183,7 +183,7 @@ Marked.js 与 giscus 仅由 `blog.html` 使用；giscus 当前因 `categoryId` �
 `tools/keyboard.html` 与 `tools/buy.html` 通过 `../css/style.css` 复用部分基础能力，同时保留大量页内样式：
 
 - `tools/keyboard.html` 依赖 `--border-color`、`--radius-lg`、`--radius-md`，并复用 Header、Footer、`.container`、`.btn`、`.btn-outline`、主题切换和移动端菜单；
-- `tools/buy.html` 依赖主题色、文本色、背景色、`--border-color`、`--radius-lg`、`--radius-md`，并复用 `.container` 与 Footer 基础样式；
+- `tools/buy.html` 依赖主题色、文本色、背景色、`--border-color`、`--radius-lg`、`--radius-md`，并复用 Header、Footer、`.container`、主题切换和移动端菜单；其复制提示使用页面专属类 `.copy-toast`，不得改回 `.toast`（与共享 Toast 组件冲突会导致不可见）；
 - `.tool-icon` 作为 `.card-icon` 的遗留类别名继续保留；仓库内 HTML 当前未引用，删除前须全仓检索确认。
 
 `tools/visualizations/foc.html` 不加载 `css/style.css`，其独立样式不应反向写入共享样式表。

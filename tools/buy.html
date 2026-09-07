@@ -3,11 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+        (function () {
+            try {
+                const savedTheme = localStorage.getItem('theme');
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                const theme = savedTheme || (prefersDark ? 'dark' : 'light');
+                document.documentElement.setAttribute('data-theme', theme);
+            } catch (error) {
+                document.documentElement.setAttribute('data-theme', 'light');
+            }
+        })();
+    </script>
     <title>链接转换器 - Huanfly</title>
+    <meta name="description" content="淘宝链接清理与转换：粘贴商品链接，自动提取商品 ID 并生成简洁链接，全部在浏览器本地完成。">
     <link rel="icon" type="image/png" href="../picture/icon.png">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-screen-webfont@1.7.0/lxgwwenkaigbscreen.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-screen-webfont@1.7.0/lxgwwenkaiscreen.css" media="print" onload="this.media='all'">
+    <noscript>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-screen-webfont@1.7.0/lxgwwenkaigbscreen.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-screen-webfont@1.7.0/lxgwwenkaiscreen.css">
+    </noscript>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
         /* ---- Page Layout ---- */
         .converter-wrapper {
@@ -50,8 +70,8 @@
             width: 64px;
             height: 64px;
             border-radius: 50%;
-            background: #fff0f0;
-            color: #ff6b6b;
+            background: var(--rose-soft);
+            color: var(--rose);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -91,7 +111,7 @@
             border: 2px solid var(--border-color);
             border-radius: var(--radius-md);
             font-size: 0.95rem;
-            font-family: 'Nunito', sans-serif;
+            font-family: inherit;
             color: var(--dark-text);
             background: var(--bg-color);
             resize: vertical;
@@ -106,7 +126,8 @@
         }
 
         .link-input::placeholder {
-            color: #b2bec3;
+            color: var(--light-text);
+            opacity: 0.7;
         }
 
         /* ---- Result Card ---- */
@@ -193,7 +214,7 @@
             border-radius: 50px;
             font-size: 0.82rem;
             font-weight: 600;
-            background: #f0f9eb;
+            background: var(--primary-soft);
             color: var(--primary-color);
         }
 
@@ -205,7 +226,7 @@
         .result-error {
             text-align: center;
             padding: 1rem 0;
-            color: #d63031;
+            color: var(--rose);
         }
 
         .result-error i {
@@ -214,24 +235,25 @@
             display: block;
         }
 
-        /* ---- Toast ---- */
-        .toast {
+        /* ---- Toast（页面专属类名，避免与 style.css 的 .toast 组件冲突） ---- */
+        .copy-toast {
             position: fixed;
-            top: 24px;
+            top: calc(var(--header-height) + 16px);
             right: 24px;
             padding: 12px 24px;
             background: var(--primary-color);
-            color: white;
-            border-radius: 50px;
+            color: #fffdf5;
+            border: 2px solid var(--ink);
+            border-radius: var(--wobble-btn);
             font-size: 0.9rem;
-            font-weight: 600;
-            box-shadow: 0 8px 20px rgba(106, 176, 76, 0.3);
+            font-weight: 700;
+            box-shadow: var(--shadow-ink);
             display: none;
-            z-index: 1000;
+            z-index: 9990;
             animation: toastSlide 2s ease forwards;
         }
 
-        .toast i {
+        .copy-toast i {
             margin-right: 6px;
         }
 
@@ -273,10 +295,30 @@
 </head>
 <body>
 
-    <div class="converter-wrapper">
+    <header>
+        <div class="container">
+            <a href="../index.html" class="logo">
+                <img src="../picture/icon.png" alt="Logo">
+                <span>Huanfly</span>
+            </a>
+            <button type="button" class="menu-toggle" aria-label="打开菜单" aria-expanded="false" aria-controls="site-nav"><i class="fas fa-bars"></i></button>
+            <nav class="nav-links" id="site-nav">
+                <a href="../index.html">主页</a>
+                <a href="../blog.html">博客</a>
+                <a href="../tool.html" class="active">工具</a>
+                <a href="../studio.html">工作室</a>
+                <a href="../about.html">关于</a>
+                <button class="theme-toggle" aria-label="切换主题" title="切换主题">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <main class="converter-wrapper">
         <!-- 返回链接 -->
         <a href="../tool.html" class="back-link">
-            <i class="fas fa-arrow-left"></i> 返回工具库
+            <i class="fas fa-arrow-left" aria-hidden="true"></i> 返回工具库
         </a>
 
         <!-- 标题区 -->
@@ -289,26 +331,26 @@
         <!-- 输入区 -->
         <div class="converter-card">
             <div class="card-label"><i class="fas fa-paste"></i> 粘贴链接</div>
-            <textarea id="input" class="link-input"
+            <textarea id="input" class="link-input" aria-label="待转换的淘宝链接"
                       placeholder="将淘宝链接粘贴到这里，会自动转换..."
-                      oninput="debounce(convertLink, 500)()"
+                      oninput="debouncedConvert()"
                       onpaste="setTimeout(convertLink, 100)"></textarea>
         </div>
 
         <!-- 结果区 -->
         <div class="result-card">
             <div class="card-label"><i class="fas fa-magic"></i> 转换结果</div>
-            <div id="result">
+            <div id="result" aria-live="polite">
                 <div class="result-empty">
                     <i class="fas fa-link"></i>
                     <p>等待粘贴链接...</p>
                 </div>
             </div>
         </div>
-    </div>
+    </main>
 
     <!-- Toast -->
-    <div id="toast" class="toast"><i class="fas fa-check-circle"></i>已复制到剪贴板</div>
+    <div id="copy-toast" class="copy-toast" role="status" aria-live="polite"><i class="fas fa-check-circle"></i>已复制到剪贴板</div>
 
     <footer>
         <div class="container">
@@ -317,30 +359,30 @@
         </div>
     </footer>
 
+    <script src="../js/script.js"></script>
     <script>
-        // 防抖函数
+        // 防抖函数：必须只创建一次，否则每次输入都会得到一个全新的定时器，防抖形同虚设
         function debounce(func, wait) {
             let timeout;
             return function executedFunction() {
-                const later = () => {
-                    clearTimeout(timeout);
-                    func();
-                };
                 clearTimeout(timeout);
-                timeout = setTimeout(later, wait);
+                timeout = setTimeout(func, wait);
             };
         }
+        const debouncedConvert = debounce(convertLink, 500);
 
         // 显示提示 Toast
+        let toastTimer = null;
         function showToast(message) {
-            const toast = document.getElementById('toast');
+            const toast = document.getElementById('copy-toast');
             toast.innerHTML = `<i class="fas fa-check-circle"></i>${message}`;
             toast.style.display = 'block';
             // 重启动画
             toast.style.animation = 'none';
             toast.offsetHeight; // 触发 reflow
             toast.style.animation = 'toastSlide 2s ease forwards';
-            setTimeout(() => {
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => {
                 toast.style.display = 'none';
             }, 2000);
         }
@@ -394,7 +436,7 @@
                 result.innerHTML = `
                     <div class="result-success">
                         <div class="result-link-box">
-                            <a href="${simplifiedUrl}" target="_blank">${simplifiedUrl}</a>
+                            <a href="${simplifiedUrl}" target="_blank" rel="noopener">${simplifiedUrl}</a>
                             <button class="copy-btn" onclick="copyToClipboard('${simplifiedUrl}')" title="复制链接">
                                 <i class="fas fa-copy"></i>
                             </button>
