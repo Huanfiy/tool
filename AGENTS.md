@@ -22,7 +22,7 @@ huanfly.com 的开源纯静态个人网站：原生 HTML5 + CSS3 + JavaScript，
 | [interests/](interests/) | 关于页兴趣素材与相册数据；进入前读各子目录 `README.md` 的素材放置与 `index.json` 约定 |
 | [run.sh](run.sh) | `test` 本地服务器、`gen` 文章索引、`deploy` 经校验的 Git 产物部署 |
 | [tests/](tests/) | Node 契约测试、浏览器契约页与可选 Chromium 回归；随 `.gitattributes` 排除，不进入部署产物 |
-| [docs/design/workbench.md](docs/design/workbench.md) | 工作室 18 项要素约束、镜头预设构图、显示器直接交互、终端与 Robot 能力边界；改工作室前必读 |
+| [docs/design/workbench.md](docs/design/workbench.md) | 工作室 19 项要素约束、镜头预设构图、显示器直接交互、终端与 Robot 能力边界；改工作室前必读 |
 | [docs/design/](docs/design/) | 拍板设计：设计系统、博客发布流程、主题封面、发布产物与部署边界 |
 | [docs/todo/](docs/todo/) | 已评审但暂缓的待办，一项一文件（当前：启用 giscus 评论、工作室真机验收） |
 | [manifest.webmanifest](manifest.webmanifest)、[robots.txt](robots.txt)、[sitemap.xml](sitemap.xml) | PWA 与 SEO；四个主页面带 OG meta 与 canonical URL |

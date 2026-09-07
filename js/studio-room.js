@@ -156,10 +156,12 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
         for(let i=0;i<10;i++){const a=-h/2+i*h/10,b=a+h/10;points.push(0,a,bend(a)+.004,0,b,bend(b)+.004);}
         const ink=new THREE.LineSegments(new THREE.BufferGeometry().setAttribute('position',new THREE.Float32BufferAttribute(points,3)),inkMaterial);ink.userData.ink=true;leaf.add(ink);return leaf;
     }
-    function bar(parent, start, end, radius, mat) {
+    // A cylinder from start to end whose radius runs from rStart to rEnd (grips, jaws, tips).
+    function taper(parent, start, end, rStart, rEnd, mat, segments = 12) {
         const a = new THREE.Vector3(...start), b = new THREE.Vector3(...end), delta = b.clone().sub(a);
-        const obj = cylinder(parent,radius,radius,delta.length(),0,0,0,mat,12); obj.position.copy(a.add(b).multiplyScalar(.5)); obj.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),delta.normalize()); return obj;
+        const obj = cylinder(parent,rEnd,rStart,delta.length(),0,0,0,mat,segments); obj.position.copy(a.add(b).multiplyScalar(.5)); obj.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),delta.normalize()); return obj;
     }
+    function bar(parent, start, end, radius, mat) { return taper(parent, start, end, radius, radius, mat); }
     function cable(parent, points, mat=m.black, radius=.025) {
         const curve = new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p)));
         const geo = new THREE.TubeGeometry(curve, 32, radius, 6, false);
@@ -291,14 +293,22 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     const toolDark=material('toolDark',{color:'#293934',roughness:.64});
     const toolRed=material('toolRed',{color:'#cf735d',roughness:.78});
     const toolYellow=material('toolYellow',{color:'#e1b55e',roughness:.76});
-    const peg=(x,y)=>{cylinder(architecture,.024,.024,.055,x,y,-3.56,toolSteel,10).rotation.x=Math.PI/2;};
-    // Scissors, with two torus finger loops and crossed blades.
-    const scissors=group(architecture,-4.42,3.28,-3.52);peg(-4.42,3.62);
+    // Hooks are rooted in the board and end in a rounded tip; tools actually hang on them.
+    const peg=(x,y)=>{cylinder(architecture,.024,.024,.09,x,y,-3.585,toolSteel,10).rotation.x=Math.PI/2;sphere(architecture,.024,x,y,-3.54,toolSteel);};
+    // Scissors hang by one oval finger loop, blades down and slightly open. Each blade is a
+    // flat tapered plate with a straight cutting edge and a curved spine; the shanks
+    // converge on a slotted pivot screw, and the whole pair settles into a hanging tilt.
+    const scissors=group(architecture,-4.42,3.72,-3.56);peg(-4.42,3.72);scissors.rotation.z=-.19;
+    const scissorBlade=side=>{const s=new THREE.Shape();s.moveTo(side*-.022,.04);s.lineTo(side*.026,.04);s.lineTo(side*.028,-.05);s.quadraticCurveTo(side*.018,-.28,side*.003,-.40);s.lineTo(side*-.006,-.34);s.lineTo(side*-.02,-.05);s.closePath();return s;};
+    const scissorPivot=[.085,-.36];
     for(const side of [-1,1]){
-        const loop=new THREE.Mesh(new THREE.TorusGeometry(.105,.023,8,18),toolRed);loop.position.set(side*.09,-.12,0);scissors.add(loop);
-        bar(scissors,[side*.055,-.03,.02],[side*.30,.30,.02],.018,toolSteel);
-        const pivot=sphere(scissors,.027,0,.02,.035,toolDark);pivot.castShadow=true;
+        const blade=new THREE.Mesh(new THREE.ExtrudeGeometry(scissorBlade(side),{depth:.012,bevelEnabled:false}),toolSteel);
+        blade.position.set(scissorPivot[0],scissorPivot[1],side>0?-.02:-.032);blade.rotation.z=side*.07;blade.castShadow=true;scissors.add(blade);
+        const loop=new THREE.Mesh(new THREE.TorusGeometry(.085,.02,8,24),toolRed);loop.position.set(.085+side*.085,-.054,-.02);loop.scale.y=1.2;scissors.add(loop);
+        bar(scissors,[.085+side*.085,-.17,-.02],[scissorPivot[0]+side*.008,scissorPivot[1]+.02,-.02],.017,toolRed);
     }
+    cylinder(scissors,.024,.024,.034,scissorPivot[0],scissorPivot[1],-.02,toolDark,14).rotation.x=Math.PI/2;
+    bar(scissors,[scissorPivot[0]-.012,scissorPivot[1],-.002],[scissorPivot[0]+.012,scissorPivot[1],-.002],.003,toolSteel);
     // Phillips screwdriver: slim handle with grip bands, a domed end, a collar and a long shaft.
     const driver=group(architecture,-3.91,3.22,-3.53);peg(-3.91,3.62);
     cylinder(driver,.072,.084,.34,0,-.02,0,toolRed,16);
@@ -306,13 +316,20 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     sphere(driver,.072,0,-.19,0,toolRed);cylinder(driver,.05,.062,.06,0,.18,0,toolDark,12);
     cylinder(driver,.028,.028,.42,0,.42,0,toolSteel,10);
     bar(driver,[-.028,.60,.01],[.028,.66,.01],.011,toolDark);bar(driver,[0,.63,-.036],[0,.63,.036],.011,toolDark);
-    // Diagonal cutters: two rubber handles, pivot, and short jaws.
-    const cutters=group(architecture,-3.39,3.30,-3.52);peg(-3.39,3.67);
+    // Needle-nose pliers ride the hook with their box joint: long flattened jaws taper
+    // to a closed tip with grip serrations, steel necks lead into dipped rubber grips.
+    const pliers=group(architecture,-3.39,3.50,-3.56);peg(-3.39,3.50);
+    const jointY=.07;
+    box(pliers,.09,.10,.04,0,jointY,-.02,toolSteel,.02);
+    cylinder(pliers,.018,.018,.05,0,jointY,-.02,toolDark,12).rotation.x=Math.PI/2;
     for(const side of [-1,1]){
-        bar(cutters,[0,-.02,0],[side*.12,-.32,.01],.036,toolRed);
-        bar(cutters,[0,.03,.01],[side*.16,.30,.01],.021,toolSteel);
+        taper(pliers,[side*.022,jointY+.03,-.02],[side*.005,jointY+.34,-.02],.026,.007,toolSteel).scale.z=.7;
+        bar(pliers,[side*.02,jointY-.04,-.02],[side*.085,-.10,-.02],.016,toolSteel);
+        taper(pliers,[side*.085,-.10,-.02],[side*.135,-.40,-.02],.03,.036,toolRed);
+        sphere(pliers,.036,side*.135,-.40,-.02,toolRed);
+        taper(pliers,[side*.085,-.10,-.02],[side*.097,-.17,-.02],.033,.034,toolDark);
     }
-    sphere(cutters,.042,0,.02,.04,toolDark);
+    for(let i=0;i<5;i++){const y=jointY+.12+i*.05,r=.026-.019*((y-jointY-.03)/.31);bar(pliers,[-.018,y,-.02+r*.7-.001],[.018,y,-.02+r*.7-.001],.0035,toolDark);}
     // Snap-off knife hanging blade-down: slim handle, rubber grip band, side slider and a
     // slanted exposed blade, so it cannot be mistaken for a phone or lighter.
     const knife=group(architecture,-2.89,3.30,-3.53);peg(-2.89,3.66);knife.rotation.z=-.08;
@@ -321,12 +338,48 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     const bladeShape=new THREE.Shape();bladeShape.moveTo(-.045,0);bladeShape.lineTo(.045,0);bladeShape.lineTo(.045,-.19);bladeShape.lineTo(-.045,-.29);bladeShape.closePath();
     const blade=new THREE.Mesh(new THREE.ExtrudeGeometry(bladeShape,{depth:.012,bevelEnabled:false}),toolSteel);blade.position.set(0,-.11,-.006);blade.castShadow=true;knife.add(blade);
     bar(knife,[-.02,-.19,.007],[.03,-.19,.007],.004,toolDark);
-    // Multimeter: casing, screen, dial, test sockets and two hanging probes.
-    const meter=group(architecture,-2.49,3.29,-3.52);peg(-2.49,3.74);
-    box(meter,.38,.57,.13,0,0,0,m.orange,.035);box(meter,.26,.15,.012,0,.13,.072,m.black,.008);
-    textLabel(meter,['VΩmA','DMM'],.22,.10,0,.145,.082,{size:29,color:'#9fdec0',align:'center',font:'monospace'});
-    cylinder(meter,.065,.065,.018,0,-.07,.078,toolDark,16).rotation.x=Math.PI/2;
-    for(const x of [-.10,.10]){cylinder(meter,.025,.025,.02,x,-.20,.08,toolRed,12).rotation.x=Math.PI/2;bar(meter,[x,-.22,.07],[x*1.6,-.49,.06],.009,x<0?toolRed:toolSteel);}
+    // Multimeter hangs from a strap loop: rubber holster around the face plate, a pale
+    // LCD with annunciators, a rotary dial inside its printed range ring, three input
+    // jacks with two leads plugged in, and the probes dangling below the body.
+    const meter=group(architecture,-2.49,3.24,-3.56);peg(-2.49,3.74);
+    const strapLoop=new THREE.Mesh(new THREE.TorusGeometry(.036,.008,6,20),toolDark);strapLoop.position.set(0,.50,-.025);meter.add(strapLoop);
+    box(meter,.05,.20,.012,0,.37,-.025,toolDark,.004);
+    box(meter,.40,.60,.13,0,0,0,toolDark,.045);
+    box(meter,.34,.54,.02,0,0,.06,m.orange,.012);
+    box(meter,.28,.16,.012,0,.16,.075,toolDark,.006);
+    const lcd=canvasTexture(256,128,(ctx,cw,ch)=>{
+        ctx.fillStyle='#bcc9ae';ctx.fillRect(0,0,cw,ch);
+        ctx.fillStyle='#2a3630';ctx.font='700 18px monospace';ctx.textBaseline='top';ctx.fillText('AUTO',12,10);ctx.textAlign='right';ctx.fillText('DC',cw-12,10);
+        ctx.font='700 56px monospace';ctx.textBaseline='alphabetic';ctx.fillText('0.000',cw-56,92);
+        ctx.font='700 30px sans-serif';ctx.fillText('V',cw-14,92);
+        ctx.fillStyle='rgba(42,54,48,.3)';for(let i=0;i<24;i++)ctx.fillRect(12+i*9.6,108,6,8);
+        ctx.fillStyle='#2a3630';ctx.fillRect(12,108,6,8);
+    });
+    surface(meter,.25,.13,0,.16,.082,lcd.texture);
+    const dialRing=canvasTexture(256,256,(ctx,cw,ch)=>{
+        const cx=cw/2,cy=ch/2;ctx.strokeStyle=ctx.fillStyle='#3b2f27';ctx.font='700 22px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+        ['OFF','V~','V=','mV','Ω','•))','→|','mA','A'].forEach((label,i)=>{
+            const a=(-150-i*30)*Math.PI/180,c=Math.cos(a),s=-Math.sin(a);
+            ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(cx+c*90,cy+s*90);ctx.lineTo(cx+c*104,cy+s*104);ctx.stroke();
+            ctx.fillText(label,cx+c*122,cy+s*122);
+            if(i<8){const b=a-Math.PI/12,cb=Math.cos(b),sb=-Math.sin(b);ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(cx+cb*96,cy+sb*96);ctx.lineTo(cx+cb*104,cy+sb*104);ctx.stroke();}
+        });
+    });
+    surface(meter,.26,.26,0,-.07,.072,dialRing.texture);
+    cylinder(meter,.07,.07,.026,0,-.07,.083,toolDark,20).rotation.x=Math.PI/2;
+    box(meter,.014,.05,.008,-.039,-.07+.0225,.098,toolRed,.003).rotation.z=Math.PI/3;
+    [['mA',-.10,toolRed],['COM',0,toolDark],['VΩ',.10,toolRed]].forEach(([label,x,mat])=>{
+        cylinder(meter,.027,.027,.016,x,-.22,.078,mat,14).rotation.x=Math.PI/2;
+        cylinder(meter,.013,.013,.006,x,-.22,.088,m.black,10).rotation.x=Math.PI/2;
+        textLabel(meter,label,.08,.035,x,-.258,.072,{size:150,color:'#3b2f27',align:'center',bold:true});
+    });
+    for(const [x,mat] of [[0,toolDark],[.10,toolRed]]){
+        cylinder(meter,.011,.011,.05,x,-.22,.115,mat,10).rotation.x=Math.PI/2;
+        cylinder(meter,.015,.015,.03,x,-.22,.15,mat,10).rotation.x=Math.PI/2;
+        cable(meter,[[x,-.22,.165],[x+.01,-.30,.17],[x-.01,-.42,.11],[x-.03,-.50,.06]],mat,.008);
+        taper(meter,[x-.03,-.50,.06],[x-.035,-.72,.045],.012,.008,mat);
+        bar(meter,[x-.035,-.72,.045],[x-.036,-.78,.042],.0035,toolSteel);
+    }
     for (const [cx,width] of [[-3.47,2.55],[3.36,3.0]]) {
         box(architecture,width,.10,cx>0?.78:.57,cx,4.21,cx>0?-3.42:-3.46,m.oak);
         emissiveStrip(architecture,width-.16,cx,4.145,-3.22,m.amberGlow);
@@ -578,27 +631,51 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     textLabel(architecture,['DC POWER','05.00 V   0.32 A'],.70,.16,-3.30,2.75,-2.65,{size:53,color:'#a7eace',background:'#122c2b'});
     const psuKnob=cylinder(architecture,.06,.06,.04,-2.78,2.74,-2.64,m.orange);psuKnob.rotation.x=Math.PI/2;
 
-    // Soldering station and its automatic extraction fan.
+    // Soldering station on rubber feet, with the iron parked tip-down in a coil holder
+    // and a fume extractor beside it that faces the iron rather than the room.
     const solder=device('solder',-3.72,1.80,-1.94,[-4.02,2.31,-1.45]);
     box(solder.fixed,.55,.26,.44,0,.13,0,m.black,.04);
+    for(const x of [-.21,.21])for(const z of [-.16,.16])cylinder(solder.fixed,.03,.03,.03,x,-.015,z,toolDark,10);
     const solderTex=canvasTexture(256,96,()=>{});surface(solder.root,.30,.11,-.055,.15,.225,solderTex.texture);
     const ironKnob=cylinder(solder.fixed,.055,.055,.05,.19,.13,.24,m.orange);ironKnob.rotation.x=Math.PI/2;
-    cable(solder.fixed,[[.26,.10,.05],[.41,.03,.35],[.69,.05,.20],[.73,.25,.01]],m.black,.017);
-    box(solder.fixed,.22,.055,.38,.72,.025,0,m.metal);
-    bar(solder.fixed,[.73,.06,-.11],[.73,.36,.02],.045,m.silver);
-    bar(solder.fixed,[.73,.25,.00],[.73,.55,.13],.055,m.orange);
-    bar(solder.fixed,[.73,.51,.12],[.73,.70,.21],.014,m.silver);
-    const extractor=group(solder.root,-.7,.34,-.10);box(extractor,.45,.43,.18,0,0,0,m.metal,.035);
+    cylinder(solder.fixed,.032,.032,.03,.285,.10,.06,toolDark,12).rotation.z=Math.PI/2;
+    // Iron stand: weighted base on the desk, an angled coil spring on a collar, and a
+    // brass-wool tip cleaner. The iron sits inside the coil: cone tip, heater barrel,
+    // collar nut, ribbed grip and a rear cap where the cord leaves for the station.
+    const stand=group(solder.fixed,.72,0,0);
+    box(stand,.24,.05,.30,0,-.005,0,m.metal,.02);
+    const ironAxis=new THREE.Vector3(.42,1,.30).normalize(),springBase=new THREE.Vector3(0,.02,-.06);
+    const along=t=>springBase.clone().addScaledVector(ironAxis,t).toArray();
+    class Helix extends THREE.Curve{getPoint(t,target=new THREE.Vector3()){const a=t*5.5*Math.PI*2,r=THREE.MathUtils.lerp(.05,.038,t);return target.set(Math.cos(a)*r,t*.22,Math.sin(a)*r);}}
+    const spring=new THREE.Mesh(new THREE.TubeGeometry(new Helix(),150,.005,6,false),toolSteel);spring.position.copy(springBase);spring.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),ironAxis);spring.castShadow=true;stand.add(spring);
+    cylinder(stand,.056,.056,.02,...springBase.toArray(),toolDark,16).quaternion.copy(spring.quaternion);
+    taper(stand,along(.03),along(.10),.004,.011,toolSteel);
+    taper(stand,along(.10),along(.25),.012,.014,m.silver);
+    taper(stand,along(.25),along(.29),.026,.026,toolDark);
+    taper(stand,along(.29),along(.57),.031,.027,m.orange);
+    for(const t of [.34,.41])taper(stand,along(t),along(t+.018),.034,.034,toolDark);
+    taper(stand,along(.57),along(.62),.026,.02,toolDark);
+    cylinder(stand,.045,.04,.05,0,.045,.10,brass,16);
+    sphere(stand,.04,0,.075,.10,m.gold).scale.y=.5;
+    cable(solder.fixed,[[.959,.589,.111],[1.05,.50,.17],[1.07,.22,.16],[.94,-.012,.18],[.67,-.012,.18],[.42,0,.13],[.30,.10,.06]],m.black,.017);
+    // Extractor on a stem and foot, yawed toward the iron and tilted slightly up so the
+    // intake looks at the work; the housing is static, only the rotor spins.
+    const fanPose=g=>{g.position.set(-.62,.36,-.22);g.rotation.set(-.18,1.13,0,'YXZ');return g;};
+    const extractor=fanPose(group(solder.fixed));box(extractor,.45,.43,.18,0,0,0,m.metal,.035);
     // Dark intake behind the blades, then a round wire guard: two rings and six spokes.
     const intake=cylinder(extractor,.175,.175,.012,0,0,.094,m.black,28);intake.rotation.x=Math.PI/2;
-    const rotor=group(extractor,0,0,.102);
+    const rotor=group(fanPose(group(solder.root)),0,0,.102);
     for(let i=0;i<5;i++){const blade=box(rotor,.16,.067,.014,0,0,0,m.silver,.018);blade.position.set(Math.cos(i*Math.PI*2/5)*.10,Math.sin(i*Math.PI*2/5)*.10,0);blade.rotation.z=i*Math.PI*2/5+.7;}
     const fanHub=cylinder(extractor,.052,.052,.035,0,0,.119,m.black);fanHub.rotation.x=Math.PI/2;
     for(const r of [.175,.10]){const ring=new THREE.Mesh(new THREE.TorusGeometry(r,.007,6,36),m.black);ring.position.z=.14;extractor.add(ring);}
     for(let i=0;i<6;i++){const a=i*Math.PI/3;bar(extractor,[Math.cos(a)*.045,Math.sin(a)*.045,.14],[Math.cos(a)*.175,Math.sin(a)*.175,.14],.006,m.black);}
-    bar(solder.fixed,[-.7,.08,-.1],[-.7,.30,-.1],.03,m.silver);
+    for(const side of [-1,1])cylinder(extractor,.03,.03,.02,side*.235,-.06,0,toolDark,12).rotation.z=Math.PI/2;
+    bar(solder.fixed,[-.59,-.02,-.21],[-.59,.18,-.21],.03,m.silver);
+    cylinder(solder.fixed,.13,.14,.02,-.59,-.02,-.21,toolDark,20);
     const smokeGeo=new THREE.BufferGeometry(),smokeArray=new Float32Array(18*3);smokeGeo.setAttribute('position',new THREE.BufferAttribute(smokeArray,3));
-    const smoke=new THREE.Points(smokeGeo,new THREE.PointsMaterial({color:'#b7cfc3',size:.085,map:glowTexture,transparent:true,opacity:.24,depthWrite:false}));solder.root.add(smoke);
+    // Soft grey puffs (not the sparkle glow), readable over the wall and over dark screens.
+    const smokeTexture=canvasTexture(128,128,(ctx,w,h)=>{const g=ctx.createRadialGradient(w/2,h/2,0,w/2,h/2,w/2);g.addColorStop(0,'rgba(255,255,255,.55)');g.addColorStop(.45,'rgba(255,255,255,.28)');g.addColorStop(1,'rgba(255,255,255,0)');ctx.fillStyle=g;ctx.fillRect(0,0,w,h);}).texture;
+    const smoke=new THREE.Points(smokeGeo,new THREE.PointsMaterial({color:'#8a9a94',size:.24,map:smokeTexture,transparent:true,opacity:.5,depthWrite:false}));smoke.frustumCulled=false;solder.root.add(smoke);
 
     // FDM printer stands on its own rubber feet at the front of the window wall.
     const printer=device('printer',-4.15,-.78,3.0,[-4.15,2.8,3.0]);
@@ -1037,7 +1114,8 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
         boardLed.material.emissiveIntensity=state.firmware==='flashing'?.65+Math.sin(elapsed*10)*.3:.55;
         rotor.rotation.z-=state.iron&&!reducedMotion?dt*14:0;
         smoke.visible=state.iron&&!reducedMotion;
-        if(smoke.visible){for(let i=0;i<18;i++){const t=(elapsed*.5+i/18)%1;smokeArray[i*3]=.73-t*.72+Math.sin(t*9+i)*.04;smokeArray[i*3+1]=.7+t*.52;smokeArray[i*3+2]=.20-t*.28;}smokeGeo.attributes.position.needsUpdate=true;}
+        // Wisps rise off the parked iron, arc over the station and are drawn into the intake.
+        if(smoke.visible){for(let i=0;i<18;i++){const t=(elapsed*.5+i/18)%1;smokeArray[i*3]=.80-t*1.30+Math.sin(t*9+i)*.03;smokeArray[i*3+1]=.24+Math.sin(t*Math.PI)*.42+t*.12;smokeArray[i*3+2]=-t*.16+Math.cos(t*7+i)*.02;}smokeGeo.attributes.position.needsUpdate=true;}
         currentRPM=THREE.MathUtils.damp(currentRPM,state.motor?state.rpm:0,3,dt);
         if(!reducedMotion)motorRotor.rotation.y+=dt*currentRPM/60*.65;
         if(state.arm)armTime+=dt;
