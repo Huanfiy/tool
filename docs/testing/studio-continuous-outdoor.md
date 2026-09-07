@@ -165,7 +165,7 @@ far = max(首轮 far, ceil(radius + cameraBound + 8))
 
 ## 9. 审查改进：院子带、镜头预设、夜间光照与模型细节
 
-验证日期：2026-09-07（UTC+8 09-08 凌晨）。基线：`8249f52`；环境：Chrome `google-chrome-stable` 无头 + SwiftShader 跑契约页，Cursor 内嵌 Chromium 做视觉抽查（1913×843，DPR 1）。约束记录见 [design/workbench.md](../../design/workbench.md) 第 15、16 项与"窗外景观与动效"新增两条。
+验证日期：2026-09-07（UTC+8 09-08 凌晨）。基线：`8249f52`；环境：Chrome `google-chrome-stable` 无头 + SwiftShader 跑契约页，Cursor 内嵌 Chromium 做视觉抽查（1913×843，DPR 1）。约束记录见 [工作室要素约束](../design/workbench.md) 第 15、16 项与"窗外景观与动效"新增两条。
 
 实现摘要：
 

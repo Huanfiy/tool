@@ -22,7 +22,7 @@ huanfly.com 的开源纯静态个人网站：原生 HTML5 + CSS3 + JavaScript，
 | [interests/](interests/) | 关于页兴趣素材与相册数据；进入前读各子目录 `README.md` 的素材放置与 `index.json` 约定 |
 | [run.sh](run.sh) | `test` 本地服务器、`gen` 文章索引、`deploy` 经校验的 Git 产物部署 |
 | [tests/](tests/) | Node 契约测试、浏览器契约页与可选 Chromium 回归；随 `.gitattributes` 排除，不进入部署产物 |
-| [design/workbench.md](design/workbench.md) | 工作室 18 项要素约束、镜头预设构图、显示器直接交互、终端与 Robot 能力边界；改工作室前必读 |
+| [docs/design/workbench.md](docs/design/workbench.md) | 工作室 18 项要素约束、镜头预设构图、显示器直接交互、终端与 Robot 能力边界；改工作室前必读 |
 | [docs/design/](docs/design/) | 拍板设计：设计系统、博客发布流程、主题封面、发布产物与部署边界 |
 | [docs/testing/](docs/testing/) | 工作室户外空间与显示器的验证记录、实测数据与待验收项 |
 | [docs/todo/](docs/todo/) | 已评审但暂缓的待办，一项一文件 |
@@ -34,7 +34,7 @@ huanfly.com 的开源纯静态个人网站：原生 HTML5 + CSS3 + JavaScript，
 - 终端永远是浏览器内的访客模拟：不得添加 shell、PTY、终端 socket 或命令执行端点。Robot 只保留 `studio.html` 内的「研究中」静态占位，没有专用脚本、API 请求、聊天或配置存储。
 - 通用 Server / Robot 后端研究计划已移出工作区，git 历史 `2d9c4e7` 可查；没有新请求不得重建后端，恢复研究前先重新盘点代码。
 - 部署只走 `run.sh deploy`：要求干净工作区，用 `git archive` 打包目标提交、写入 `deploy-version.json`、校验产物、延迟 rsync 更新并做通用在线冒烟；`DEPLOY_TARGET`、`PUBLIC_BASE_URL` 必填，`DEPLOY_REQUIRED_REF` 可选限定可部署提交。Web 服务器、TLS、DNS、缓存、凭据与主机专有配置一律留在仓库外，边界见 [发布产物与外部部署边界](docs/design/deployment-architecture.md)。
-- 修改工作室前先读 [design/workbench.md](design/workbench.md)，并遵守以下未收入该文件的实现约束：
+- 修改工作室前先读 [工作室要素约束](docs/design/workbench.md)，并遵守以下未收入该文件的实现约束：
   - 小精灵不合批，拾取方式同设备但永不打开设备面板；语料仅离线内置，未来任何模型 provider 都必须在浏览器中免密钥。
   - 由实体墙提供室外深度遮挡，不保留窗洞着色器；不透明景物阻挡拾取但不触发开窗或设备动作；屏幕的指针、点击与滚轮守卫同样尊重前景实体。
   - 世界空间地表淡出为「庭院椭圆 ∪ 环绕房屋轮廓的圆角矩形」，加前院短石径、边缘绿篱与角落花丛，输出色彩转换后须与纸面吻合。
@@ -72,6 +72,6 @@ DEPLOY_TARGET=... PUBLIC_BASE_URL=... ./run.sh deploy <ref>  # 部署指定提�
 - 调整配色、组件或整体视觉：读 [设计系统](docs/design/design-system.md)。
 - 新增或修改文章、front matter、索引生成：读 [博客文章索引与发布流程](docs/design/blog-auto-publish.md)；涉及封面读 [博客主题 SVG 封面](docs/design/blog-covers.md)。
 - 修改 `run.sh deploy` 或 `.gitattributes` 导出边界：读 [发布产物与外部部署边界](docs/design/deployment-architecture.md)。
-- 修改显示器、相册或终端交互：读 [design/workbench.md](design/workbench.md)「显示屏的直接交互」与 [显示器验证记录](docs/testing/studio-monitor.md)。
-- 修改窗景、庭院、镜头范围或户外动效：读 [design/workbench.md](design/workbench.md)「窗外景观与动效」与 [连续户外空间验证记录](docs/testing/studio-continuous-outdoor.md)。
+- 修改显示器、相册或终端交互：读 [工作室要素约束](docs/design/workbench.md)「显示屏的直接交互」与 [显示器验证记录](docs/testing/studio-monitor.md)。
+- 修改窗景、庭院、镜头范围或户外动效：读 [工作室要素约束](docs/design/workbench.md)「窗外景观与动效」与 [连续户外空间验证记录](docs/testing/studio-continuous-outdoor.md)。
 - 启用评论区：读 [docs/todo/enable-giscus-comments.md](docs/todo/enable-giscus-comments.md)。
