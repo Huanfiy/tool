@@ -83,7 +83,7 @@ Artifact 只包含目标提交中的跟踪文件。工作区修改、未跟踪�
 `.gitattributes` 使用 `export-ignore` 排除以下内容：
 
 - `.gitattributes`、`.gitignore`；
-- `.cursor/`、`.claude/`、`CLAUDE.md`；
+- `.cursor/`、`.claude/`、`AGENTS.md`、`docs-rules.md`；
 - `README.md`、`*.log`、`.DS_Store`、`*.test.js`；
 - `run.sh`、`deploy/`、`server/`、`agents/`、`tests/`、`tmp/`、`build/` 和 `.venv/`；
 - `.env*`、`*.sqlite3*`、`testkey.txt` 等运行时敏感文件。
