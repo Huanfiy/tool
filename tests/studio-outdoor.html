@@ -34,7 +34,7 @@ const helpers = {
 // A module fixture, not a copy of the room camera presets. Full camera/interaction
 // acceptance is recorded separately in docs/testing/studio-continuous-outdoor.md.
 const layout = {
-    wall:{outerX:-5.33}, ground:{top:-.15,fadeCenter:[-9.5,0],fadeRadii:[16,14]},
+    wall:{outerX:-5.33}, ground:{top:-.15,fadeCenter:[-9.5,0],fadeRadii:[16,14],yard:{center:[0,0],half:[8.8,7.3],feather:[4.5,4.5]}},
     background:{center:[-5.33,0,0],radius:80,horizonUV:.5}, sunDirection:[-4.4,7.8,2.7],
     casement:{hingeX:-5.145,width:2.58,maxAngle:Math.PI/3,bottom:1.655,top:4.315,zMin:-2.66,zMax:2.52}
 };
@@ -211,6 +211,13 @@ try {
         landscape.setTheme(palette(night));renderer.render(scene,camera);
         const gl=renderer.getContext(),pixel=new Uint8Array(4);gl.readPixels(64,64,1,1,gl.RGBA,gl.UNSIGNED_BYTE,pixel);
         assert(JSON.stringify([...pixel])===JSON.stringify(night?[52,72,64,255]:[238,229,210,255]),'default framebuffer ground/paper mismatch');
+        // The yard band keeps ground colour beside the right wall and in front of the
+        // open side; one feather width further out the paint has fully returned to paper.
+        const sample=(x,z)=>{camera.position.set(x,15,z);camera.lookAt(x,-.15,z);camera.updateMatrixWorld();renderer.render(scene,camera);const px=new Uint8Array(4);gl.readPixels(64,64,1,1,gl.RGBA,gl.UNSIGNED_BYTE,px);return [...px];};
+        const paper=[...pixel];
+        for(const [x,z] of [[7.4,0],[0,6.0]]) {const px=sample(x,z);assert(JSON.stringify(px)!==JSON.stringify(paper)&&px[1]>=px[0]&&px[1]>px[2],'yard band lost its ground colour');}
+        assert(JSON.stringify(sample(14.5,0))===JSON.stringify(paper),'yard paint did not return to paper');
+        camera.position.set(35,15,30);camera.lookAt(35,-.15,30);camera.updateMatrixWorld();
     }
     const texture=sky.material.map;
     for(let i=0;i<20;i++){landscape.setTheme(palette(false));landscape.setTheme(palette(true));}

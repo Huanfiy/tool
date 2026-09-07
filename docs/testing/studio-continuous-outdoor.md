@@ -162,3 +162,26 @@ far = max(首轮 far, ceil(radius + cameraBound + 8))
 - 同口径桌面 overview 主通道为 `211 calls / 220,534 triangles`，强制阴影整帧为 `348 / 319,752`；几何 / 纹理仍为 `188 / 31`。预算断言收紧至最多 120 簇 / 6,500 个草丛三角形；没有据此宣称真机帧率提升。
 - 浏览器契约全部通过：新增按实际石头位置插值得到的连续路边检查，覆盖石头间隙，完整风动采样中每片草叶均留在远侧。桌面 / 移动 × 三视角 × 日夜的 12 张截图已检查；无请求注入的实际页面再次通过 16 组日夜 / 窗态 / 动态偏好检查，页面异常为 0。
 - 证据：`/tmp/huanfly-studio-review/grass-curved/sparse*`（镜头对照、测量及契约日志）、`/tmp/huanfly-studio-review/grass-sparse/`（实际页面状态检查）。上述临时证据不提交；未部署，真实设备性能仍待验收。
+
+## 9. 审查改进：院子带、镜头预设、夜间光照与模型细节
+
+验证日期：2026-09-07（UTC+8 09-08 凌晨）。基线：`8249f52`；环境：Chrome `google-chrome-stable` 无头 + SwiftShader 跑契约页，Cursor 内嵌 Chromium 做视觉抽查（1913×843，DPR 1）。约束记录见 [design/workbench.md](../../design/workbench.md) 第 15、16 项与"窗外景观与动效"新增两条。
+
+实现摘要：
+
+- 渲染伪影：`box()` 只对 `radius < .04` 的盒体添加直角 `EdgesGeometry` ink 线，示波器白壳等大圆角只保留轮廓壳。示波器 "SIGNAL / DSO" 铭牌移到机身右下角，电源坐实在示波器顶面并后移 .04；排烟风机改为深色进风盘 + 两圈 Torus 护网 + 6 根辐条。
+- 日夜同步：`studio.js` 启动读 `localStorage.theme`（`dark`/`light`），无记忆按小时判断（18:00–06:00 夜），`applyTheme()` 在 room 创建前就设置 `data-theme`/`theme-color`；`toggleTheme()` 写回同一键，日志文案由 `ambientLine()` 按日夜与时段生成。
+- 镜头：`robotics` 改为房内前侧 `pos(-.72,4.1,2.77) → target(-4.1,2.3,-.2)`（方位角 .85 rad、俯仰 1.19 rad、距离 4.85），`fabrication` 改为 `pos(-2.7,3.9,8.0) → target(-4.15,1.78,3.0)`（方位角 .28）；`deviceViews.pcb/motor/arm` 同向调整。所有预设均在 OrbitControls 现有限制内，未改任何角度/距离限制；`fitOutdoorCoverage()` 由实际 `destination()` 重算。
+- 界面：`.is-at-monitor .lab-footer` 淡出并 `visibility:hidden`；相册 `≤4` 张时 `data-density="sparse"` 用大列宽。
+- 户外：地表着色器改为"庭院椭圆 ∪ 圆角矩形院子带"（`layout.ground.yard = {center:[0,0], half:[8.8,7.3], feather:[4.5,4.5]}`），`customProgramCacheKey` 升为 `v2`；新增 `front-yard-stepping-stones`（6 块，独立批次，不改变草丛以侧径为基准的路边检查）、`yard-hedge`（6 丛，x≈8.2–8.9，在院子带外缘）、右前角 9 株花并入 `low-window-flower-beds`、`midfield-copses`（4 组 12 实例，x ≤ -22.5，位于相机可达区 `x ≥ -20.5` 之外）。远丘配色加深一档、起伏 ×1.35，小屋经度 `.457 → .485`（更靠 -X，退出 overview 左缘）。
+- 光照：`warmLight` 夜间 16 → 6 并移到右架下，新增左架下同色 `shelfLight`（夜 6 / 日 .9，距离 11），新增窗侧 `moonLight`（夜 .35 / 日 0），`hemi` 夜间 .7 → .55。
+- 模型：打印机加两侧 + 门板烟色亚克力（`opacity .22`、不写深度、DoubleSide，透明材质不参与拾取）、实心背板与顶板、门把手；小刀改为刀刃朝下的美工刀（`ExtrudeGeometry` 斜切刀片）；螺丝刀改为细长带握纹柄 + 颈环 + 长杆，整体下移 .09 以免杆顶高出挂板。
+
+回归：
+
+- `tests/studio-outdoor.html` 全部通过。夹具 layout 已加入 `yard`，像素契约新增三点：`(7.4, 0)` 与 `(0, 6.0)` 必须非纸色且绿分量占优，`(14.5, 0)` 必须精确回到纸色（日夜各一次）；原 `(35, 30)` 纸色断言不变。显示器四角对齐最大 `0.0297px`。
+- 桌面 overview / 日间 / 正常动态 `getStats()`：`224 calls / 226,202 triangles / 192 geometries / 31 textures`（审查时基线 `211 / ≈220,500 / 188 / 31`；仅完成阶段 1–2 时 `215 / 221,474 / 189 / 31`），仍在 `≤350 / ≤260,000 / ≤320 / ≤35` 保护线内。增量来自打印机 3 块透明板（不合批）、3 个新实例批次（前院石径、绿篱、中景树丛）和风机护网。
+- 视觉抽查：overview 日/夜、bench、fabrication、robotics、pcb/motor 设备视角、靠近屏幕 + 相册。确认打印机不再挡电机台、外墙截面不入镜、开发板居中、显示器只留顶部一条、夜间墙面无单点热点、小屋不在页头区、院子带在低角度下承接墙脚。
+- Cursor 内嵌浏览器首次载入契约页曾报 `57.5px` 四角漂移与 `visible screen click prevented native action`，暂存改动后基线代码报同样数值，属于该内嵌标签页焦点/布局环境问题；无头 Chrome 与再次加载均通过，不计为回归。
+
+未做：真机性能与最终美术签收仍按 §6 待验收；`tests/studio-apps-browser.cjs`（需 puppeteer-core）本轮未运行。
