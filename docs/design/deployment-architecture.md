@@ -79,12 +79,12 @@ Artifact 只包含目标提交中的跟踪文件。工作区修改、未跟踪�
 `.gitattributes` 使用 `export-ignore` 排除以下内容：
 
 - `.gitattributes`、`.gitignore`；
-- `.cursor/`、`.claude/`、`AGENTS.md`、`docs-rules.md`；
+- `.cursor/`、`.claude/`、`AGENTS.md`、`docs-rules.md`、`docs/`；
 - `README.md`、`*.log`、`.DS_Store`、`*.test.js`；
 - `run.sh`、`deploy/`、`server/`、`agents/`、`tests/`、`tmp/`、`build/` 和 `.venv/`；
 - `.env*`、`*.sqlite3*`、`testkey.txt` 等运行时敏感文件。
 
-发布产物不包含项目协作说明、研究计划、测试文件或运维目录。对 `server/` 等路径的防误发规则不表示当前存在后端实现。
+发布产物不包含项目协作说明、设计文档、待办登记、测试文件或运维目录。对 `server/` 等路径的防误发规则不表示当前存在后端实现。
 
 ### 4.3 版本标记
 

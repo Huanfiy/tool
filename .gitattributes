@@ -4,6 +4,7 @@
 /.claude export-ignore
 /AGENTS.md export-ignore
 /docs-rules.md export-ignore
+/docs export-ignore
 /agents export-ignore
 /run.sh export-ignore
 /deploy export-ignore
