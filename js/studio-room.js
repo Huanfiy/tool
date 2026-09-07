@@ -749,7 +749,9 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
     });
     const botanical=surface(architecture,.54,.79,2.60,3.36,-3.718,sketch.texture);botanical.rotation.z=-.06;
     box(architecture,.19,.055,.014,2.59,3.763,-3.704,m.mint,.003);
-    for(let i=0;i<3;i++)box(architecture,.63,.055,.47,2.26,1.82+i*.06,-2.99,[m.cream,m.orange,m.teal][i]);
+    // Three stacked books lift the potted plant; the stack rests on the desk a good
+    // hand's width clear of the screen edge so the leaves never brush the panel.
+    for(let i=0;i<3;i++)box(architecture,.63,.055,.47,2.95,1.7975+i*.055,-2.99,[m.cream,m.orange,m.teal][i]);
     // Trailing pothos at the free end of the book shelf: the pot stands clear of the
     // last book and its strands climb over the rim before hanging past the shelf edge.
     const trailing=group(architecture,-2.45,shelfTop,-3.41);
@@ -761,8 +763,9 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
         const crown=paintedLeaf(trailing,.09,.15,xx+.04,.31,.12,strand%2?leafLight:leafDark);crown.rotation.set(-1.1,0,strand*.5-.5);
         for(let i=0;i<5;i++){const leaf=paintedLeaf(trailing,.095,.17,xx+.09+(i%2?.06:-.06),.04-i*.15,.255,i%2?leafDark:leafLight);leaf.rotation.z=i%2?.6:-.7;}
     }
-    // Soil-moisture sensor: a small, interactive plant beside the development desk.
-    const sensorPlant=device('plant',2.38,2.01,-2.99,[2.38,2.86,-2.99]);
+    // Soil-moisture sensor: a small, interactive plant on the book stack, its pot
+    // seated on the top cover rather than hovering above it.
+    const sensorPlant=device('plant',3.0,1.935,-2.99,[3.0,2.86,-2.99]);
     cylinder(sensorPlant.fixed,.22,.16,.32,0,.16,0,m.orange,28);
     cylinder(sensorPlant.fixed,.237,.237,.05,0,.31,0,m.orange,28);
     cylinder(sensorPlant.fixed,.205,.205,.014,0,.34,0,m.darkOrange,28);
@@ -773,9 +776,11 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
         const leaf=paintedLeaf(leaves,.13,.31,x,h,z,i%2?leafDark:leafLight);leaf.rotation.set(Math.sin(a)*.4,a,Math.cos(a)*.55);
     }
     box(sensorPlant.fixed,.07,.21,.025,.12,.38,.04,m.pcb,.008);
-    cable(sensorPlant.fixed,[[.12,.44,.055],[.30,.29,.08],[.37,.05,.18],[.34,.10,.25]],m.cream,.011);
-    box(sensorPlant.fixed,.29,.18,.14,.36,.11,.23,m.cream,.02);
-    const soilDisplay=canvasTexture(256,112,()=>{});surface(sensorPlant.root,.235,.12,.36,.12,.307,soilDisplay.texture);
+    // The readout stands on the desk in front of the stack; its lead climbs over the
+    // rim, runs down the book covers and enters the back of the case.
+    cable(sensorPlant.fixed,[[.12,.44,.055],[.16,.42,.17],[.14,.22,.27],[.08,.02,.31],[.02,-.06,.34]],m.cream,.011);
+    box(sensorPlant.fixed,.29,.18,.14,-.05,-.075,.40,m.cream,.02);
+    const soilDisplay=canvasTexture(256,112,()=>{});surface(sensorPlant.root,.235,.12,-.05,-.065,.477,soilDisplay.texture);
     const waterPositions=new Float32Array(12*3),waterGeo=new THREE.BufferGeometry();waterGeo.setAttribute('position',new THREE.BufferAttribute(waterPositions,3));
     const droplets=new THREE.Points(waterGeo,new THREE.PointsMaterial({color:'#93b7c0',size:.045,transparent:true,opacity:.75,depthWrite:false}));droplets.visible=false;sensorPlant.root.add(droplets);
     // A palm-sized desk spirit keeps the free right end of the bench company, clear of
@@ -857,7 +862,7 @@ export function createStudioRoom({ container, state, reducedMotion, onSelect, on
         solder:{pos:[-1.8,3.7,1.9],target:[-3.72,2.07,-1.9]},
         printer:presets.fabrication, motor:{pos:[-2.0,3.5,3.0],target:[-4.2,2.2,1.1]},
         arm:{pos:[-1.3,4.3,2.4],target:[-4.0,2.5,-1.0]},
-        plant:{pos:[.8,3.7,.2],target:[2.38,2.4,-2.99]}
+        plant:{pos:[1.42,3.7,.2],target:[3.0,2.4,-2.99]}
     };
     function destination(preset, forDevice=false) {
         const pos=new THREE.Vector3(...preset.pos), target=new THREE.Vector3(...preset.target);
