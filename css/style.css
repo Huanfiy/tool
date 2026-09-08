@@ -35,18 +35,42 @@
     --violet: #9b7ede;
     --violet-soft: #f0eafb;
 
-    /* --- 场景：山丘 / 草地 / 猫 --- */
+    /* --- 场景：天空 / 远山 / 森林 / 山丘 / 草地 / 猫 --- */
+    --sky-top: #d3e6e6;
+    --sky-mid: #e9efe4;
+    --sky-low: #f7f3e8;
+    --ray: rgba(255, 249, 220, 0.26);
+    --sun: #fff3c2;
+    --sun-glow: rgba(242, 185, 80, 0.30);
+    --moon: #e9efe0;
+    --moon-glow: rgba(111, 216, 226, 0.22);
+    --cloud: rgba(255, 255, 255, 0.86);
+    --cloud-line: rgba(47, 54, 48, 0.16);
+    --bird: rgba(47, 54, 48, 0.55);
+    --mount-far: #d4e2d4;
+    --mount-near: #bed5c0;
+    --mist: #e9efdc;
+    --forest: #a2cc8b;
     --hill-back: #cfe6b8;
     --hill-mid: #a8d38a;
     --hill-front: #7cba5e;
     --tree: #58924a;
+    --tree-light: #7ab266;
+    --trunk: #7a5a3e;
+    --grass: #67aa4c;
+    --grass-fg: #4f8f3c;
     --cat-ink: #23281f;
+    --cat-sheen: #363e35;
+    --cat-eye: #74e2d6;
+    --cat-iris: #27a49b;
+    --cat-pupil: #10302d;
     --footer-bg: #edf3df;
 
     /* --- 布局 --- */
     --container-width: 1100px;
     --header-height: 68px;
-    --hills-h: clamp(130px, 18vw, 210px);
+    /* Hero 景观图层高度：与 1920×300 的 viewBox 等比，1920 宽时为 300px */
+    --scene-h: clamp(150px, 15.625vw, 480px);
 
     /* --- 手绘圆角（不规则 wobble） --- */
     --wobble-btn: 255px 18px 225px 18px / 18px 225px 18px 255px;
@@ -94,11 +118,27 @@
     --violet: #b39aec;
     --violet-soft: rgba(179, 154, 236, 0.14);
 
+    --sky-top: #0a1219;
+    --sky-mid: #101d20;
+    --sky-low: #141c16;
+    --cloud: rgba(64, 84, 76, 0.45);
+    --cloud-line: rgba(223, 233, 220, 0.10);
+    --mount-far: #182626;
+    --mount-near: #1b2f2a;
+    --mist: #172420;
+    --forest: #1c3224;
     --hill-back: #223528;
     --hill-mid: #2a4430;
     --hill-front: #34573b;
     --tree: #26402c;
+    --tree-light: #325538;
+    --trunk: #3a2e24;
+    --grass: #2f5335;
+    --grass-fg: #24402b;
     --cat-ink: #10140e;
+    --cat-sheen: #1f2a20;
+    --cat-eye: #7fe9dd;
+    --cat-iris: #2bb3a8;
     --footer-bg: #101711;
 
     --shadow-sm: 3px 4px 0 rgba(0, 0, 0, 0.25);
@@ -393,9 +433,14 @@ header .container {
 }
 
 /* =========================================
-   Hero：手绘森林场景
+   Hero：手绘森林景观
+   结构：天空(.hero-sky) → 三层景观(.hero-scene) → 正文(.hero-content)
+   时段由 js/hero-scene.js 写入 .hero[data-daypart]，深色主题固定为 night；
+   视差位移由脚本直接写在各图层 transform 上，脚本失效时为静态插画。
    ========================================= */
 .hero {
+    --sun-x: 74%;
+    --sun-y: 14%;
     min-height: calc(92vh - var(--header-height));
     display: flex;
     align-items: center;
@@ -403,55 +448,459 @@ header .container {
     text-align: center;
     position: relative;
     overflow: hidden;
-    padding-bottom: var(--hills-h);
+    isolation: isolate;
+    /* 只为山丘与树线（景观下部 72%）预留空间，淡色远山允许被正文覆盖 */
+    padding-bottom: calc(var(--scene-h) * 0.72);
 }
 
-/* 漂浮色斑背景 */
-.hero-bg {
+/* 晨昏变体：仅浅色主题下由脚本按本地时间启用 */
+.hero[data-daypart="dawn"] {
+    --sky-top: #d6dbea;
+    --sky-mid: #f3ded3;
+    --sky-low: #f7f0e4;
+    --ray: rgba(255, 225, 200, 0.22);
+    --sun: #ffe4b8;
+    --sun-glow: rgba(232, 131, 111, 0.30);
+    --mount-far: #d7d2dc;
+    --mount-near: #c3c0cb;
+    --mist: #efe4db;
+    --forest: #9dc48c;
+}
+
+.hero[data-daypart="dusk"] {
+    --sky-top: #c9bdd6;
+    --sky-mid: #f0c8a6;
+    --sky-low: #f6e3cd;
+    --ray: rgba(255, 205, 150, 0.24);
+    --sun: #ffcf7e;
+    --sun-glow: rgba(242, 140, 80, 0.42);
+    --mount-far: #c8bad0;
+    --mount-near: #ae9fb9;
+    --mist: #f2d8c3;
+    --forest: #94b885;
+    --hill-back: #c9d9a6;
+}
+
+.hero-defs {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+}
+
+/* --- 天空 --- */
+.hero-sky {
     position: absolute;
     inset: 0;
     z-index: 0;
     pointer-events: none;
+    background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 58%, var(--sky-low) 100%);
 }
 
-.blob {
+.hero[data-daypart="dusk"] .hero-sky::after {
+    content: '';
     position: absolute;
-    border-radius: 46% 54% 60% 40% / 50% 44% 56% 50%;
-    filter: blur(46px);
-    opacity: 0.35;
-    animation: blob-float 14s ease-in-out infinite alternate;
+    inset: 0;
+    background: linear-gradient(180deg, transparent 30%, rgba(242, 150, 80, 0.12) 100%);
 }
 
-.blob-1 {
-    width: 340px;
-    height: 340px;
-    top: -6%;
-    right: -4%;
-    background: var(--accent-soft);
-    background: color-mix(in srgb, var(--accent-color) 26%, transparent);
+/* 从太阳位置散出的柔和光束 */
+.hero-rays {
+    position: absolute;
+    inset: 0;
+    background: conic-gradient(from 150deg at var(--sun-x) var(--sun-y),
+            transparent 0deg 9deg, var(--ray) 9deg 13deg,
+            transparent 13deg 30deg, var(--ray) 30deg 33deg,
+            transparent 33deg 52deg, var(--ray) 52deg 57deg,
+            transparent 57deg 80deg, var(--ray) 80deg 83deg,
+            transparent 83deg 360deg);
+    -webkit-mask-image: radial-gradient(circle at var(--sun-x) var(--sun-y), #000 0%, rgba(0, 0, 0, 0.6) 25%, transparent 62%);
+    mask-image: radial-gradient(circle at var(--sun-x) var(--sun-y), #000 0%, rgba(0, 0, 0, 0.6) 25%, transparent 62%);
+    animation: rays-breathe 9s ease-in-out infinite alternate;
 }
 
-.blob-2 {
-    width: 300px;
-    height: 300px;
-    bottom: 18%;
-    left: -6%;
-    background: color-mix(in srgb, var(--primary-color) 24%, transparent);
-    animation-delay: -5s;
+@keyframes rays-breathe {
+    from { opacity: 0.55; }
+    to { opacity: 1; }
 }
 
-.blob-3 {
-    width: 200px;
-    height: 200px;
-    top: 22%;
-    left: 22%;
-    background: color-mix(in srgb, var(--warm) 20%, transparent);
-    animation-delay: -9s;
+.hero-sun {
+    position: absolute;
+    left: var(--sun-x);
+    top: var(--sun-y);
+    width: clamp(200px, 16vw, 320px);
+    height: clamp(200px, 16vw, 320px);
+    transform: translate(-50%, -50%);
+    background:
+        radial-gradient(circle, var(--sun) 0 14.5%, color-mix(in srgb, var(--sun) 60%, transparent) 15.5%, transparent 17.5%),
+        radial-gradient(circle, var(--sun-glow) 0, transparent 62%);
+    transition: left 1.2s ease, top 1.2s ease;
 }
 
-@keyframes blob-float {
-    from { transform: translate(0, 0) scale(1); }
-    to { transform: translate(24px, -28px) scale(1.12); }
+.hero-moon {
+    display: none;
+    position: absolute;
+    left: 80%;
+    top: 16%;
+    width: clamp(56px, 4.5vw, 84px);
+    height: clamp(56px, 4.5vw, 84px);
+    transform: translate(-50%, -50%);
+    filter: drop-shadow(0 0 18px var(--moon-glow));
+}
+
+.hero-moon::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: var(--moon);
+    -webkit-mask: radial-gradient(circle at 70% 34%, transparent 0 46%, #000 48%);
+    mask: radial-gradient(circle at 70% 34%, transparent 0 46%, #000 48%);
+}
+
+/* 星星只在夜晚存在：display:none 让白天完全不跑闪烁动画 */
+.hero-stars {
+    display: none;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.hero-stars .stars circle,
+.hero-stars .sparkles path {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: twinkle var(--t, 3s) ease-in-out var(--d, 0s) infinite alternate;
+}
+
+@keyframes twinkle {
+    from { opacity: 0.3; transform: scale(0.8); }
+    to { opacity: 1; transform: scale(1.15); }
+}
+
+.hero-clouds {
+    position: absolute;
+    inset: 0;
+    will-change: transform;
+}
+
+.cloud {
+    position: absolute;
+    left: 0;
+    height: auto;
+    opacity: var(--o, 0.92);
+    animation: cloud-drift var(--dur, 160s) linear var(--delay, 0s) infinite;
+}
+
+.cloud-1 { width: clamp(120px, 13vw, 250px); top: 8%; --dur: 150s; --delay: -22s; }
+.cloud-2 { width: clamp(90px, 9vw, 170px); top: 24%; --dur: 190s; --delay: -96s; --o: 0.8; }
+.cloud-3 { width: clamp(70px, 7vw, 130px); top: 15%; --dur: 230s; --delay: -150s; --o: 0.7; }
+.cloud-4 { width: clamp(100px, 11vw, 200px); top: 33%; --dur: 175s; --delay: -60s; --o: 0.75; }
+
+@keyframes cloud-drift {
+    from { transform: translateX(-30vw); }
+    to { transform: translateX(110vw); }
+}
+
+.hero-birds {
+    position: absolute;
+    top: 21%;
+    left: 0;
+    width: clamp(56px, 5vw, 96px);
+    height: auto;
+    animation: birds-fly 52s linear -14s infinite;
+}
+
+.hero-birds .bird {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: bird-flap 0.9s ease-in-out var(--d, 0s) infinite alternate;
+}
+
+@keyframes birds-fly {
+    from { transform: translate(-12vw, 0); }
+    50% { transform: translate(50vw, -3vh); }
+    to { transform: translate(112vw, 1vh); }
+}
+
+@keyframes bird-flap {
+    from { transform: scaleY(1); }
+    to { transform: scaleY(-0.5); }
+}
+
+[data-theme="dark"] .hero-sun,
+[data-theme="dark"] .hero-rays,
+[data-theme="dark"] .hero-birds {
+    display: none;
+}
+
+[data-theme="dark"] .hero-moon {
+    display: block;
+}
+
+[data-theme="dark"] .hero-stars {
+    display: block;
+}
+
+/* --- 景观图层 --- */
+.hero-scene {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.hero-layer {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: var(--scene-h);
+    transform-origin: 50% 100%;
+    will-change: transform;
+}
+
+.hero-far {
+    height: calc(var(--scene-h) * 1.7333);
+}
+
+.hero-particles {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+/* 草丛随风：沿底边剪切，整片草地同向轻摆 */
+.sway-slow,
+.sway-fg {
+    transform-box: fill-box;
+    transform-origin: 50% 100%;
+    animation: grass-sway 5.5s ease-in-out infinite alternate;
+}
+
+.sway-fg {
+    animation-duration: 4.2s;
+    animation-delay: -1.5s;
+}
+
+@keyframes grass-sway {
+    from { transform: skewX(-2.5deg); }
+    to { transform: skewX(2.5deg); }
+}
+
+/* --- 小黑 --- */
+.hero-cat {
+    pointer-events: auto;
+    cursor: pointer;
+    outline: none;
+}
+
+.hero-cat:focus-visible {
+    outline: 2px dashed var(--primary-color);
+    outline-offset: 8px;
+}
+
+[data-theme="dark"] .hero-cat {
+    filter: drop-shadow(0 0 6px rgba(111, 216, 226, 0.35));
+}
+
+.cat-figure,
+.cat-tail,
+.cat-body,
+.cat-head,
+.cat-ear-l,
+.cat-ear-r,
+.cat-eyes,
+.cat-hearts path,
+.cat-zzz text {
+    transform-box: fill-box;
+}
+
+.cat-figure {
+    transform-origin: 50% 100%;
+}
+
+.cat-tail {
+    transform-origin: 0% 100%;
+    animation: tail-swish 3.6s ease-in-out infinite;
+}
+
+@keyframes tail-swish {
+    0%, 100% { transform: rotate(0deg); }
+    50% { transform: rotate(14deg); }
+}
+
+.cat-body {
+    transform-origin: 50% 100%;
+    animation: cat-breathe 4s ease-in-out infinite;
+}
+
+@keyframes cat-breathe {
+    0%, 100% { transform: scale(1, 1); }
+    50% { transform: scale(1.015, 1.03); }
+}
+
+.cat-head {
+    transform-origin: 50% 100%;
+    transition: transform 0.45s cubic-bezier(0.34, 1.3, 0.64, 1);
+}
+
+.cat-pupil {
+    transition: transform 0.16s ease-out;
+}
+
+.cat-eyes {
+    transform-origin: center;
+    animation: cat-blink 5s ease-in-out infinite;
+}
+
+@keyframes cat-blink {
+    0%, 90%, 100% { transform: scaleY(1); }
+    93%, 96% { transform: scaleY(0.08); }
+}
+
+.cat-ear-l,
+.cat-ear-r {
+    transform-origin: 50% 100%;
+    transition: transform 0.3s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
+.cat-ear-r {
+    animation: ear-twitch 7s ease-in-out infinite;
+}
+
+@keyframes ear-twitch {
+    0%, 88%, 100% { transform: rotate(0deg); }
+    91%, 95% { transform: rotate(-12deg); }
+}
+
+.hero-cat.is-hover .cat-ear-l {
+    transform: rotate(-9deg) translateY(-3px);
+}
+
+.hero-cat.is-hover .cat-ear-r {
+    transform: rotate(9deg) translateY(-3px);
+    animation: none;
+}
+
+.hero-cat.is-hover .cat-eyes {
+    animation: none;
+    transform: scale(1.06);
+}
+
+/* 表情状态：开心 / 打瞌睡 */
+.cat-eyes-happy,
+.cat-eyes-closed,
+.cat-hearts,
+.cat-zzz {
+    visibility: hidden;
+}
+
+.hero-cat.is-happy .cat-eyes,
+.hero-cat.is-sleepy .cat-eyes,
+.hero-cat.is-sleepy .cat-mouth {
+    visibility: hidden;
+}
+
+.hero-cat.is-happy .cat-eyes-happy,
+.hero-cat.is-happy .cat-hearts,
+.hero-cat.is-sleepy .cat-eyes-closed,
+.hero-cat.is-sleepy .cat-zzz {
+    visibility: visible;
+}
+
+.hero-cat.is-happy .cat-figure {
+    animation: cat-hop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes cat-hop {
+    0% { transform: translateY(0) scale(1, 1); }
+    30% { transform: translateY(-10px) scale(0.96, 1.06); }
+    60% { transform: translateY(0) scale(1.05, 0.95); }
+    100% { transform: translateY(0) scale(1, 1); }
+}
+
+.hero-cat.is-happy .cat-hearts path {
+    transform-origin: center;
+    animation: heart-float 1.5s ease-out var(--d, 0s) both;
+}
+
+@keyframes heart-float {
+    0% { opacity: 0; transform: translateY(8px) scale(0.5); }
+    30% { opacity: 1; transform: translateY(-6px) scale(1.05); }
+    100% { opacity: 0; transform: translateY(-38px) scale(0.9); }
+}
+
+.hero-cat.is-sleepy .cat-tail {
+    animation-duration: 8s;
+}
+
+.hero-cat.is-sleepy .cat-zzz text {
+    animation: zzz-float 2.6s ease-in-out var(--d, 0s) infinite;
+}
+
+@keyframes zzz-float {
+    0% { opacity: 0; transform: translate(0, 4px); }
+    35% { opacity: 1; }
+    100% { opacity: 0; transform: translate(10px, -18px); }
+}
+
+/* --- 小黑的对话气泡（桌面端）：挂在耳朵旁，left/top 由脚本写入，data-side 决定尾巴在哪一侧 --- */
+.cat-bubble {
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 3;
+    width: max-content;
+    max-width: min(300px, 40vw);
+    padding: 8px 16px;
+    background: var(--card-bg);
+    color: var(--dark-text);
+    border: 2px solid var(--ink);
+    border-radius: var(--wobble-btn);
+    box-shadow: var(--shadow-ink);
+    font-size: 0.95rem;
+    line-height: 1.5;
+    text-align: left;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transform-origin: 0 100%;
+    transform: translateY(-100%) scale(0.92);
+    transition: opacity 0.3s ease, transform 0.35s cubic-bezier(0.34, 1.4, 0.64, 1), visibility 0s linear 0.3s;
+}
+
+.cat-bubble::after {
+    content: '';
+    position: absolute;
+    left: 18px;
+    bottom: -8px;
+    width: 12px;
+    height: 12px;
+    background: inherit;
+    border-left: 2px solid var(--ink);
+    border-bottom: 2px solid var(--ink);
+    transform: skewX(24deg) rotate(45deg);
+}
+
+.cat-bubble[data-side="left"] {
+    transform-origin: 100% 100%;
+}
+
+.cat-bubble[data-side="left"]::after {
+    left: auto;
+    right: 18px;
+    transform: skewX(-24deg) rotate(45deg);
+}
+
+.cat-bubble.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(-100%) scale(1);
+    transition-delay: 0s;
 }
 
 .hero-content {
@@ -568,79 +1017,16 @@ header .container {
     flex-wrap: wrap;
 }
 
-/* --- 山丘场景 --- */
-.hero-scene {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: var(--hills-h);
-    z-index: 1;
-    pointer-events: none;
-}
-
-.hero-hills {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-}
-
-/* --- 小黑猫 --- */
-.hero-cat {
-    position: absolute;
-    right: 13%;
-    bottom: calc(var(--hills-h) * 0.26);
-    width: clamp(72px, 8.5vw, 110px);
-    height: auto;
-    z-index: 2;
-}
-
-[data-theme="dark"] .hero-cat {
-    filter: drop-shadow(0 0 6px rgba(111, 216, 226, 0.35));
-}
-
-.cat-tail {
-    transform-box: fill-box;
-    transform-origin: left bottom;
-    animation: tail-swish 3.6s ease-in-out infinite;
-}
-
-@keyframes tail-swish {
-    0%, 100% { transform: rotate(0deg); }
-    50% { transform: rotate(14deg); }
-}
-
-.cat-eyes {
-    transform-box: fill-box;
-    transform-origin: center;
-    animation: cat-blink 5s ease-in-out infinite;
-}
-
-@keyframes cat-blink {
-    0%, 90%, 100% { transform: scaleY(1); }
-    93%, 96% { transform: scaleY(0.08); }
-}
-
-.cat-ear-l,
-.cat-ear-r {
-    transform-box: fill-box;
-    transform-origin: bottom center;
-}
-
-.cat-ear-r {
-    animation: ear-twitch 7s ease-in-out infinite;
-}
-
-@keyframes ear-twitch {
-    0%, 88%, 100% { transform: rotate(0deg); }
-    91%, 95% { transform: rotate(-12deg); }
-}
-
 /* =========================================
    卡片
    ========================================= */
 .card {
+    /* 指针光斑位置与纸片倾斜角，由 js/script.js 的 initCardTilt 写入 */
+    --mx: 50%;
+    --my: 50%;
+    --rx: 0deg;
+    --ry: 0deg;
+    position: relative;
     background: var(--card-bg);
     border: 2px solid var(--line-soft);
     border-radius: var(--wobble-card);
@@ -1923,12 +2309,38 @@ footer::before {
         scroll-behavior: auto;
     }
 
-    .blob,
     .hero-avatar,
+    .hero-rays,
+    .hero-stars .stars circle,
+    .hero-stars .sparkles path,
+    .cloud,
+    .hero-birds,
+    .hero-birds .bird,
+    .sway-slow,
+    .sway-fg,
     .cat-tail,
+    .cat-body,
     .cat-eyes,
-    .cat-ear-r {
+    .cat-ear-r,
+    .hero-cat.is-happy .cat-figure,
+    .hero-cat.is-happy .cat-hearts path,
+    .hero-cat.is-sleepy .cat-zzz text {
         animation: none;
+    }
+
+    /* 静态构图：云与飞鸟停在画面里，不再漂移 */
+    .cloud-1 { transform: translateX(12vw); }
+    .cloud-2 { transform: translateX(62vw); }
+    .cloud-3 { transform: translateX(84vw); }
+    .cloud-4 { transform: translateX(30vw); }
+    .hero-birds { transform: translate(26vw, 0); }
+
+    .cat-head,
+    .cat-pupil,
+    .cat-ear-l,
+    .cat-ear-r,
+    .cat-bubble {
+        transition: none;
     }
 
     .card:hover,
@@ -1985,7 +2397,7 @@ footer::before {
     .hero {
         min-height: auto;
         padding-top: 2rem;
-        padding-bottom: calc(var(--hills-h) + 2rem);
+        padding-bottom: calc(var(--scene-h) * 0.72 + 2rem);
     }
 
     .hero-title {
@@ -2001,9 +2413,17 @@ footer::before {
         letter-spacing: 0.16em;
     }
 
-    .hero-cat {
-        right: 8%;
-        width: 68px;
+    /* 窄屏：太阳与云收小，气泡让位给正文里的问候 */
+    .hero {
+        --sun-x: 78%;
+    }
+
+    .hero-birds {
+        top: 14%;
+    }
+
+    .cat-bubble {
+        display: none;
     }
 
     .blog-card {
