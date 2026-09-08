@@ -36,9 +36,10 @@ Three.js 工作室是 Huanfly 个人设计风格在三维空间中的延展。
 | 文件 | 职责 |
 |---|---|
 | `css/style.css` | 设计 Token 唯一定义处 + 全部组件样式 + 深色模式覆盖 + 响应式 |
-| `js/script.js` | 灵气动效、主题切换、移动端菜单、首页问候与动态时间线、busuanzi 访问统计 |
+| `js/script.js` | 灵气动效、主题切换（圆形揭示过渡）、卡片光斑与倾斜、吸顶导航滚动态、移动端菜单、首页问候与动态时间线、busuanzi 访问统计 |
+| `js/hero-scene.js` | 首页 Hero 景观：时段天空与太阳位置、指针 / 滚动视差、落叶 / 萤火粒子、小黑的眼神追随与互动、气泡 |
 | `js/interests.js` | 关于页兴趣详情视图（摄影 / 科技制作 / 阅读）渲染，Toast 与 Lightbox |
-| `index.html` | Hero 场景（山丘 + 小黑 SVG 内联于此文件）、板块入口卡片、动态时间线 |
+| `index.html` | Hero 景观（天空、远山、森林、山丘、草丛与小黑全部内联 SVG，见 §4.1）、板块入口卡片、动态时间线 |
 | `blog.html` | 文章列表 / 详情双视图、标签筛选、搜索、`#post=` hash 路由、Markdown 渲染、文章信息、AI 摘要与可选评论 |
 | `tool.html` | 5 个工具入口（均为真实链接）+ 页内 ICO 转换器（`#ico` hash 视图，含拖拽上传） |
 | `about.html` | 简介、时间线、兴趣卡片与详情视图容器 |
@@ -66,9 +67,20 @@ Three.js 工作室是 Huanfly 个人设计风格在三维空间中的延展。
 | `--primary-color` | `#5da844`（hover `#4c9636`） | `#7cc95f` | 森林绿主色 |
 | `--accent-color` | `#4fc4cf` | `#6fd8e2` | 灵气青强调色 |
 | `--warm` / `--rose` / `--violet` | `#f2b950` / `#e8836f` / `#9b7ede` | `#f2c46e` / `#ee9a88` / `#b39aec` | 卡片色调扩展 |
-| `--hill-back/mid/front` | `#cfe6b8` / `#a8d38a` / `#7cba5e` | `#223528` / `#2a4430` / `#34573b` | Hero 三层山丘 |
-| `--tree` / `--cat-ink` | `#58924a` / `#23281f` | `#26402c` / `#10140e` | 树 / 小黑 |
+| `--sky-top/mid/low` | `#d3e6e6` / `#e9efe4` / `#f7f3e8` | `#0a1219` / `#101d20` / `#141c16` | Hero 天空三段渐变（底段等于纸面） |
+| `--sun` / `--sun-glow` / `--ray` | `#fff3c2` / 琥珀 30% / 暖白 26% | 隐藏 | 太阳、光晕与光束 |
+| `--moon` / `--moon-glow` | 隐藏 | `#e9efe0` / 灵气青 22% | 月亮与月晕 |
+| `--cloud` / `--cloud-line` / `--bird` | 白 86% / 墨 16% / 墨 55% | 灰绿 45% / 淡墨 10% / 同浅色 | 云、云的描边、飞鸟 |
+| `--mount-far/near` / `--mist` | `#d4e2d4` / `#bed5c0` / `#e9efdc` | `#182626` / `#1b2f2a` / `#172420` | 两层远山与山脚雾气 |
+| `--forest` | `#a2cc8b` | `#1c3224` | 后山上的树冠带 |
+| `--hill-back/mid/front` | `#cfe6b8` / `#a8d38a` / `#7cba5e` | `#223528` / `#2a4430` / `#34573b` | 三层山丘 |
+| `--tree` / `--tree-light` / `--trunk` | `#58924a` / `#7ab266` / `#7a5a3e` | `#26402c` / `#325538` / `#3a2e24` | 树冠、树冠高光、树干 |
+| `--grass` / `--grass-fg` | `#67aa4c` / `#4f8f3c` | `#2f5335` / `#24402b` | 山丘草丛 / 前景草簇 |
+| `--cat-ink` / `--cat-sheen` | `#23281f` / `#363e35` | `#10140e` / `#1f2a20` | 小黑毛色与体积高光 |
+| `--cat-eye` / `--cat-iris` / `--cat-pupil` | `#74e2d6` / `#27a49b` / `#10302d` | `#7fe9dd` / `#2bb3a8` / 同浅色 | 小黑的眼睛三层 |
 | `--footer-bg` | `#edf3df` | `#101711` | 草地页脚 |
+
+晨昏变体只在浅色主题下由 `js/hero-scene.js` 写入 `.hero[data-daypart="dawn" | "dusk"]`，覆盖天空、太阳、远山、雾气与树冠带的值（定义在 `style.css` 的 Hero 段落）；深色主题固定为 `night`，直接使用深色 Token。
 
 派生透明色统一使用 `color-mix(in srgb, …)`，不引入新 hex。
 
@@ -103,7 +115,7 @@ Three.js 工作室是 Huanfly 个人设计风格在三维空间中的延展。
 ### 3.5 布局
 
 - 容器宽 `--container-width: 1100px`；Header 高 `--header-height: 68px`；
-- Hero 山丘高度 `--hills-h: clamp(130px, 18vw, 210px)`，SVG 与小黑定位共用该变量；
+- Hero 景观图层高度 `--scene-h: clamp(150px, 15.625vw, 480px)`，与 `1920 × 300` 的 viewBox 等比：宽屏不裁切，窄屏以 `xMidYMax slice` 保留画面中心；Hero 只为景观下部 72% 预留 `padding-bottom`，淡色远山允许被正文覆盖；
 - 栅格 `.grid-3`：`repeat(auto-fit, minmax(280px, 1fr))`，间距 28 px；
 - 响应式断点：768 px（导航折叠、博客卡片纵排、山丘缩放）。
 
@@ -115,9 +127,29 @@ Three.js 工作室是 Huanfly 个人设计风格在三维空间中的延展。
 | 波浪线下划线 | 内联 SVG data URI，用于 `.section-title::after`、导航激活态、Markdown `hr` | 全站 |
 | 马克笔高亮 | `.marker`：青→绿 45% 透明渐变，`background-size: 100% 42%` 压在文字下沿 | Hero、关于页标题 |
 | 胶带贴纸 | 半透明色块 + 旋转（`::before/::after`） | Hero 头像、博客缩略图 |
-| 山丘场景 | 三层 `path` + 树剪影，`fill` 绑定 CSS 变量随主题切换 | `index.html` 内联 SVG |
-| 小黑 | 纯 SVG：眨眼（`cat-blink` 5 s）、摇尾（`tail-swish` 3.6 s）、抖耳（`ear-twitch` 7 s），深色模式加青色 drop-shadow | `index.html` 内联 SVG |
-| 草地页脚 | `footer::before` 波浪草丛 SVG data URI，颜色与 `--footer-bg` 同值衔接 | 全站 |
+| 森林景观 | 天空 + 三层内联 SVG 景观 + 小黑，见 §4.1 | `index.html` |
+| 草地页脚 | `footer::before` 波浪草丛 SVG data URI，颜色与 `--footer-bg` 同值衔接；`footer::after` 是蜷在草地上睡着的小黑（data URI，浅 / 深各一套） | 全站 |
+| 卡片光斑 | `.card::after` 跟随指针的色调径向光，`--mx/--my` 由 `js/script.js` 写入；悬停时卡片按 `--rx/--ry` 作 ≤ 3.5° 的纸片倾斜（宽幅博客卡片只有光斑） | 全站卡片 |
+
+### 4.1 首页 Hero 景观
+
+Hero 是一幅随时段变化的手绘绘本插画，全部元素内联在 `index.html`，颜色只引用 §3.1 的 Token，脚本失效时仍是完整的静态画面：
+
+| 层 | 内容 | 实现 |
+|---|---|---|
+| 天空 `.hero-sky` | 三段渐变；太阳（`--sun-x/--sun-y`，随本地时间沿偏右上的弧线移动）与从太阳散出的 `conic-gradient` 光束；夜晚换成月牙（`mask` 挖出的弧）、34 颗闪烁星星与 4 枚星芒；4 朵云以 150–230 s 漂过；白天 3 只飞鸟掠过 | CSS + 内联 SVG |
+| 远景 `.hero-far` | 两层远山 + 山脚雾气渐变，viewBox `1920 × 520`，高度为 `--scene-h × 1.7333` 以保持与其他层等比 | 内联 SVG |
+| 中景 `.hero-mid` | 圆形树冠组成的森林带 + 后山 + 6 棵树 | 内联 SVG |
+| 近景 `.hero-near` | 中山、前山、7 棵树、草丛、花朵、小黑、前景草簇，底边一条纸面波浪把山丘接回页面底色 | 内联 SVG |
+| 粒子 `.hero-particles` | 白天 22 片落叶 / 花瓣（窄屏 9），随指针快速移动起风；夜晚 16 只草间萤火（窄屏 7）。Hero 不可见或标签页隐藏时停止 | `js/hero-scene.js` Canvas |
+
+树、草、花、云、鸟定义为 `.hero-defs` 里的 `<g id>`，各层用 `<use>` 复用；山脉、森林带、山丘、草丛位置与星星由一次性脚本按固定种子生成后直接写入 HTML，不在运行时生成。
+
+**视差**：精细指针设备上 `js/hero-scene.js` 把指针偏移平滑写到各层 `transform`（云 10 px、远 6 px、中 14 px、近 24 px），所有设备随滚动让远层下沉（远 0.30、中 0.16、云 0.22 倍滚动量，近景不动以保住底边）；图层预放大 `scale(1.04)` 遮住位移露边。
+
+**小黑**：近景 SVG 里可聚焦的 `<g role="button" tabindex="0" aria-label="摸摸小黑">`，眼神跟随指针（无指针时每 2.6–5.6 s 随机张望），悬停竖耳、眼睛放大，点击 / Enter / 空格触发开心表情、跳一下、三颗爱心与气泡短句，45 s 无操作闭眼打瞌睡并冒出 `z`。CSS 待机动画：眨眼 `cat-blink` 5 s、摇尾 `tail-swish` 3.6 s、抖耳 `ear-twitch` 7 s、呼吸 `cat-breathe` 4 s。桌面端加载 1.6 s 后小黑以气泡说一句按时段的问候（`.cat-bubble`，窄屏隐藏，正文中的 `#hero-greeting` 仍是无障碍文本）；语料离线内置在 `js/hero-scene.js`。
+
+**时段**：深色主题固定 `night`；浅色主题按本地时间 5–7 时 `dawn`、17–19:30 `dusk`、其余 `day`，每分钟复查一次，主题切换时立即重算。`window.HeroScene.setDaypart()` 可强制时段供诊断。
 
 ## 5. 组件规范
 
@@ -140,29 +172,39 @@ Three.js 工作室是 Huanfly 个人设计风格在三维空间中的延展。
 
 | 动画 | 时长 | 对象 |
 |---|---|---|
-| `blob-float` | 14 s 往返 | Hero 三个模糊色斑 |
 | `gentle-bob` | 5 s | Hero 头像悬浮 |
-| `tail-swish` / `cat-blink` / `ear-twitch` | 3.6 s / 5 s / 7 s | 小黑 |
-| hover 位移 + 微旋 | 0.25–0.35 s | 卡片、按钮、图标 |
+| `cloud-drift` / `birds-fly` / `bird-flap` | 150–230 s / 52 s / 0.9 s | Hero 云、飞鸟群、翅膀 |
+| `rays-breathe` / `twinkle` | 9 s 往返 / 2.4–5 s 往返 | Hero 光束、星星与星芒 |
+| `grass-sway` | 4.2–5.5 s 往返（`skewX ±2.5°`） | Hero 草丛与前景草簇 |
+| `tail-swish` / `cat-blink` / `ear-twitch` / `cat-breathe` | 3.6 s / 5 s / 7 s / 4 s | 小黑待机 |
+| `cat-hop` / `heart-float` / `zzz-float` | 0.55 s / 1.5 s / 2.6 s | 小黑被戳、爱心、打瞌睡 |
+| hover 位移 + 微旋 + 纸片倾斜 | 0.25–0.35 s | 卡片、按钮、图标 |
 
-### 6.2 Canvas 双层（js/script.js）
+### 6.2 Canvas 层
 
 | 层 | class | z-index | 行为 |
 |---|---|---|---|
-| 漂浮萤火 | `.spirit-layer` | 5 | 10 个（<768 px）/ 20 个灵气点缓慢上浮 + 摇曳 + 闪烁；深色模式基础透明度 0.55，浅色 0.32；标签页隐藏时暂停 |
-| 点击迸发 | `.burst-layer` | 9950 | 每次点击 18 + 8 粒子（冷却 90 ms），负重力 −0.012 轻微上浮，绿 / 青 / 琥珀配色 |
+| 漂浮萤火 | `.spirit-layer` | 5 | `js/script.js`；10 个（<768 px）/ 20 个灵气点缓慢上浮 + 摇曳 + 闪烁；深色模式基础透明度 0.55，浅色 0.32；标签页隐藏时暂停 |
+| 点击迸发 | `.burst-layer` | 9950 | `js/script.js`；每次点击 18 + 8 粒子（冷却 90 ms），负重力 −0.012 轻微上浮，绿 / 青 / 琥珀配色 |
+| Hero 粒子 | `.hero-particles` | Hero 内 | `js/hero-scene.js`；白天落叶 / 花瓣、夜晚草间萤火，见 §4.1 |
 
 ### 6.3 降级策略
 
-- `prefers-reduced-motion: reduce`：萤火层不创建；点击迸发退化为单个扩散圆环（`.reduced-motion-click`）；
-  CSS 关键帧动画与 hover 位移全部关闭；
+- `prefers-reduced-motion: reduce`：萤火层与 Hero 粒子不创建，视差不启用，云与飞鸟停在固定位置；点击迸发退化为单个扩散圆环（`.reduced-motion-click`）；
+  CSS 关键帧动画与 hover 位移全部关闭；小黑仍可点击，只切换表情不做位移；主题切换与跨页导航不使用 View Transition；
 - 入场动画自托管：首屏 `.rise-in` 为纯 CSS 关键帧，首帧即播放；视口外元素 `[data-reveal]` 由
   `js/script.js` 的 IntersectionObserver 触发，且仅在 `html.js`（head 内联脚本标记 JS 可用）时才隐藏，
-  脚本失效时内容直接可见。
+  脚本失效时内容直接可见；
+- 卡片光斑与倾斜只在 `(hover: hover) and (pointer: fine)` 设备上由脚本写入变量，触屏设备保持原有 hover 表现。
 
-### 6.4 z-index 秩序
+### 6.4 View Transitions（渐进增强）
 
-`5` 萤火 → `99` 移动端菜单 → `100` Header → `9950` 点击迸发 → `9960` 纸纹 → `9990` Toast → `9999` Lightbox。
+- 跨页导航：`style.css` 声明 `@view-transition { navigation: auto }`，同源主页面之间 0.28 s 交叉淡化；不支持的浏览器与 `studio.html`（不加载 `style.css`）无过渡；
+- 主题切换：`js/script.js` 在 `html` 上加 `.theme-switching`，用 `document.startViewTransition` 让新主题以切换按钮为圆心 `clip-path: circle()` 扩散 0.56 s；期间关闭全部颜色 `transition`，避免快照出现半程颜色。不支持时直接切换。
+
+### 6.5 z-index 秩序
+
+`5` 萤火 → `99` 移动端菜单 → `100` Header → `9950` 点击迸发 → `9960` 纸纹 → `9990` Toast → `9999` Lightbox。Hero 内部：`0` 天空 → `1` 景观与粒子 → `2` 正文 → `3` 小黑气泡。
 
 ## 7. 外部依赖与降级行为
 
@@ -194,17 +236,19 @@ Marked.js 与 giscus 仅由 `blog.html` 使用；giscus 当前因 `categoryId` �
 ### 8.2 浏览器特性要求
 
 依赖 `color-mix()`（Chrome 111 / Safari 16.2 / Firefox 113 及以上）、`backdrop-filter`、
-`transform-box: fill-box`、`content-visibility`。低于该基线的浏览器表现为派生色缺失，
-主体内容与布局仍可用；未做针对性兼容处理。
+`transform-box: fill-box`、`content-visibility`、`conic-gradient` 与 `mask-image`（Hero 光束、月牙）。
+低于该基线的浏览器表现为派生色缺失，主体内容与布局仍可用；未做针对性兼容处理。
+View Transitions（跨页 Chrome 126+ / Safari 18.2+，同页 Chrome 111+ / Safari 18+）为纯增强，缺失时无过渡。
 
 ### 8.3 主题切换机制
 
 主题状态存储于 `localStorage.theme`，各页面 `<head>` 内联脚本在首帧前写入
-`<html data-theme>`，避免闪白；无存储值时跟随 `prefers-color-scheme`。
+`<html data-theme>`，避免闪白；无存储值时跟随 `prefers-color-scheme`。页内切换的过渡见 §6.4；
+首页 Hero 通过 `MutationObserver` 监听 `data-theme` 同步日夜时段。
 
 ## 9. 维护指引
 
 - **新增卡片色调**：在 style.css 追加 `.tone-x { --tone: …; --tone-soft: …; }` 并补深色值，组件自动适配；
 - **新增文章**：在 `posts/` 创建 Markdown 文件，执行 `./run.sh gen` 并同时审查、提交 `posts/posts.json`；不得只手工编辑索引。完整流程见 [blog-auto-publish.md](blog-auto-publish.md)；
-- **调整山丘 / 小黑**：直接编辑 `index.html` 内联 SVG，颜色务必继续引用 `var(--hill-*)` / `var(--cat-ink)` 以保持主题联动；
+- **调整 Hero 景观 / 小黑**：直接编辑 `index.html` 内联 SVG，颜色务必继续引用 §3.1 的场景 Token 以保持主题与晨昏联动；三层景观共用 `1920 × 300` 的坐标系（远景 `1920 × 520`），新增树 / 草 / 花请复用 `.hero-defs` 里的符号并把落点放在山丘轮廓上；小黑的局部坐标以脚底为原点、向上为负，`transform="translate(1240 246)"` 决定它坐在前山的哪一点；有 `transform` 属性又要做 CSS 动画的元素必须外包一层 `<g>`，否则 CSS transform 会覆盖属性位移；
 - **改动共享类名前**：先按 §8.1 检查 `tools/` 引用（`rg -n 'var\\(--|class=' tools -g '*.html'`）。
