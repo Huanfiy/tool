@@ -2,8 +2,10 @@
  * Huanfly · 手绘森林主题交互
  * 1. 点击灵气迸发（绿/青色粒子）
  * 2. 全屏漂浮萤火灵气（缓慢上浮的发光点）
- * 3. 主题切换 / 移动端菜单 / 键盘可达性
+ * 3. 主题切换（圆形揭示过渡）/ 移动端菜单 / 键盘可达性
  * 4. 首页问候与动态时间线 / 不蒜子统计 / 滚动浮现
+ * 5. 卡片光斑与倾斜 / 吸顶导航滚动态
+ * 首页 Hero 景观见 js/hero-scene.js
  * ============================================================= */
 
 const SPIRIT_BURST_CONFIG = {
@@ -502,8 +504,62 @@ window.observeReveal = root => {
 };
 
 /* =============================================================
+ * 纸片卡片的光斑与轻微倾斜：仅精细指针设备，尊重减少动态偏好
+ * 光斑位置写入 --mx / --my，倾斜角写入 --rx / --ry，样式见 style.css 的 .card
+ * 宽幅的博客卡片只有光斑不倾斜，避免长条形元素透视失真
+ * ============================================================= */
+function initCardTilt() {
+    const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
+    const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (!finePointer.matches) return;
+
+    const MAX_TILT = 3.5;
+
+    document.addEventListener('pointermove', (event) => {
+        const card = event.target.closest ? event.target.closest('.card') : null;
+        if (!card) return;
+        const rect = card.getBoundingClientRect();
+        if (!rect.width || !rect.height) return;
+        const px = (event.clientX - rect.left) / rect.width;
+        const py = (event.clientY - rect.top) / rect.height;
+        card.style.setProperty('--mx', (px * 100).toFixed(1) + '%');
+        card.style.setProperty('--my', (py * 100).toFixed(1) + '%');
+        if (motionQuery.matches || card.classList.contains('blog-card')) return;
+        card.style.setProperty('--ry', ((px - 0.5) * 2 * MAX_TILT).toFixed(2) + 'deg');
+        card.style.setProperty('--rx', ((0.5 - py) * 2 * MAX_TILT).toFixed(2) + 'deg');
+    }, { passive: true });
+
+    document.addEventListener('pointerout', (event) => {
+        const card = event.target.closest ? event.target.closest('.card') : null;
+        if (!card || (event.relatedTarget && card.contains(event.relatedTarget))) return;
+        card.style.removeProperty('--rx');
+        card.style.removeProperty('--ry');
+    }, { passive: true });
+}
+
+/* =============================================================
+ * 吸顶导航：离开页顶后加深底边与投影
+ * ============================================================= */
+function initHeaderScrollState() {
+    const header = document.querySelector('header');
+    if (!header) return;
+    let scrolled = null;
+    const update = () => {
+        const next = window.scrollY > 12;
+        if (next !== scrolled) {
+            scrolled = next;
+            header.classList.toggle('scrolled', next);
+        }
+    };
+    window.addEventListener('scroll', update, { passive: true });
+    update();
+}
+
+/* =============================================================
  * 基础交互：主题切换 / 移动端菜单 / 键盘可达性
  * 首帧主题由各页 <head> 内联脚本写入 data-theme，这里只负责图标同步与切换。
+ * 主题切换在支持 View Transitions 的浏览器里以按钮为圆心扩散揭示新主题，
+ * 否则直接切换；prefers-reduced-motion 下同样直接切换。
  * 页内锚点交给浏览器原生处理：style.css 的 scroll-behavior / scroll-padding-top 负责
  * 平滑滚动与避开吸顶导航，博客与工具页的 #hash 视图路由也因此不会被拦截。
  * ============================================================= */
@@ -514,9 +570,12 @@ document.addEventListener('DOMContentLoaded', () => {
     initTimeGreeting();
     initActivityTimeline();
     initBusuanzi();
+    initCardTilt();
+    initHeaderScrollState();
 
     // --- 主题切换 ---
     const themeToggles = document.querySelectorAll('.theme-toggle');
+    const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
 
     function updateThemeIcons(theme) {
         themeToggles.forEach(toggle => {
@@ -527,14 +586,41 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    function applyTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        try { localStorage.setItem('theme', theme); } catch (error) { /* 隐私模式下忽略 */ }
+        updateThemeIcons(theme);
+    }
+
+    function switchTheme(theme, originX, originY) {
+        const root = document.documentElement;
+        if (typeof document.startViewTransition !== 'function' || motionQuery.matches) {
+            applyTheme(theme);
+            return;
+        }
+        // 切换期间关闭颜色过渡，避免快照里出现半程颜色
+        root.classList.add('theme-switching');
+        const transition = document.startViewTransition(() => applyTheme(theme));
+        transition.ready.then(() => {
+            const radius = Math.hypot(
+                Math.max(originX, window.innerWidth - originX),
+                Math.max(originY, window.innerHeight - originY)
+            );
+            root.animate(
+                { clipPath: [`circle(0px at ${originX}px ${originY}px)`, `circle(${radius}px at ${originX}px ${originY}px)`] },
+                { duration: 560, easing: 'cubic-bezier(0.4, 0, 0.2, 1)', pseudoElement: '::view-transition-new(root)' }
+            );
+        }).catch(() => { /* 过渡被打断时主题已经生效 */ });
+        transition.finished.finally(() => root.classList.remove('theme-switching'));
+    }
+
     updateThemeIcons(document.documentElement.getAttribute('data-theme'));
 
     themeToggles.forEach(toggle => {
         toggle.addEventListener('click', () => {
             const newTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-            document.documentElement.setAttribute('data-theme', newTheme);
-            try { localStorage.setItem('theme', newTheme); } catch (error) { /* 隐私模式下忽略 */ }
-            updateThemeIcons(newTheme);
+            const rect = toggle.getBoundingClientRect();
+            switchTheme(newTheme, rect.left + rect.width / 2, rect.top + rect.height / 2);
         });
     });
 

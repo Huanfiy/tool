@@ -334,7 +334,13 @@ header {
     top: 0;
     z-index: 100;
     border-bottom: 2px solid var(--line-soft);
-    transition: background-color 0.4s ease;
+    transition: background-color 0.4s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* 离开页顶后（js/script.js 加 .scrolled）：底边加深并浮起 */
+header.scrolled {
+    border-bottom-color: color-mix(in srgb, var(--line) 60%, transparent);
+    box-shadow: 0 6px 18px rgba(47, 54, 48, 0.06);
 }
 
 header .container {
@@ -1035,7 +1041,25 @@ header .container {
     height: 100%;
     display: flex;
     flex-direction: column;
-    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    transition: transform 0.35s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+/* 跟随指针的柔光：取卡片色调，只在悬停时显现 */
+.card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: radial-gradient(260px circle at var(--mx) var(--my),
+            color-mix(in srgb, var(--tone, var(--primary-color)) 16%, transparent),
+            transparent 70%);
+    opacity: 0;
+    transition: opacity 0.35s ease;
+}
+
+.card:hover::after {
+    opacity: 1;
 }
 
 .grid-3 > .card:nth-child(even) {
@@ -1043,13 +1067,13 @@ header .container {
 }
 
 .card:hover {
-    transform: translateY(-6px) rotate(-0.5deg);
+    transform: perspective(900px) rotateX(var(--rx)) rotateY(var(--ry)) translateY(-6px) rotate(-0.5deg);
     box-shadow: var(--shadow-hover);
     border-color: var(--line);
 }
 
 .grid-3 > .card:nth-child(even):hover {
-    transform: translateY(-6px) rotate(0.5deg);
+    transform: perspective(900px) rotateX(var(--rx)) rotateY(var(--ry)) translateY(-6px) rotate(0.5deg);
 }
 
 /* 色调修饰类：--tone / --tone-soft */
@@ -2146,6 +2170,42 @@ html.js [data-reveal].revealed {
 }
 
 /* =========================================
+   View Transitions（渐进增强，不支持的浏览器忽略）
+   - 跨页导航：同源页面之间短促交叉淡化（Chrome 126+ / Safari 18.2+）
+   - 主题切换：js/script.js 在 html 上加 .theme-switching，新主题以按钮为圆心扩散揭示
+   ========================================= */
+@view-transition {
+    navigation: auto;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation-duration: 0.28s;
+}
+
+html.theme-switching::view-transition-old(root),
+html.theme-switching::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
+}
+
+html.theme-switching::view-transition-old(root) {
+    z-index: 1;
+}
+
+html.theme-switching::view-transition-new(root) {
+    z-index: 2;
+}
+
+/* 切换瞬间关闭颜色过渡，保证新快照直接是目标主题 */
+html.theme-switching,
+html.theme-switching *,
+html.theme-switching *::before,
+html.theme-switching *::after {
+    transition: none !important;
+}
+
+/* =========================================
    灵气动效层（点击迸发 + 漂浮萤火）
    ========================================= */
 .burst-layer {
@@ -2205,6 +2265,22 @@ footer::before {
 
 [data-theme="dark"] footer::before {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='16' viewBox='0 0 90 16'%3E%3Cpath d='M0 16V10Q7 2 15 9Q22 1 30 8Q38 3 45 9Q52 2 60 8Q68 3 75 9Q83 2 90 10V16Z' fill='%23101711'/%3E%3C/svg%3E");
+}
+
+/* 页脚草地上睡着的小黑：全站页脚共用，随主题换一套墨色 */
+footer::after {
+    content: '';
+    position: absolute;
+    right: clamp(16px, 7vw, 120px);
+    top: -44px;
+    width: 104px;
+    height: 48px;
+    pointer-events: none;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 104 48'%3E%3Cpath d='M12 40C3 42 1 32 9 27' fill='none' stroke='%2323281f' stroke-width='7' stroke-linecap='round'/%3E%3Cellipse cx='48' cy='33' rx='34' ry='14' fill='%2323281f'/%3E%3Ccircle cx='74' cy='27' r='16' fill='%2323281f'/%3E%3Cpath d='M63 16L59 4L71 12Z M85 16L91 4L79 12Z' fill='%2323281f'/%3E%3Cpath d='M66 29q4 3 8 0M78 29q4 3 8 0' fill='none' stroke='%238fe3d9' stroke-width='1.6' stroke-linecap='round'/%3E%3Cpath d='M92 10h6l-6 6h6' fill='none' stroke='%234fc4cf' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M99 3h4l-4 4h4' fill='none' stroke='%234fc4cf' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round' opacity='.8'/%3E%3C/svg%3E") no-repeat center bottom / contain;
+}
+
+[data-theme="dark"] footer::after {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 104 48'%3E%3Cpath d='M12 40C3 42 1 32 9 27' fill='none' stroke='%231c261e' stroke-width='7' stroke-linecap='round'/%3E%3Cellipse cx='48' cy='33' rx='34' ry='14' fill='%231c261e' stroke='%23324b3c' stroke-width='1.5'/%3E%3Ccircle cx='74' cy='27' r='16' fill='%231c261e' stroke='%23324b3c' stroke-width='1.5'/%3E%3Cpath d='M63 16L59 4L71 12Z M85 16L91 4L79 12Z' fill='%231c261e' stroke='%23324b3c' stroke-width='1.5' stroke-linejoin='round'/%3E%3Cpath d='M66 29q4 3 8 0M78 29q4 3 8 0' fill='none' stroke='%237fe9dd' stroke-width='1.6' stroke-linecap='round'/%3E%3Cpath d='M92 10h6l-6 6h6' fill='none' stroke='%236fd8e2' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M99 3h4l-4 4h4' fill='none' stroke='%236fd8e2' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round' opacity='.8'/%3E%3C/svg%3E");
 }
 
 .footer-note {
@@ -2356,6 +2432,10 @@ footer::before {
 
     html.js [data-reveal] {
         opacity: 1;
+    }
+
+    @view-transition {
+        navigation: none;
     }
 }
 
